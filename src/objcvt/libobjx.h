@@ -1,0 +1,19 @@
+//////////////////////////////////////////////////////////////////////////
+// .OBJ file loader!
+// .OBJX file maker!
+//
+// Zhou, Feb/2012
+//
+//////////////////////////////////////////////////////////////////////////
+#pragma once
+
+#ifndef _LIB
+#ifdef _DEBUG
+#pragma comment(lib, "libobjxd")
+#else
+#pragma comment(lib, "libobjx")
+#endif
+#endif
+
+#include "objldr.h"
+#include "objxio.h"
