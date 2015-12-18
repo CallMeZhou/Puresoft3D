@@ -67,6 +67,8 @@ void PuresoftVBO::evenOutRanges(int rangeAmount /* = MAX_WORKRANGES */)
 		m_workRanges[i].current = m_workRanges[i - 1].end;
 		m_workRanges[i].end = m_workRanges[i].current + bytesPerRange;
 	}
+
+	m_workRanges[rangeAmount - 1].end = (unsigned char*)m_buffer + m_bufferBytes;
 }
 
 const void* PuresoftVBO::next(size_t idx /* = 0 */)
