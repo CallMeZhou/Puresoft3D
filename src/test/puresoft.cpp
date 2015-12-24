@@ -58,7 +58,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	pipeline.setUniform(2, modelRotate, sizeof(modelRotate.elem));
 	RGBQUAD singleColour = {200, 100, 150, 0};
 	pipeline.setUniform(3, &singleColour, sizeof(singleColour));
-	vec4 lightPos(-0.5f, 2.0f, 0, 0);
+	vec4 lightPos(-0.5f, 0, 0, 0);
 	pipeline.setUniform(4, &lightPos, sizeof(lightPos));
 	vec4 cameraPos;
 	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));

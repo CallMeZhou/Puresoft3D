@@ -47,21 +47,17 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 	mcemaths_norm_3_4(H);
 
 	float lambert = mcemaths_dot_3_4(L, inData->normal);
-	if(lambert < 0.2f)
-	{
-		lambert = 0.2f;
-	}
+	lambert = max(lambert, 0.0f);
 
 	float specular = mcemaths_dot_3_4(H, inData->normal);
-	if(specular < 0)
-	{
-		specular = 0;
-	}
-	specular = pow(specular, 6.0f);
+	specular = max(specular, 0.0f);
+	specular = pow(specular, 50.0f);
 
-	int red = m_singleColour.rgbRed * lambert + m_singleColour.rgbRed * specular + ambience.rgbRed;
-	int green = m_singleColour.rgbGreen * lambert + m_singleColour.rgbGreen * specular + ambience.rgbGreen;
-	int blue = m_singleColour.rgbBlue * lambert + m_singleColour.rgbBlue * specular + ambience.rgbBlue;
+	int specularColour = (int)(255.0f * specular * 0.5f);
+
+	int red = (m_singleColour.rgbRed + specularColour) * lambert + m_singleColour.rgbRed / 10;
+	int green = (m_singleColour.rgbGreen + specularColour) * lambert + m_singleColour.rgbGreen / 10;
+	int blue = (m_singleColour.rgbBlue + specularColour) * lambert + m_singleColour.rgbBlue / 10;
 
 	m_singleColour.rgbRed = min(red, 255);
 	m_singleColour.rgbGreen = min(green, 255);
