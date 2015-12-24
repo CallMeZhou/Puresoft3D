@@ -6,9 +6,13 @@ class MyTestVertexProcesser :
 	public PuresoftVertexProcessor
 {
 public:
+	static void* _stdcall createInstance(void);
+
+public:
 	MyTestVertexProcesser(void);
 	~MyTestVertexProcesser(void);
 
+	void release(void);
 	void process(const VertexProcessorInput* input, VertexProcessorOutput* output, const void** uniforms);
 
 private:

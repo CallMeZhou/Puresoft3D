@@ -2,6 +2,11 @@
 #include "mcemaths.h"
 #include "testip.h"
 
+void* _stdcall MyTestInterpolationProcessor::createInstance(void)
+{
+	return new MyTestInterpolationProcessor;
+}
+
 MyTestInterpolationProcessor::MyTestInterpolationProcessor(void)
 {
 	memset(&m_outputExtForLeft, 0, sizeof(m_outputExt));
@@ -11,6 +16,11 @@ MyTestInterpolationProcessor::MyTestInterpolationProcessor(void)
 
 MyTestInterpolationProcessor::~MyTestInterpolationProcessor(void)
 {
+}
+
+void MyTestInterpolationProcessor::release()
+{
+	delete this;
 }
 
 void MyTestInterpolationProcessor::setInputExt(int idx, const void* ext)

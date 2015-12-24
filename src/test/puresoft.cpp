@@ -40,10 +40,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	BITMAPINFO bi = {{sizeof(BITMAPINFOHEADER), W, H, 1, 32, BI_RGB, 0, 0, 0, 0, 0}, {0}};
 	Bitmap* bmp = new Bitmap(&bi, img.getBuffer());
 
-	MyTestVertexProcesser vp;
-	MyTestInterpolationProcessor ip;
-	MyTestFragmentProcessor fp;
-	PuresoftProcessor proc(&vp, &ip, &fp);
+	PuresoftProcessor proc(&MyTestVertexProcesser::createInstance, &MyTestInterpolationProcessor::createInstance, &MyTestFragmentProcessor::createInstance);
 	pipeline.setProcessor(&proc);
 	pipeline.setFBO(0, &img);
 
@@ -191,7 +188,6 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 			img.clear4(&bkdng);
 			pipeline.clearDepth();
 			pipeline.drawVAO(&vao1);
-//			pipeline.drawVAO(&vao2);
 
 			{
 				Bitmap* b = (Bitmap*)GetWindowLongPtr(wnd, GWL_USERDATA);

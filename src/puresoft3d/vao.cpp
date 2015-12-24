@@ -45,7 +45,7 @@ void PuresoftVAO::rewindAll(void)
 	{
 		if(*p)
 		{
-			(*p)->rewind();
+			(*p)->rewindRanges();
 		}
 	}
 }

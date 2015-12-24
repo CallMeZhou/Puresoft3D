@@ -6,6 +6,11 @@
 
 using namespace mcemaths;
 
+void* _stdcall MyTestFragmentProcessor::createInstance(void)
+{
+	return new MyTestFragmentProcessor;
+}
+
 MyTestFragmentProcessor::MyTestFragmentProcessor(void)
 {
 }
@@ -14,18 +19,20 @@ MyTestFragmentProcessor::~MyTestFragmentProcessor(void)
 {
 }
 
+void MyTestFragmentProcessor::release()
+{
+	delete this;
+}
+
 const RGBQUAD ambience = {10, 10, 10, 0};
 void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures)
 {
-	static RGBQUAD singleColour;
-
-	//singleColour = *(const RGBQUAD*)uniforms[3];
 	const float* lightPos = (const float*)uniforms[4];
 	const float* cameraPos = (const float*)uniforms[5];
 	int diffuse = *(const int*)uniforms[6];
 
 	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->ext;
-	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &singleColour);
+	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
 
 	vec4 L;
 	mcemaths_sub_3_4(L, lightPos, inData->worldPos);
@@ -52,14 +59,14 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 	}
 	specular = pow(specular, 6.0f);
 
-	int red = singleColour.rgbRed * lambert + singleColour.rgbRed * specular + ambience.rgbRed;
-	int green = singleColour.rgbGreen * lambert + singleColour.rgbGreen * specular + ambience.rgbGreen;
-	int blue = singleColour.rgbBlue * lambert + singleColour.rgbBlue * specular + ambience.rgbBlue;
+	int red = m_singleColour.rgbRed * lambert + m_singleColour.rgbRed * specular + ambience.rgbRed;
+	int green = m_singleColour.rgbGreen * lambert + m_singleColour.rgbGreen * specular + ambience.rgbGreen;
+	int blue = m_singleColour.rgbBlue * lambert + m_singleColour.rgbBlue * specular + ambience.rgbBlue;
 
-	singleColour.rgbRed = min(red, 255);
-	singleColour.rgbGreen = min(green, 255);
-	singleColour.rgbBlue = min(blue, 255);
+	m_singleColour.rgbRed = min(red, 255);
+	m_singleColour.rgbGreen = min(green, 255);
+	m_singleColour.rgbBlue = min(blue, 255);
 
-	output->data[0] = &singleColour;
+	output->data[0] = &m_singleColour;
 	output->dataSizes[0] = sizeof(RGBQUAD);
 }

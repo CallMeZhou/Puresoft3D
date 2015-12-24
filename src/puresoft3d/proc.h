@@ -1,8 +1,24 @@
 #pragma once
+#include <stdlib.h>
+#include <assert.h>
+#include <stdint.h>
+#include "config.h"
 #include "vao.h"
-#include "pipeline.h" // for MAX_FBOS
 
-class PuresoftVertexProcessor
+class align_base_64
+{
+public:
+	void* operator new(size_t bytes) {return _aligned_malloc(bytes, 64);}
+	void operator delete(void* mem) {_aligned_free(mem);}
+	void* operator new(size_t bytes, void* place) {assert(0 == (intptr_t)place % 64);return place;}
+	void operator delete(void* mem, void* place) {}
+	void* operator new[](size_t bytes) {return _aligned_malloc(bytes, 64);}
+	void operator delete[](void* mem) {_aligned_free(mem);}
+	void* operator new[](size_t bytes, void* place) {assert(0 == (intptr_t)place % 64);return place;}
+	void operator delete[](void* mem, void* place) {}
+};
+
+class PuresoftVertexProcessor : public align_base_64
 {
 public:
 	typedef struct
@@ -17,31 +33,22 @@ public:
 	} VertexProcessorOutput;
 
 public:
-	virtual ~PuresoftVertexProcessor(void) {};
+	virtual void release(void) = 0;
 	virtual void process(const VertexProcessorInput* input, VertexProcessorOutput* output, const void** uniforms) = 0;
 };
 
-class PuresoftInterpolationProcessor
+class PuresoftInterpolationProcessor : public align_base_64
 {
 public:
-	void scanlineBegin(int left, int right, int y, const float* contributesForLeft, const float* contributesForRight, const float* correctionFactor1);
-	void scanlineNext(float* correctionFactor2, const void** outputExt);
-
-public:
-	virtual ~PuresoftInterpolationProcessor(void) {};
+	virtual void release(void) = 0;
 	virtual void setInputExt(int idx, const void* ext) = 0;
 	virtual void processLeftEnd(const float* correctedContributes) = 0;
 	virtual void processRightEnd(const float* correctedContributes) = 0;
 	virtual void processDelta(float reciprocalScanlineLength) = 0;
 	virtual void* processOutput(float correctionFactor2) = 0;
-
-protected:
-	float m_correctionFactor2ForLeft;
-	float m_correctionFactor2ForRight;
-	float m_correctionFactor2Delta;
 };
 
-class PuresoftFragmentProcessor
+class PuresoftFragmentProcessor : public align_base_64
 {
 public:
 	typedef struct
@@ -52,23 +59,31 @@ public:
 
 	typedef struct
 	{
-		const void* data[PuresoftPipeline::MAX_FBOS];
-		size_t dataSizes[PuresoftPipeline::MAX_FBOS];
+		const void* data[MAX_FBOS];
+		size_t dataSizes[MAX_FBOS];
 	} FragmentProcessorOutput;
 
 public:
-	virtual ~PuresoftFragmentProcessor(void) {};
+	virtual void release(void) = 0;
 	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures) = 0;
 };
 
+typedef void* (_stdcall *createProcessorInstance)(void);
+
 class PuresoftProcessor
 {
-	friend class PuresoftPipeline;
 public:
-	PuresoftProcessor(PuresoftVertexProcessor* vp, PuresoftInterpolationProcessor* ip, PuresoftFragmentProcessor* fp)
-		: m_vertProc(vp), m_interpProc(ip), m_fragProc(fp) {}
+	static const size_t MAX_FRAG_PIPES = 8;
+
+public:
+	PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc);
+	~PuresoftProcessor();
+	PuresoftVertexProcessor* getVertProc(void);
+	PuresoftInterpolationProcessor* getInterpProc(int idx);
+	PuresoftFragmentProcessor* getFragProc(int idx);
+
 private:
 	PuresoftVertexProcessor* m_vertProc;
-	PuresoftInterpolationProcessor* m_interpProc;
-	PuresoftFragmentProcessor* m_fragProc;
+	PuresoftInterpolationProcessor* m_interpProc[MAX_FRAG_PIPES];
+	PuresoftFragmentProcessor* m_fragProc[MAX_FRAG_PIPES];
 };

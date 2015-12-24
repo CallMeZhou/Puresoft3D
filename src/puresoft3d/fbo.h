@@ -3,19 +3,28 @@
 class PuresoftFBO
 {
 public:
+	__declspec(align(64)) struct WORKRANGE
+	{
+		size_t curRowEntry;
+		void* writePoint;
+	};
+
+	static const size_t MAX_WORKRANGES = 16;
+
+public:
 	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen);
 	~PuresoftFBO(void);
 
-	void setCurRow(unsigned int row);
-	void nextRow(void);
-	void setCurCol(unsigned int col);
-	void nextCol(void);
-	void read(void* data, size_t bytes) const;
-	void write(const void* data, size_t bytes);
-	void read4(void* data) const;
-	void write4(const void* data);
-	void read16(void* dataAligned16Bytes) const;  // elemLen must be 16
-	void write16(const void* dataAligned16Bytes); // elemLen must be 16
+	void setCurRow(int idx, unsigned int row);
+	void nextRow(int idx);
+	void setCurCol(int idx, unsigned int col);
+	void nextCol(int idx);
+	void read(int idx, void* data, size_t bytes) const;
+	void write(int idx, const void* data, size_t bytes);
+	void read4(int idx, void* data) const;
+	void write4(int idx, const void* data);
+	void read16(int idx, void* dataAligned16Bytes) const;  // elemLen must be 16
+	void write16(int idx, const void* dataAligned16Bytes); // elemLen must be 16
 
 	// must accord with elemLen
 	void clear(const void* data, size_t bytes);
@@ -36,8 +45,7 @@ private:
 	unsigned int m_height;
 	unsigned int m_elemLen;
 	size_t m_bytes;
-	size_t m_curRowEntry;
-	void* m_writePoint;
 	void* m_buffer;
-};
 
+	WORKRANGE m_workRanges[MAX_WORKRANGES];
+};

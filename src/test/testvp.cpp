@@ -2,6 +2,11 @@
 #include "mcemaths.h"
 #include "testvp.h"
 
+void* _stdcall MyTestVertexProcesser::createInstance(void)
+{
+	return new MyTestVertexProcesser;
+}
+
 MyTestVertexProcesser::MyTestVertexProcesser(void)
 {
 	memset(&m_outputExt, 0, sizeof(m_outputExt));
@@ -9,6 +14,11 @@ MyTestVertexProcesser::MyTestVertexProcesser(void)
 
 MyTestVertexProcesser::~MyTestVertexProcesser(void)
 {
+}
+
+void MyTestVertexProcesser::release(void)
+{
+	delete this;
 }
 
 void MyTestVertexProcesser::process(const PuresoftVertexProcessor::VertexProcessorInput* input, PuresoftVertexProcessor::VertexProcessorOutput* output, const void** uniforms)

@@ -13,12 +13,16 @@ PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int
 	m_elemLen = elemLen;
 
 	m_bytes = m_scanline * m_height;
-	if(NULL == (m_buffer = _aligned_malloc(m_bytes, 16)))
+	if(NULL == (m_buffer = _aligned_malloc(m_bytes, 64)))
 	{
 		throw bad_alloc("PuresoftFBO::PuresoftFBO");
 	}
 
-	m_writePoint = m_buffer;
+	for(size_t i = 0; i < MAX_WORKRANGES; i++)
+	{
+		m_workRanges[i].curRowEntry = 0;
+		m_workRanges[i].writePoint = m_buffer;
+	}
 }
 
 
@@ -27,105 +31,103 @@ PuresoftFBO::~PuresoftFBO(void)
 	_aligned_free(m_buffer);
 }
 
-void PuresoftFBO::setCurRow(unsigned int row)
+void PuresoftFBO::setCurRow(int idx, unsigned int row)
 {
-	if(row >= m_height)
-	{
-		throw std::out_of_range("PuresoftFBO::setCurRow");
-	}
-
-	m_curRowEntry = row * m_scanline;
-	m_writePoint = (char*)m_buffer + m_curRowEntry;
+	m_workRanges[idx].curRowEntry = row * m_scanline;
+	m_workRanges[idx].writePoint = (char*)m_buffer + m_workRanges[idx].curRowEntry;
 }
 
-void PuresoftFBO::nextRow(void)
+void PuresoftFBO::nextRow(int idx)
 {
-	m_curRowEntry += m_scanline;
-	m_writePoint = (char*)m_buffer + m_curRowEntry;
+	m_workRanges[idx].curRowEntry += m_scanline;
+	m_workRanges[idx].writePoint = (char*)m_buffer + m_workRanges[idx].curRowEntry;
 }
 
-void PuresoftFBO::setCurCol(unsigned int col)
+void PuresoftFBO::setCurCol(int idx, unsigned int col)
 {
-	m_writePoint = (char*)m_buffer + m_curRowEntry + col * m_elemLen;
+	m_workRanges[idx].writePoint = (char*)m_buffer + m_workRanges[idx].curRowEntry + col * m_elemLen;
 }
 
-void PuresoftFBO::nextCol(void)
+void PuresoftFBO::nextCol(int idx)
 {
-	m_writePoint = (char*)m_writePoint + m_elemLen;
+	m_workRanges[idx].writePoint = (char*)m_workRanges[idx].writePoint + m_elemLen;
 }
 
-void PuresoftFBO::read(void* data, size_t bytes) const
+void PuresoftFBO::read(int idx, void* data, size_t bytes) const
 {
-	memcpy(data, m_writePoint, bytes);
+	memcpy(data, m_workRanges[idx].writePoint, bytes);
 }
 
-void PuresoftFBO::write(const void* data, size_t bytes)
+void PuresoftFBO::write(int idx, const void* data, size_t bytes)
 {
-	memcpy(m_writePoint, data, bytes);
+	memcpy(m_workRanges[idx].writePoint, data, bytes);
 }
 
-void PuresoftFBO::read4(void* data) const
+void PuresoftFBO::read4(int idx, void* data) const
 {
-	*((unsigned int*)data) = *((const unsigned int*)m_writePoint);
+	*((unsigned int*)data) = *((const unsigned int*)m_workRanges[idx].writePoint);
 }
 
-void PuresoftFBO::write4(const void* data)
+void PuresoftFBO::write4(int idx, const void* data)
 {
-	*((unsigned int*)m_writePoint) = *((const unsigned int*)data);
+	*((unsigned int*)m_workRanges[idx].writePoint) = *((const unsigned int*)data);
 }
 
-void PuresoftFBO::read16(void* dataAligned16Bytes) const
+void PuresoftFBO::read16(int idx, void* dataAligned16Bytes) const
 {
-	mcemaths_quatcpy((float*)dataAligned16Bytes, (const float*)m_writePoint);
+	mcemaths_quatcpy((float*)dataAligned16Bytes, (const float*)m_workRanges[idx].writePoint);
 }
 
-void PuresoftFBO::write16(const void* dataAligned16Bytes)
+void PuresoftFBO::write16(int idx, const void* dataAligned16Bytes)
 {
-	mcemaths_quatcpy((float*)m_writePoint, (const float*)dataAligned16Bytes);
+	mcemaths_quatcpy((float*)m_workRanges[idx].writePoint, (const float*)dataAligned16Bytes);
 }
 
 void PuresoftFBO::clear(const void* data, size_t bytes)
 {
-	setCurRow(0);
+	unsigned char* row = (unsigned char*)m_buffer;
 
 	for(unsigned int y = 0; y < m_height - 1; y++)
 	{
+		unsigned char* col = (unsigned char*)row;
 		for(unsigned int x = 0; x < m_width; x++)
 		{
-			write(data, bytes);
-			nextCol();
+			memcpy(col, data, bytes);
+			col += m_elemLen;
 		}
-		nextRow();
+		row += m_scanline;
 	}
 }
 
 void PuresoftFBO::clear4(const void* data)
 {
-	setCurRow(0);
+	unsigned char* row = (unsigned char*)m_buffer;
 
 	for(unsigned int y = 0; y < m_height - 1; y++)
 	{
+		unsigned char* col = (unsigned char*)row;
 		for(unsigned int x = 0; x < m_width; x++)
 		{
-			write4(data);
-			nextCol();
+			*((unsigned int*)col) = *((unsigned int*)data);
+			col += m_elemLen;
 		}
-		nextRow();
+		row += m_scanline;
 	}
 }
 
 void PuresoftFBO::clear16(const void* dataAligned16Bytes)
 {
-	setCurRow(0);
+	unsigned char* row = (unsigned char*)m_buffer;
 
 	for(unsigned int y = 0; y < m_height - 1; y++)
 	{
+		unsigned char* col = (unsigned char*)row;
 		for(unsigned int x = 0; x < m_width; x++)
 		{
-			write16(dataAligned16Bytes);
-			nextCol();
+			mcemaths_quatcpy((float*)col, (const float*)dataAligned16Bytes);
+			col += m_elemLen;
 		}
-		nextRow();
+		row += m_scanline;
 	}
 }
 

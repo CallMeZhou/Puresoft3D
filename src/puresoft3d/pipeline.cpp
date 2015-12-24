@@ -1,4 +1,6 @@
+#include <windows.h>
 #include <stdlib.h>
+#include <process.h>
 #include <memory.h>
 #include <stdexcept>
 #include "mcemaths.h"
@@ -19,10 +21,40 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 	memset(m_uniforms, 0, sizeof(m_uniforms));
 	memset(m_fbos, 0, sizeof(m_fbos));
 	m_processor = NULL;
+
+	m_threadSharedData.rasterResult = m_rasterizer.getResultPtr();
+
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	{
+		m_threadHungary[i] = (uintptr_t)CreateEventW(NULL, FALSE, FALSE, NULL);
+		m_threadSetoff[i] = (uintptr_t)CreateEventW(NULL, FALSE, FALSE, NULL);
+	}
+
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	{
+		FRAGTHREADPARAM* param = (FRAGTHREADPARAM*)malloc(sizeof(FRAGTHREADPARAM));
+		param->index = i;
+		param->hostInstance = this;
+		m_threads[i] = _beginthreadex(NULL, 0, fragmentThread, param, 0, NULL);
+	}
 }
 
 PuresoftPipeline::~PuresoftPipeline(void)
 {
+	m_threadSharedData.m_threadsQuit = true;
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	{
+		SetEvent((HANDLE)m_threadSetoff[i]);
+	}
+	WaitForMultipleObjects(MAX_FRAGTHREADS, (const HANDLE*)m_threads, TRUE, INFINITE);
+
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	{
+		CloseHandle((HANDLE)m_threads[i]);
+		CloseHandle((HANDLE)m_threadHungary[i]);
+		CloseHandle((HANDLE)m_threadSetoff[i]);
+	}
+
 	for(int i = 0; i < MAX_UNIFORMS; i++)
 	{
 		if(m_uniforms[i])
@@ -51,6 +83,7 @@ void PuresoftPipeline::setViewport()
 void PuresoftPipeline::setProcessor(PuresoftProcessor* proc)
 {
 	m_processor = proc;
+	m_interpolater.setProcessor(proc);
 }
 
 void PuresoftPipeline::setFBO(int idx, PuresoftFBO* fbo)
@@ -101,16 +134,16 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	// output data structure for Vertex Processor
 	PuresoftVertexProcessor::VertexProcessorOutput vertOutput[3];
 	// input data structure for Fragment Processor
-	PuresoftFragmentProcessor::FragmentProcessorInput fragInput;
+	//PuresoftFragmentProcessor::FragmentProcessorInput fragInput;
 	// output data structure for Vertex Processor
-	PuresoftFragmentProcessor::FragmentProcessorOutput fragOuput;
+	//PuresoftFragmentProcessor::FragmentProcessorOutput fragOuput;
 	// this is for interpolation perspective correction, this is the divider
 	__declspec(align(16)) float correctionFactor1[4] = {0};
 	// projected Z coordinates (divided by W), collect them for interpolation, interpolate for depth
 	__declspec(align(16)) float projZs[4] = {0};
-	// vertex contribute values for left / right end of a scanline
-	__declspec(align(16)) float contributesForLeft[4] = {0};
-	__declspec(align(16)) float contributesForRight[4] = {0};
+
+	m_threadSharedData.correctionFactor1 = correctionFactor1;
+	m_threadSharedData.projZs = projZs;
 
 	// vbo processing start
 	while(true)
@@ -127,7 +160,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			{
 				if(vbos[j])
 				{
-					if(NULL == (vertInput.data[j] = vbos[j]->next()))
+					if(NULL == (vertInput.data[j] = vbos[j]->next(0)))
 					{
 						return;
 					}
@@ -135,12 +168,12 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			}
 
 			// call Vertex Processor
-			m_processor->m_vertProc->process(&vertInput, &vertOutput[i], (const void**)m_uniforms);
+			m_processor->getVertProc()->process(&vertInput, &vertOutput[i], (const void**)m_uniforms);
 
 			// check Vertex Processor's output at Interpolation Processor
 			// we don't touch Vertex Processor output except the 'position'
 			// we use 'position' to do rasterization
-			m_processor->m_interpProc->setInputExt(i, vertOutput[i].ext);
+			m_interpolater.setProcessorInputExt(i, vertOutput[i].ext);
 
 			// process the 'position'
 
@@ -174,112 +207,11 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 		m_rasterizer.pushTriangle(vertOutput[0].position, vertOutput[1].position, vertOutput[2].position);
 
 		// process rasterization result, scanline by scanline
-
-		int y = rasterResult->firstRow;
-
-		// set current row to all attached fbos
-		for(size_t i = 0; i < MAX_FBOS; i++)
+		for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
 		{
-			if(m_fbos[i])
-			{
-				m_fbos[i]->setCurRow(y);
-			}
+			SetEvent((HANDLE)m_threadSetoff[i]);
 		}
-
-		m_depth.setCurRow(y);
-
-		// for each scanline
-		for(; y <= rasterResult->lastRow; y++)
-		{
-			int x = rasterResult->m_rows[y].left;
-
-			// set starting column to all attached fbos
-			for(size_t i = 0; i < MAX_FBOS; i++)
-			{
-				if(m_fbos[i])
-				{
-					m_fbos[i]->setCurCol(x);
-				}
-			}
-
-			m_depth.setCurCol(x);
-
-			// calculate vertex contributes for the first and last pixel of scanline
-			PuresoftInterpolater::integerBasedLineSegmentlinearInterpolate((const int*)rasterResult->vertices, rasterResult->m_rows[y].leftVerts[0], rasterResult->m_rows[y].leftVerts[1], rasterResult->m_rows[y].left, y, contributesForLeft);
-			PuresoftInterpolater::integerBasedLineSegmentlinearInterpolate((const int*)rasterResult->vertices, rasterResult->m_rows[y].rightVerts[0], rasterResult->m_rows[y].rightVerts[1], rasterResult->m_rows[y].right, y, contributesForRight);
-
-			// calculate interpolated values for the first and last pixel of scanline
-			// scanlineBegin calculates delta interpolated values as well
-			m_processor->m_interpProc->scanlineBegin(rasterResult->m_rows[y].left, rasterResult->m_rows[y].right, y, contributesForLeft, contributesForRight, correctionFactor1);
-
-			__declspec(align(16)) float projZsWithcorrectionFactor1[4];
-			mcemaths_quatcpy(projZsWithcorrectionFactor1, projZs);
-			mcemaths_mulvec_3_4(projZsWithcorrectionFactor1, correctionFactor1);
-			float projZForLeft = mcemaths_dot_3_4(contributesForLeft, projZsWithcorrectionFactor1);
-			float projZForRight = mcemaths_dot_3_4(contributesForRight, projZsWithcorrectionFactor1);
-			float projZDelta = (projZForRight - projZForLeft) / (float)(rasterResult->m_rows[y].right == rasterResult->m_rows[y].left ? 1 : rasterResult->m_rows[y].right - rasterResult->m_rows[y].left);
-
-			// process rasterization result of a scanline, column by column
-
-			for(; x <= rasterResult->m_rows[y].right; x++)
-			{
-				// get interpolated values as well as the other perspective correction factor
-				float correctionFactor2;
-				m_processor->m_interpProc->scanlineNext(&correctionFactor2, &fragInput.ext);
-				fragInput.position[0] = x;
-				fragInput.position[1] = y;
-
-				// interpolate for projected Z. we'll use it for depth
-				float newDepth = projZForLeft * correctionFactor2;
-				projZForLeft += projZDelta;
-
-				// get current depth from the depth buffer and do depth test
-				float currentDepth;
-				m_depth.read4(&currentDepth);
-				if(newDepth < currentDepth) // depth test passed
-				{
-					// update depth buffer
-					m_depth.write4(&newDepth);
-					m_depth.nextCol();
-
-					// go ahead with Fragment Processor
-					m_processor->m_fragProc->process(&fragInput, &fragOuput, (const void**)m_uniforms, (const void**)m_textures);
-
-					// update each attached fbo with Fragment Processor output
-					for(size_t i = 0; i < MAX_FBOS; i++)
-					{
-						if(m_fbos[i])
-						{
-							m_fbos[i]->write(fragOuput.data[i], fragOuput.dataSizes[i]);
-							m_fbos[i]->nextCol();
-						}
-					}
-				}
-				else // depth test passed, skip everything of the current column
-				{
-					for(size_t i = 0; i < MAX_FBOS; i++)
-					{
-						if(m_fbos[i])
-						{
-							m_fbos[i]->nextCol();
-						}
-					}
-
-					m_depth.nextCol();
-				}
-			}
-
-			// for each attached fbo: go to next row
-			for(size_t i = 0; i < MAX_FBOS; i++)
-			{
-				if(m_fbos[i])
-				{
-					m_fbos[i]->nextRow();
-				}
-			}
-
-			m_depth.nextRow();
-		}
+		WaitForMultipleObjects(MAX_FRAGTHREADS, (const HANDLE*)m_threadHungary, TRUE, INFINITE);
 	}
 }
 
@@ -287,17 +219,154 @@ void PuresoftPipeline::clearDepth(float furthest /* = 1.0f */)
 {
 	__declspec(align(16)) float temp[4] = {furthest, furthest, furthest, furthest};
 
-	m_depth.setCurRow(0);
+	size_t idx = PuresoftFBO::MAX_WORKRANGES - 1;
+	m_depth.setCurRow(idx, 0);
 	for(int y = 0; y < m_height; y++)
 	{
 		for(int x = 0; x < m_width; x+=4)
 		{
-			m_depth.write16(temp);
-			m_depth.nextCol();
-			m_depth.nextCol();
-			m_depth.nextCol();
-			m_depth.nextCol();
+			m_depth.write16(idx, temp);
+			m_depth.nextCol(idx);
+			m_depth.nextCol(idx);
+			m_depth.nextCol(idx);
+			m_depth.nextCol(idx);
 		}
-		m_depth.nextRow();
+		m_depth.nextRow(idx);
 	}
+}
+
+unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
+{
+	// thread start off parameters
+	int threadIndex = ((FRAGTHREADPARAM*)param)->index;
+	PuresoftPipeline* pThis = ((FRAGTHREADPARAM*)param)->hostInstance;
+
+	// input data structure for Fragment Processor
+	PuresoftFragmentProcessor::FragmentProcessorInput fragInput;
+	// output data structure for Vertex Processor
+	PuresoftFragmentProcessor::FragmentProcessorOutput fragOuput;
+
+	FRAGTHREADSHARED& shared = pThis->m_threadSharedData;
+
+	while(true)
+	{
+		WaitForSingleObject((HANDLE)pThis->m_threadSetoff[threadIndex], INFINITE);
+
+		if(shared.m_threadsQuit)
+		{
+			break;
+		}
+
+		int y = shared.rasterResult->firstRow + threadIndex;
+
+		// set current row to all attached fbos
+		for(size_t i = 0; i < MAX_FBOS; i++)
+		{
+			if(pThis->m_fbos[i])
+			{
+				pThis->m_fbos[i]->setCurRow(threadIndex, y);
+			}
+		}
+
+		pThis->m_depth.setCurRow(threadIndex, y);
+
+		// for each scanline
+		for(; y <= shared.rasterResult->lastRow; y += MAX_FRAGTHREADS)
+		{
+			int x = shared.rasterResult->m_rows[y].left;
+
+			// set starting column to all attached fbos
+			for(size_t i = 0; i < MAX_FBOS; i++)
+			{
+				if(pThis->m_fbos[i])
+				{
+					pThis->m_fbos[i]->setCurCol(threadIndex, x);
+				}
+			}
+
+			pThis->m_depth.setCurCol(threadIndex, x);
+
+			// calculate interpolated values for the first and last pixel of scanline
+			// scanlineBegin calculates delta interpolated values as well
+			PuresoftInterpolater::SCANLINE_BEGIN_PARAMS scanlineParams;
+			scanlineParams.vertices = (const int*)shared.rasterResult->vertices;
+			scanlineParams.reciprocalWs = shared.correctionFactor1;
+			scanlineParams.projectedZs = shared.projZs;
+			scanlineParams.row = y;
+			scanlineParams.leftColumn = shared.rasterResult->m_rows[y].left;
+			scanlineParams.rightColumn = shared.rasterResult->m_rows[y].right;
+			scanlineParams.leftVerts = shared.rasterResult->m_rows[y].leftVerts;
+			scanlineParams.rightVerts = shared.rasterResult->m_rows[y].rightVerts;
+			pThis->m_interpolater.scanlineBegin(threadIndex, &scanlineParams);
+
+			// process rasterization result of a scanline, column by column
+
+			for(; x <= shared.rasterResult->m_rows[y].right; x++)
+			{
+				// get interpolated values as well as the other perspective correction factor
+				float newDepth;
+				pThis->m_interpolater.scanlineNext(threadIndex, &newDepth, &fragInput.ext);
+				fragInput.position[0] = x;
+				fragInput.position[1] = y;
+
+				// get current depth from the depth buffer and do depth test
+				float currentDepth;
+				pThis->m_depth.read4(threadIndex, &currentDepth);
+				if(newDepth < currentDepth) // depth test passed
+				{
+					// update depth buffer
+					pThis->m_depth.write4(threadIndex, &newDepth);
+					pThis->m_depth.nextCol(threadIndex);
+
+					// go ahead with Fragment Processor
+					pThis->m_processor->getFragProc(threadIndex)->process(&fragInput, &fragOuput, (const void**)pThis->m_uniforms, (const void**)pThis->m_textures);
+
+					// update each attached fbo with Fragment Processor output
+					for(size_t i = 0; i < MAX_FBOS; i++)
+					{
+						if(pThis->m_fbos[i])
+						{
+							pThis->m_fbos[i]->write(threadIndex, fragOuput.data[i], fragOuput.dataSizes[i]);
+							pThis->m_fbos[i]->nextCol(threadIndex);
+						}
+					}
+				}
+				else // depth test passed, skip everything of the current column
+				{
+					for(size_t i = 0; i < MAX_FBOS; i++)
+					{
+						if(pThis->m_fbos[i])
+						{
+							pThis->m_fbos[i]->nextCol(threadIndex);
+						}
+					}
+
+					pThis->m_depth.nextCol(threadIndex);
+				}
+			}
+
+			// for each attached fbo: go to next row
+			for(size_t i = 0; i < MAX_FBOS; i++)
+			{
+				if(pThis->m_fbos[i])
+				{
+					for(int j = 0; j < MAX_FRAGTHREADS; j++)
+					{
+						pThis->m_fbos[i]->nextRow(threadIndex);
+					}
+				}
+			}
+
+			for(int j = 0; j < MAX_FRAGTHREADS; j++)
+			{
+				pThis->m_depth.nextRow(threadIndex);
+			}
+		}
+
+
+		SetEvent((HANDLE)pThis->m_threadHungary[threadIndex]);
+	}
+
+	free(param);
+	return 0;
 }

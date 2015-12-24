@@ -1,5 +1,10 @@
 #include <math.h>
+#include <stdexcept>
+#include "mcemaths.h"
 #include "interp.h"
+
+using namespace std;
+using namespace mcemaths;
 
 #pragma pack(4)
 typedef struct
@@ -15,6 +20,81 @@ PuresoftInterpolater::PuresoftInterpolater(void)
 
 PuresoftInterpolater::~PuresoftInterpolater(void)
 {
+}
+
+void PuresoftInterpolater::setProcessor(PuresoftProcessor* proc)
+{
+	m_processor = proc;
+}
+
+void PuresoftInterpolater::setProcessorInputExt(int extIdx, const void* ext)
+{
+	for(size_t i = 0; i < PuresoftProcessor::MAX_FRAG_PIPES; i++)
+	{
+		m_processor->getInterpProc(i)->setInputExt(extIdx, ext);
+	}
+}
+
+void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PARAMS* params)
+{
+	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
+	{
+		throw out_of_range("PuresoftInterpolater::scanlineBegin");
+	}
+
+	__declspec(align(16)) float contributesForLeft[4];
+	__declspec(align(16)) float contributesForRight[4];
+	contributesForLeft[3] = contributesForRight[3] = 0;
+
+	integerBasedLineSegmentlinearInterpolate(params->vertices, params->leftVerts[0], params->leftVerts[1], params->leftColumn, params->row, contributesForLeft);
+	integerBasedLineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], params->rightColumn, params->row, contributesForRight);
+
+	PuresoftInterpolationProcessor* proc = m_processor->getInterpProc(interpIdx);
+	INTERPOLATION& interp = m_corrections[interpIdx];
+
+	// calculate interpolated ext-values for left and right end of scanline
+	__declspec(align(16)) float correctedContributes[4];
+	mcemaths_quatcpy(correctedContributes, contributesForLeft);
+	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
+	proc->processLeftEnd(correctedContributes);
+	mcemaths_quatcpy(correctedContributes, contributesForRight);
+	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
+	proc->processRightEnd(correctedContributes);
+
+	// calculate perspective correction factor 2
+	float reciprocalScanlineLength = params->rightColumn == params->leftColumn ? 1.0f : (1.0f / (float)(params->rightColumn - params->leftColumn));
+	interp.correctionFactor2ForLeft = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
+	interp.correctionFactor2ForRight = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
+	interp.correctionFactor2Delta = (interp.correctionFactor2ForRight - interp.correctionFactor2ForLeft) * reciprocalScanlineLength;
+
+	// calculate delta interpolation between left and right end of scanline
+	proc->processDelta(reciprocalScanlineLength);
+
+	__declspec(align(16)) float projZsWithcorrectionFactor1[4];
+	mcemaths_quatcpy(projZsWithcorrectionFactor1, params->projectedZs);
+	mcemaths_mulvec_3_4(projZsWithcorrectionFactor1, params->reciprocalWs);
+	interp.projectedZForLeft = mcemaths_dot_3_4(contributesForLeft, projZsWithcorrectionFactor1);
+	interp.projectedZForRight = mcemaths_dot_3_4(contributesForRight, projZsWithcorrectionFactor1);
+	interp.projectedZDelta = (interp.projectedZForRight - interp.projectedZForLeft) * reciprocalScanlineLength;
+}
+
+void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, const void** outputExt)
+{
+	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
+	{
+		throw out_of_range("PuresoftInterpolater::scanlineBegin");
+	}
+
+	PuresoftInterpolationProcessor* proc = m_processor->getInterpProc(interpIdx);
+	INTERPOLATION& interp = m_corrections[interpIdx];
+
+	float _correctionFactor2 = 1.0f / interp.correctionFactor2ForLeft;
+	interp.correctionFactor2ForLeft += interp.correctionFactor2Delta;
+
+	*outputExt = proc->processOutput(_correctionFactor2);
+
+	*interpZ = interp.projectedZForLeft;
+	interp.projectedZForLeft += interp.projectedZDelta;
 }
 
 /*
