@@ -93,7 +93,7 @@ void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, const voi
 
 	*outputExt = proc->processOutput(_correctionFactor2);
 
-	*interpZ = interp.projectedZForLeft;
+	*interpZ = interp.projectedZForLeft * _correctionFactor2;
 	interp.projectedZForLeft += interp.projectedZDelta;
 }
 

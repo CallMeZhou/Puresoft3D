@@ -117,17 +117,25 @@ void PuresoftFBO::clear4(const void* data)
 
 void PuresoftFBO::clear16(const void* dataAligned16Bytes)
 {
-	unsigned char* row = (unsigned char*)m_buffer;
-
-	for(unsigned int y = 0; y < m_height - 1; y++)
-	{
-		unsigned char* col = (unsigned char*)row;
-		for(unsigned int x = 0; x < m_width; x++)
-		{
-			mcemaths_quatcpy((float*)col, (const float*)dataAligned16Bytes);
-			col += m_elemLen;
-		}
-		row += m_scanline;
+	// clear16() requires every scanline starts at 16-byte boundary meaning the buffer length is a multiple of 16
+	__asm{
+		; load source data
+		mov		eax,	dataAligned16Bytes
+		movaps	xmm0,	[eax]
+		; find loop times
+		mov		eax,	this
+		add		eax,	m_bytes
+		mov		ecx,	[eax]
+		shr		ecx,	4		; div 16
+		; load dest address
+		mov		eax,	this
+		add		eax,	m_buffer
+		mov		edx,	[eax]
+		; fill buffer in sse way
+lup:	movaps	[edx],	xmm0
+		add		edx,	16
+		dec		ecx
+		jnz		lup
 	}
 }
 

@@ -48,6 +48,7 @@ private:
 	struct FRAGTHREADSHARED
 	{
 		volatile bool m_threadsQuit;
+//		volatile int face;
 		const PuresoftRasterizer::RESULT* rasterResult;
 		float* correctionFactor1;
 		float* projZs;

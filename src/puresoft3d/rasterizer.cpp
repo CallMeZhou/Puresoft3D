@@ -110,7 +110,7 @@ const PuresoftRasterizer::RESULT* PuresoftRasterizer::getResultPtr(void) const
 	return &m_output;
 }
 
-void PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, const float* vert2)
+bool PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, const float* vert2)
 {
 	// integerize
 	pushVertex(0, vert0);
@@ -135,7 +135,7 @@ void PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, co
 
 	if(m_output.firstRow == m_output.lastRow)
 	{
-		return;
+		return false;
 	}
 
 	// flat top/bottom
@@ -200,4 +200,6 @@ void PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, co
 
 		processStandingTriangle(m_output.vertices, top, bottom, third);
 	}
+
+	return true;
 }

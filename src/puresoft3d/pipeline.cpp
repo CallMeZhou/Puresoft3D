@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <atlbase.h>
 #include <stdlib.h>
 #include <process.h>
 #include <memory.h>
@@ -14,7 +15,6 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 	: m_width(width)
 	, m_height(height)
 	, m_rasterizer(width, height)
-	//, m_dip(new PuresoftDepthInterpolationProcessor)
 	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
 {
 	memset(m_textures, 0, sizeof(m_textures));
@@ -36,6 +36,7 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 		param->index = i;
 		param->hostInstance = this;
 		m_threads[i] = _beginthreadex(NULL, 0, fragmentThread, param, 0, NULL);
+		SetThreadPriority((HANDLE)m_threads[i], THREAD_PRIORITY_ABOVE_NORMAL);
 	}
 }
 
@@ -62,8 +63,6 @@ PuresoftPipeline::~PuresoftPipeline(void)
 			_aligned_free(m_uniforms[i]);
 		}
 	}
-
-//	delete m_dip;
 }
 
 void PuresoftPipeline::setTexture(int idx, void* sampler)
@@ -133,10 +132,6 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	PuresoftVertexProcessor::VertexProcessorInput vertInput;
 	// output data structure for Vertex Processor
 	PuresoftVertexProcessor::VertexProcessorOutput vertOutput[3];
-	// input data structure for Fragment Processor
-	//PuresoftFragmentProcessor::FragmentProcessorInput fragInput;
-	// output data structure for Vertex Processor
-	//PuresoftFragmentProcessor::FragmentProcessorOutput fragOuput;
 	// this is for interpolation perspective correction, this is the divider
 	__declspec(align(16)) float correctionFactor1[4] = {0};
 	// projected Z coordinates (divided by W), collect them for interpolation, interpolate for depth
@@ -204,7 +199,10 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 
 		// do rasterization
 		// output: const PuresoftRasterizer::RESULT* rasterResult
-		m_rasterizer.pushTriangle(vertOutput[0].position, vertOutput[1].position, vertOutput[2].position);
+		if(!m_rasterizer.pushTriangle(vertOutput[0].position, vertOutput[1].position, vertOutput[2].position))
+		{
+			continue;
+		}
 
 		// process rasterization result, scanline by scanline
 		for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
@@ -217,22 +215,8 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 
 void PuresoftPipeline::clearDepth(float furthest /* = 1.0f */)
 {
-	__declspec(align(16)) float temp[4] = {furthest, furthest, furthest, furthest};
-
-	size_t idx = PuresoftFBO::MAX_WORKRANGES - 1;
-	m_depth.setCurRow(idx, 0);
-	for(int y = 0; y < m_height; y++)
-	{
-		for(int x = 0; x < m_width; x+=4)
-		{
-			m_depth.write16(idx, temp);
-			m_depth.nextCol(idx);
-			m_depth.nextCol(idx);
-			m_depth.nextCol(idx);
-			m_depth.nextCol(idx);
-		}
-		m_depth.nextRow(idx);
-	}
+	__declspec(align(16)) const float temp[4] = {furthest, furthest, furthest, furthest};
+	m_depth.clear16(temp);
 }
 
 unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
@@ -312,6 +296,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				// get current depth from the depth buffer and do depth test
 				float currentDepth;
 				pThis->m_depth.read4(threadIndex, &currentDepth);
+
 				if(newDepth < currentDepth) // depth test passed
 				{
 					// update depth buffer
@@ -362,7 +347,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				pThis->m_depth.nextRow(threadIndex);
 			}
 		}
-
 
 		SetEvent((HANDLE)pThis->m_threadHungary[threadIndex]);
 	}

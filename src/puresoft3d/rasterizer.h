@@ -30,7 +30,7 @@ public:
 	~PuresoftRasterizer(void);
 
 	const RESULT* getResultPtr(void) const;
-	void pushTriangle(const float* vert0, const float* vert1, const float* vert2);
+	bool pushTriangle(const float* vert0, const float* vert1, const float* vert2);
 
 private:
 	int m_width;
