@@ -128,15 +128,19 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	PuresoftVBO** vbos = vao->getVBOs();
 	vao->rewindAll();
 
-	// input data structure for Vertex Processor
-	PuresoftVertexProcessor::VertexProcessorInput vertInput;
-	// output data structure for Vertex Processor
-	PuresoftVertexProcessor::VertexProcessorOutput vertOutput[3];
-	// this is for interpolation perspective correction, this is the divider
-	__declspec(align(16)) float correctionFactor1[4] = {0};
-	// projected Z coordinates (divided by W), collect them for interpolation, interpolate for depth
-	__declspec(align(16)) float projZs[4] = {0};
+	// vertex processor input
+	VertexProcessorInput vertInput;
 
+	// vertex processor output
+	m_processor->getUDM()->alloc(3 + MAX_FRAGTHREADS);
+	VertexProcessorOutput vertOutput[3];
+	for(size_t i = 0; i < 3; i++)
+	{
+		m_threadSharedData.userData[i] = vertOutput[i].user = m_processor->getUDM()->get(i);
+	}
+
+	__declspec(align(16)) float correctionFactor1[4] = {0};
+	__declspec(align(16)) float projZs[4] = {0};
 	m_threadSharedData.correctionFactor1 = correctionFactor1;
 	m_threadSharedData.projZs = projZs;
 
@@ -164,13 +168,6 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 
 			// call Vertex Processor
 			m_processor->getVertProc()->process(&vertInput, &vertOutput[i], (const void**)m_uniforms);
-
-			// check Vertex Processor's output at Interpolation Processor
-			// we don't touch Vertex Processor output except the 'position'
-			// we use 'position' to do rasterization
-			m_interpolater.setProcessorInputExt(i, vertOutput[i].ext);
-
-			// process the 'position'
 
 			// homogenizing division (reciprocal W is negative reciprocal Z)
 			float reciprocalW = 1.0f / vertOutput[i].position[3];
@@ -226,9 +223,10 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 	PuresoftPipeline* pThis = ((FRAGTHREADPARAM*)param)->hostInstance;
 
 	// input data structure for Fragment Processor
-	PuresoftFragmentProcessor::FragmentProcessorInput fragInput;
+	FragmentProcessorInput fragInput;
+	
 	// output data structure for Vertex Processor
-	PuresoftFragmentProcessor::FragmentProcessorOutput fragOuput;
+	FragmentProcessorOutput fragOuput;
 
 	FRAGTHREADSHARED& shared = pThis->m_threadSharedData;
 
@@ -240,6 +238,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 		{
 			break;
 		}
+
+		fragInput.user = pThis->m_processor->getUDM()->get(3 + threadIndex);
 
 		int y = shared.rasterResult->firstRow + threadIndex;
 
@@ -281,6 +281,9 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			scanlineParams.rightColumn = shared.rasterResult->m_rows[y].right;
 			scanlineParams.leftVerts = shared.rasterResult->m_rows[y].leftVerts;
 			scanlineParams.rightVerts = shared.rasterResult->m_rows[y].rightVerts;
+			scanlineParams.userData[0] = shared.userData[0];
+			scanlineParams.userData[1] = shared.userData[1];
+			scanlineParams.userData[2] = shared.userData[2];
 			pThis->m_interpolater.scanlineBegin(threadIndex, &scanlineParams);
 
 			// process rasterization result of a scanline, column by column
@@ -289,7 +292,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			{
 				// get interpolated values as well as the other perspective correction factor
 				float newDepth;
-				pThis->m_interpolater.scanlineNext(threadIndex, &newDepth, &fragInput.ext);
+				pThis->m_interpolater.scanlineNext(threadIndex, &newDepth, fragInput.user);
 				fragInput.position[0] = x;
 				fragInput.position[1] = y;
 

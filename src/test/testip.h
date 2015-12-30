@@ -13,14 +13,14 @@ public:
 	~MyTestInterpolationProcessor(void);
 
 	void release(void);
-	void setInputExt(int idx, const void* ext);
+	void setUserData(const void* const data[3]);
 	void processLeftEnd(const float* correctedContributes);
 	void processRightEnd(const float* correctedContributes);
 	void processDelta(float reciprocalScanlineLength);
-	void* processOutput(float correctionFactor2);
+	void processOutput(float correctionFactor2, void* interpData);
 
 private:
-	MYTESTPROCDATA m_inputExts[3];
+	MYTESTPROCDATA m_inputs[3];
 	MYTESTPROCDATA m_outputExt;
 	MYTESTPROCDATA m_outputExtForLeft;
 	MYTESTPROCDATA m_outputExtForRight;

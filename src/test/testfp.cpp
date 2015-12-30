@@ -31,7 +31,7 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 	const float* cameraPos = (const float*)uniforms[5];
 	int diffuse = *(const int*)uniforms[6];
 
-	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->ext;
+	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->user;
 	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
 
 	vec4 L;

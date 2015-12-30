@@ -48,10 +48,10 @@ private:
 	struct FRAGTHREADSHARED
 	{
 		volatile bool m_threadsQuit;
-//		volatile int face;
 		const PuresoftRasterizer::RESULT* rasterResult;
 		float* correctionFactor1;
 		float* projZs;
+		void* userData[3];
 	};
 
 	static const size_t MAX_FRAGTHREADS = 4;

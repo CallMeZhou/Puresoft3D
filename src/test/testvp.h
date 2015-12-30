@@ -14,8 +14,5 @@ public:
 
 	void release(void);
 	void process(const VertexProcessorInput* input, VertexProcessorOutput* output, const void** uniforms);
-
-private:
-	MYTESTPROCDATA m_outputExt;
 };
 

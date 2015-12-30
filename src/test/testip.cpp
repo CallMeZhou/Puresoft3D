@@ -23,9 +23,11 @@ void MyTestInterpolationProcessor::release()
 	delete this;
 }
 
-void MyTestInterpolationProcessor::setInputExt(int idx, const void* ext)
+void MyTestInterpolationProcessor::setUserData(const void* const data[3])
 {
-	memcpy(m_inputExts + idx, ext, sizeof(MYTESTPROCDATA));
+	memcpy(m_inputs    , data[0], sizeof(MYTESTPROCDATA));
+	memcpy(m_inputs + 1, data[1], sizeof(MYTESTPROCDATA));
+	memcpy(m_inputs + 2, data[2], sizeof(MYTESTPROCDATA));
 }
 
 void MyTestInterpolationProcessor::processLeftEnd(const float* correctedContributes)
@@ -48,19 +50,18 @@ void MyTestInterpolationProcessor::processDelta(float reciprocalScanlineLength)
 	mcemaths_mul_3_4(m_outputExtDelta.texcoord, reciprocalScanlineLength);
 }
 
-void* MyTestInterpolationProcessor::processOutput(float correctionFactor2)
+void MyTestInterpolationProcessor::processOutput(float correctionFactor2, void* interpData)
 {
-	memcpy(&m_outputExt, &m_outputExtForLeft, sizeof(m_outputExt));
+	MYTESTPROCDATA* output = (MYTESTPROCDATA*)interpData;
+	memcpy(output, &m_outputExtForLeft, sizeof(MYTESTPROCDATA));
 
-	mcemaths_mul_3_4(m_outputExt.normal, correctionFactor2);
-	mcemaths_mul_3_4(m_outputExt.worldPos, correctionFactor2);
-	mcemaths_mul_3_4(m_outputExt.texcoord, correctionFactor2);
+	mcemaths_mul_3_4(output->normal, correctionFactor2);
+	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
+	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
 
 	mcemaths_add_3_4_ip(m_outputExtForLeft.normal, m_outputExtDelta.normal);
 	mcemaths_add_3_4_ip(m_outputExtForLeft.worldPos, m_outputExtDelta.worldPos);
 	mcemaths_add_3_4_ip(m_outputExtForLeft.texcoord, m_outputExtDelta.texcoord);
-
-	return &m_outputExt;
 }
 
 void MyTestInterpolationProcessor::processEndData(MYTESTPROCDATA* data, const float* correctedContributes)
@@ -79,7 +80,7 @@ void MyTestInterpolationProcessor::processEndData(MYTESTPROCDATA* data, const fl
 	*/
 
 	MYTESTPROCDATA temp[3];
-	memcpy(&temp, m_inputExts, sizeof(MYTESTPROCDATA) * 3);
+	memcpy(&temp, m_inputs, sizeof(MYTESTPROCDATA) * 3);
 
 	mcemaths_mul_3_4(temp[0].normal, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].worldPos, correctedContributes[0]);

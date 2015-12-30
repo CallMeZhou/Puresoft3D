@@ -15,6 +15,7 @@ public:
 		int rightColumn;
 		const int* leftVerts;
 		const int* rightVerts;
+		const void* userData[3];
 	};
 
 public:
@@ -22,9 +23,8 @@ public:
 	~PuresoftInterpolater(void);
 
 	void setProcessor(PuresoftProcessor* proc);
-	void setProcessorInputExt(int extIdx, const void* ext);
 	void scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PARAMS* params);
-	void scanlineNext(int interpIdx, float* interpZ, const void** outputExt);
+	void scanlineNext(int interpIdx, float* interpZ, void* interpUserData);
 
 private:
 	__declspec(align(64)) struct INTERPOLATION

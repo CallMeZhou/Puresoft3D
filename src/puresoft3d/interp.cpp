@@ -27,14 +27,6 @@ void PuresoftInterpolater::setProcessor(PuresoftProcessor* proc)
 	m_processor = proc;
 }
 
-void PuresoftInterpolater::setProcessorInputExt(int extIdx, const void* ext)
-{
-	for(size_t i = 0; i < PuresoftProcessor::MAX_FRAG_PIPES; i++)
-	{
-		m_processor->getInterpProc(i)->setInputExt(extIdx, ext);
-	}
-}
-
 void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PARAMS* params)
 {
 	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
@@ -51,6 +43,8 @@ void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PAR
 
 	PuresoftInterpolationProcessor* proc = m_processor->getInterpProc(interpIdx);
 	INTERPOLATION& interp = m_corrections[interpIdx];
+
+	proc->setUserData(params->userData);
 
 	// calculate interpolated ext-values for left and right end of scanline
 	__declspec(align(16)) float correctedContributes[4];
@@ -78,7 +72,7 @@ void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PAR
 	interp.projectedZDelta = (interp.projectedZForRight - interp.projectedZForLeft) * reciprocalScanlineLength;
 }
 
-void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, const void** outputExt)
+void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, void* interpUserData)
 {
 	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
 	{
@@ -91,7 +85,7 @@ void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, const voi
 	float _correctionFactor2 = 1.0f / interp.correctionFactor2ForLeft;
 	interp.correctionFactor2ForLeft += interp.correctionFactor2Delta;
 
-	*outputExt = proc->processOutput(_correctionFactor2);
+	proc->processOutput(_correctionFactor2, interpUserData);
 
 	*interpZ = interp.projectedZForLeft * _correctionFactor2;
 	interp.projectedZForLeft += interp.projectedZDelta;
