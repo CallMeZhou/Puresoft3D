@@ -106,6 +106,7 @@
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="proc.h" />
     <ClInclude Include="rasterizer.h" />
+    <ClInclude Include="rinque.h" />
     <ClInclude Include="samplr2d.h" />
     <ClInclude Include="vao.h" />
     <ClInclude Include="vbo.h" />
