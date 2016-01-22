@@ -22,18 +22,8 @@ PuresoftInterpolater::~PuresoftInterpolater(void)
 {
 }
 
-void PuresoftInterpolater::setProcessor(PuresoftProcessor* proc)
+void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* params)
 {
-	m_processor = proc;
-}
-
-void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PARAMS* params)
-{
-	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
-	{
-		throw out_of_range("PuresoftInterpolater::scanlineBegin");
-	}
-
 	__declspec(align(16)) float contributesForLeft[4];
 	__declspec(align(16)) float contributesForRight[4];
 	contributesForLeft[3] = contributesForRight[3] = 0;
@@ -41,54 +31,41 @@ void PuresoftInterpolater::scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PAR
 	integerBasedLineSegmentlinearInterpolate(params->vertices, params->leftVerts[0], params->leftVerts[1], params->leftColumn, params->row, contributesForLeft);
 	integerBasedLineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], params->rightColumn, params->row, contributesForRight);
 
-	PuresoftInterpolationProcessor* proc = m_processor->getInterpProc(interpIdx);
-	INTERPOLATION& interp = m_corrections[interpIdx];
-
-	proc->setUserData(params->userData);
-
 	// calculate interpolated ext-values for left and right end of scanline
 	__declspec(align(16)) float correctedContributes[4];
 	mcemaths_quatcpy(correctedContributes, contributesForLeft);
 	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	proc->processLeftEnd(correctedContributes);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStart, params->vertexUserData, contributesForLeft);
 	mcemaths_quatcpy(correctedContributes, contributesForRight);
 	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	proc->processRightEnd(correctedContributes);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStep, params->vertexUserData, contributesForRight);
+	int stepCount = params->rightColumn - params->leftColumn;
+	params->proc->calcStep(params->interpolatedUserDataStep, params->interpolatedUserDataStart, params->interpolatedUserDataStep, stepCount);
 
-	// calculate perspective correction factor 2
-	float reciprocalScanlineLength = params->rightColumn == params->leftColumn ? 1.0f : (1.0f / (float)(params->rightColumn - params->leftColumn));
-	interp.correctionFactor2ForLeft = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
-	interp.correctionFactor2ForRight = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
-	interp.correctionFactor2Delta = (interp.correctionFactor2ForRight - interp.correctionFactor2ForLeft) * reciprocalScanlineLength;
-
-	// calculate delta interpolation between left and right end of scanline
-	proc->processDelta(reciprocalScanlineLength);
+	float reciprocalScanlineLength = 1.0f / (float)stepCount;
 
 	__declspec(align(16)) float projZsWithcorrectionFactor1[4];
 	mcemaths_quatcpy(projZsWithcorrectionFactor1, params->projectedZs);
 	mcemaths_mulvec_3_4(projZsWithcorrectionFactor1, params->reciprocalWs);
-	interp.projectedZForLeft = mcemaths_dot_3_4(contributesForLeft, projZsWithcorrectionFactor1);
-	interp.projectedZForRight = mcemaths_dot_3_4(contributesForRight, projZsWithcorrectionFactor1);
-	interp.projectedZDelta = (interp.projectedZForRight - interp.projectedZForLeft) * reciprocalScanlineLength;
+	params->projectedZStart = mcemaths_dot_3_4(contributesForLeft, projZsWithcorrectionFactor1);
+	params->projectedZStep = mcemaths_dot_3_4(contributesForRight, projZsWithcorrectionFactor1);
+	params->projectedZStep = (params->projectedZStep - params->projectedZStart) * reciprocalScanlineLength;
+
+	// calculate perspective correction factor 2
+	params->correctionFactor2Start = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
+	params->correctionFactor2Step = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
+	params->correctionFactor2Step = (params->correctionFactor2Step - params->correctionFactor2Start) * reciprocalScanlineLength;
 }
 
-void PuresoftInterpolater::scanlineNext(int interpIdx, float* interpZ, void* interpUserData)
+void PuresoftInterpolater::interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params)
 {
-	if(interpIdx < 0 || interpIdx >= PuresoftProcessor::MAX_FRAG_PIPES)
-	{
-		throw out_of_range("PuresoftInterpolater::scanlineBegin");
-	}
+	float _correctionFactor2 = 1.0f / params->correctionFactor2Start;
+	params->correctionFactor2Start += params->correctionFactor2Step;
 
-	PuresoftInterpolationProcessor* proc = m_processor->getInterpProc(interpIdx);
-	INTERPOLATION& interp = m_corrections[interpIdx];
+	params->proc->interpolateBySteps(interpolatedUserData, params->interpolatedUserDataStart, params->interpolatedUserDataStep, _correctionFactor2);
 
-	float _correctionFactor2 = 1.0f / interp.correctionFactor2ForLeft;
-	interp.correctionFactor2ForLeft += interp.correctionFactor2Delta;
-
-	proc->processOutput(_correctionFactor2, interpUserData);
-
-	*interpZ = interp.projectedZForLeft * _correctionFactor2;
-	interp.projectedZForLeft += interp.projectedZDelta;
+	*interpolatedProjectedZ = params->projectedZStart * _correctionFactor2;
+	params->projectedZStart += params->projectedZStep;
 }
 
 /*

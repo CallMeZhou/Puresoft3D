@@ -5,8 +5,10 @@
 class PuresoftInterpolater : public mcemaths::align_base_16
 {
 public:
-	struct SCANLINE_BEGIN_PARAMS // from rasterization
+	struct INTERPOLATIONSTARTSTEP
 	{
+		PuresoftInterpolationProcessor* proc;
+		const void* vertexUserData;
 		const int* vertices;
 		const float* reciprocalWs;
 		const float* projectedZs;
@@ -15,31 +17,32 @@ public:
 		int rightColumn;
 		const int* leftVerts;
 		const int* rightVerts;
-		const void* userData[3];
+		void* interpolatedUserDataStart;
+		void* interpolatedUserDataStep;
+		float correctionFactor2Start;
+		float correctionFactor2Step;
+		float projectedZStart;
+		float projectedZStep;
 	};
 
+	struct INTERPOLATIONSTEPPING
+	{
+		PuresoftInterpolationProcessor* proc;
+		void* interpolatedUserDataStart;
+		void* interpolatedUserDataStep;
+		float correctionFactor2Start;
+		float correctionFactor2Step;
+		float projectedZStart;
+		float projectedZStep;
+	};
 public:
 	PuresoftInterpolater(void);
 	~PuresoftInterpolater(void);
 
-	void setProcessor(PuresoftProcessor* proc);
-	void scanlineBegin(int interpIdx, const SCANLINE_BEGIN_PARAMS* params);
-	void scanlineNext(int interpIdx, float* interpZ, void* interpUserData);
+	void interpolateStartAndStep(INTERPOLATIONSTARTSTEP* params);
+	void interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params);
 
 private:
-	__declspec(align(64)) struct INTERPOLATION
-	{
-		float correctionFactor2ForLeft;
-		float correctionFactor2ForRight;
-		float correctionFactor2Delta;
-		float projectedZForLeft;
-		float projectedZForRight;
-		float projectedZDelta;
-	};
-
-	INTERPOLATION m_corrections[PuresoftProcessor::MAX_FRAG_PIPES];
-	PuresoftProcessor* m_processor;
-
 	static void integerBasedTrianglelinearInterpolate(const int* verts, int x,  int y, float* contributes);
 	static void integerBasedLineSegmentlinearInterpolate(const int* verts, int vert1, int vert2, int x,  int y, float* contributes);
 };

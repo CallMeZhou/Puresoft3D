@@ -5,6 +5,8 @@
 #include "proc.h"
 #include "interp.h"
 #include "rasterizer.h"
+#include "rinque.h"
+#include "udm.h"
 
 class PuresoftProcessor;
 class PuresoftInterpolationProcessor;
@@ -54,11 +56,28 @@ private:
 		void* userData[3];
 	};
 
-	static const size_t MAX_FRAGTHREADS = 4;
-	uintptr_t m_threadSetoff[MAX_FRAGTHREADS];
-	uintptr_t m_threadHungary[MAX_FRAGTHREADS];
+	static size_t m_numberOfThreads;
+	PuresoftUserDataManager m_udm;
+
 	uintptr_t m_threads[MAX_FRAGTHREADS];
 	FRAGTHREADSHARED m_threadSharedData;
+
+	struct FRAGTHREADTASK
+	{
+		int x1;
+		int x2;
+		int y;
+		float projZStart;
+		float projZStep;
+		float correctionFactor2Start;
+		float correctionFactor2Step;
+		void* userDataStart;
+		void* userDataStep;
+		bool eot; // end of tasks
+	};
+
+	typedef RingQueueMT<FRAGTHREADTASK, MAX_FRAGTASKS> FragmentThreadTaskQueue;
+	FragmentThreadTaskQueue* m_fragTaskQueues;
 	
 	static unsigned __stdcall fragmentThread(void *param);
 };

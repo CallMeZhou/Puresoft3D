@@ -48,6 +48,9 @@
     <ClInclude Include="rinque.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="udm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -72,6 +75,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="proc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="udm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

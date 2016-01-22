@@ -9,7 +9,6 @@
 #include <map>
 
 #include "pipeline.h"
-#include "testudm.h"
 #include "testvp.h"
 #include "testip.h"
 #include "testfp.h"
@@ -45,7 +44,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	BITMAPINFO bi = {{sizeof(BITMAPINFOHEADER), W, H, 1, 32, BI_RGB, 0, 0, 0, 0, 0}, {0}};
 	Bitmap* bmp = new Bitmap(&bi, img.getBuffer());
 
-	PuresoftProcessor proc(&MyTestVertexProcesser::createInstance, &MyTestInterpolationProcessor::createInstance, &MyTestFragmentProcessor::createInstance, &MyTestProcessorUserDataManager::createInstance);
+	PuresoftProcessor proc(&MyTestVertexProcesser::createInstance, &MyTestInterpolationProcessor::createInstance, &MyTestFragmentProcessor::createInstance, sizeof(MYTESTPROCDATA));
 	pipeline.setProcessor(&proc);
 	pipeline.setFBO(0, &img);
 

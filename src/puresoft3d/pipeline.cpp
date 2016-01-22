@@ -11,11 +11,14 @@
 
 using namespace std;
 
+size_t PuresoftPipeline::m_numberOfThreads = 4; // = getCpuCures();
+
 PuresoftPipeline::PuresoftPipeline(int width, int height)
 	: m_width(width)
 	, m_height(height)
 	, m_rasterizer(width, height)
 	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
+	, m_udm(m_numberOfThreads)
 {
 	memset(m_textures, 0, sizeof(m_textures));
 	memset(m_uniforms, 0, sizeof(m_uniforms));
@@ -24,13 +27,9 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 
 	m_threadSharedData.rasterResult = m_rasterizer.getResultPtr();
 
-	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
-	{
-		m_threadHungary[i] = (uintptr_t)CreateEventW(NULL, FALSE, FALSE, NULL);
-		m_threadSetoff[i] = (uintptr_t)CreateEventW(NULL, FALSE, FALSE, NULL);
-	}
+	m_fragTaskQueues = new FragmentThreadTaskQueue[m_numberOfThreads];
 
-	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
 		FRAGTHREADPARAM* param = (FRAGTHREADPARAM*)malloc(sizeof(FRAGTHREADPARAM));
 		param->index = i;
@@ -42,19 +41,20 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 
 PuresoftPipeline::~PuresoftPipeline(void)
 {
-	m_threadSharedData.m_threadsQuit = true;
+	FRAGTHREADTASK task;
+	task.eot = true;
 	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
 	{
-		SetEvent((HANDLE)m_threadSetoff[i]);
+		m_fragTaskQueues->push(task);
 	}
 	WaitForMultipleObjects(MAX_FRAGTHREADS, (const HANDLE*)m_threads, TRUE, INFINITE);
 
 	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
 	{
 		CloseHandle((HANDLE)m_threads[i]);
-		CloseHandle((HANDLE)m_threadHungary[i]);
-		CloseHandle((HANDLE)m_threadSetoff[i]);
 	}
+
+	delete[] m_fragTaskQueues;
 
 	for(int i = 0; i < MAX_UNIFORMS; i++)
 	{
@@ -82,7 +82,27 @@ void PuresoftPipeline::setViewport()
 void PuresoftPipeline::setProcessor(PuresoftProcessor* proc)
 {
 	m_processor = proc;
-	m_interpolater.setProcessor(proc);
+
+	USERDATABUFFERS* buffers = m_udm.setUserDataBytes(m_processor->getUserDataBytes());
+
+	class prep
+	{
+		void* m_qbuff;
+		size_t m_bbytes;
+	public:
+		prep(void* qbuff, size_t bbytes) : m_qbuff(qbuff), m_bbytes(bbytes) {}
+		void operator()(size_t idx, FRAGTHREADTASK* item)
+		{
+			item->userDataStart = (void*)((uintptr_t)m_qbuff + idx * 2 * m_bbytes);
+			item->userDataStep = (void*)((uintptr_t)item->userDataStart + m_bbytes);
+		}
+	};
+
+	for(size_t i = 0; i < m_numberOfThreads; i++)
+	{
+		prep _prep(buffers->taskQueues[i], m_processor->getUserDataBytes());
+		m_fragTaskQueues[i].prepare(_prep);
+	}
 }
 
 void PuresoftPipeline::setFBO(int idx, PuresoftFBO* fbo)
@@ -124,6 +144,8 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 
 	const PuresoftRasterizer::RESULT* rasterResult = m_rasterizer.getResultPtr();
 
+	USERDATABUFFERS* udbuff = m_udm.getBuffers();
+
 	// get pointers to all vbos, reset all data pointers
 	PuresoftVBO** vbos = vao->getVBOs();
 	vao->rewindAll();
@@ -132,11 +154,12 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	VertexProcessorInput vertInput;
 
 	// vertex processor output
-	m_processor->getUDM()->alloc(3 + MAX_FRAGTHREADS);
 	VertexProcessorOutput vertOutput[3];
+	uintptr_t user = (uintptr_t)udbuff->verts;
 	for(size_t i = 0; i < 3; i++)
 	{
-		m_threadSharedData.userData[i] = vertOutput[i].user = m_processor->getUDM()->get(i);
+		vertOutput[i].user = (void*)user;
+		user += m_processor->getUserDataBytes();
 	}
 
 	__declspec(align(16)) float correctionFactor1[4] = {0};
@@ -144,14 +167,10 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	m_threadSharedData.correctionFactor1 = correctionFactor1;
 	m_threadSharedData.projZs = projZs;
 
-	// vbo processing start
 	while(true)
 	{
-		// process 3 elements
-		// input:     vbo
-		// processor: Vertex Processor
-		// output:    vertOutput
-		// next step: rasterization
+		bool allFinished = false;
+
 		for(int i = 0; i < 3; i++)
 		{
 			// collect element data from each available vbo
@@ -161,9 +180,15 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 				{
 					if(NULL == (vertInput.data[j] = vbos[j]->next(0)))
 					{
-						return;
+						allFinished = true;
+						break; // for(size_t j = 0; j < PuresoftVAO::MAX_VBOS; j++)
 					}
 				}
+			}
+
+			if(allFinished)
+			{
+				break; // for(int i = 0; i < 3; i++)
 			}
 
 			// call Vertex Processor
@@ -181,6 +206,11 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			// V_interp = z * (contibute_1 * V_1 / z + ... contibute_n * V_n / z)
 			// we'll call '/z' correction factor 1 and 'z*' correction factor 2
 			correctionFactor1[i] = reciprocalW;
+		}
+
+		if(allFinished)
+		{
+			break; // while(true)
 		}
 
 		// cull back face in naive way
@@ -201,12 +231,57 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			continue;
 		}
 
-		// process rasterization result, scanline by scanline
-		for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+		PuresoftInterpolater::INTERPOLATIONSTARTSTEP interp;
+		interp.proc = m_processor->getInterpProc(0);
+		interp.vertexUserData = udbuff->verts;
+		interp.vertices = (const int*)rasterResult->vertices;
+		interp.reciprocalWs = correctionFactor1;
+		interp.projectedZs = projZs;
+	
+		for(interp.row = rasterResult->firstRow; interp.row <= rasterResult->lastRow; interp.row++)
 		{
-			SetEvent((HANDLE)m_threadSetoff[i]);
+			PuresoftRasterizer::RESULT_ROW& row = rasterResult->m_rows[interp.row];
+
+			// skip zero length line
+			if(row.left == row.right)
+			{
+				continue;
+			}
+
+			// if the mod calc is found slow, use a pre-calc table instead
+			int threadIndex = interp.row % m_numberOfThreads;
+			FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + threadIndex;
+			int beginPushTracer;
+			FRAGTHREADTASK* newTask = taskQueue->beginPush(&beginPushTracer);
+
+			interp.leftColumn = row.left;
+			interp.rightColumn = row.right;
+			interp.leftVerts = row.leftVerts;
+			interp.rightVerts = row.rightVerts;
+			interp.interpolatedUserDataStart = newTask->userDataStart;
+			interp.interpolatedUserDataStep = newTask->userDataStep;
+			m_interpolater.interpolateStartAndStep(&interp);
+
+			// the above push() doesn't copy content, but just alloc space for new item
+			// here we complete the data copying for new item
+			// we do it in this way to avoid redundant user-data copying (see how we 
+			// set the interp.interpolatedUserData* above)
+			newTask->eot = false;
+			newTask->x1 = row.left;
+			newTask->x2 = row.right;
+			newTask->y = interp.row;
+			newTask->projZStart = interp.projectedZStart;
+			newTask->projZStep = interp.projectedZStep;
+			newTask->correctionFactor2Start = interp.correctionFactor2Start;
+			newTask->correctionFactor2Step = interp.correctionFactor2Step;
+			taskQueue->endPush(beginPushTracer);
 		}
-		WaitForMultipleObjects(MAX_FRAGTHREADS, (const HANDLE*)m_threadHungary, TRUE, INFINITE);
+	}
+
+	// don't think of event. polling offers constant space complexity ensuring scalability
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	{
+		m_fragTaskQueues[i].pollEmpty();
 	}
 }
 
@@ -222,8 +297,12 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 	int threadIndex = ((FRAGTHREADPARAM*)param)->index;
 	PuresoftPipeline* pThis = ((FRAGTHREADPARAM*)param)->hostInstance;
 
+	// user data buffers
+	USERDATABUFFERS* udbuff = pThis->m_udm.getBuffers();
+
 	// input data structure for Fragment Processor
 	FragmentProcessorInput fragInput;
+	fragInput.user = udbuff->fragInputs + threadIndex;
 	
 	// output data structure for Vertex Processor
 	FragmentProcessorOutput fragOuput;
@@ -232,14 +311,13 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 	while(true)
 	{
-		WaitForSingleObject((HANDLE)pThis->m_threadSetoff[threadIndex], INFINITE);
+		FRAGTHREADTASK task;
+		pThis->m_fragTaskQueues[threadIndex].pop(task);
 
-		if(shared.m_threadsQuit)
+		if(task.eot)
 		{
 			break;
 		}
-
-		fragInput.user = pThis->m_processor->getUDM()->get(3 + threadIndex);
 
 		int y = shared.rasterResult->firstRow + threadIndex;
 
@@ -270,29 +348,21 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 			pThis->m_depth.setCurCol(threadIndex, x);
 
-			// calculate interpolated values for the first and last pixel of scanline
-			// scanlineBegin calculates delta interpolated values as well
-			PuresoftInterpolater::SCANLINE_BEGIN_PARAMS scanlineParams;
-			scanlineParams.vertices = (const int*)shared.rasterResult->vertices;
-			scanlineParams.reciprocalWs = shared.correctionFactor1;
-			scanlineParams.projectedZs = shared.projZs;
-			scanlineParams.row = y;
-			scanlineParams.leftColumn = shared.rasterResult->m_rows[y].left;
-			scanlineParams.rightColumn = shared.rasterResult->m_rows[y].right;
-			scanlineParams.leftVerts = shared.rasterResult->m_rows[y].leftVerts;
-			scanlineParams.rightVerts = shared.rasterResult->m_rows[y].rightVerts;
-			scanlineParams.userData[0] = shared.userData[0];
-			scanlineParams.userData[1] = shared.userData[1];
-			scanlineParams.userData[2] = shared.userData[2];
-			pThis->m_interpolater.scanlineBegin(threadIndex, &scanlineParams);
-
 			// process rasterization result of a scanline, column by column
 
 			for(; x <= shared.rasterResult->m_rows[y].right; x++)
 			{
 				// get interpolated values as well as the other perspective correction factor
+				PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
+				stepping.proc = pThis->m_processor->getInterpProc(0);
+				stepping.interpolatedUserDataStart = task.userDataStart;
+				stepping.interpolatedUserDataStep = task.userDataStep;
+				stepping.correctionFactor2Start = task.correctionFactor2Start;
+				stepping.correctionFactor2Step = task.correctionFactor2Step;
+				stepping.projectedZStart = task.projZStart;
+				stepping.projectedZStep = task.projZStep;
 				float newDepth;
-				pThis->m_interpolater.scanlineNext(threadIndex, &newDepth, fragInput.user);
+				pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
 				fragInput.position[0] = x;
 				fragInput.position[1] = y;
 
@@ -350,8 +420,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				pThis->m_depth.nextRow(threadIndex);
 			}
 		}
-
-		SetEvent((HANDLE)pThis->m_threadHungary[threadIndex]);
 	}
 
 	free(param);

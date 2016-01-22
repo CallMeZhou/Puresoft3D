@@ -53,11 +53,9 @@ class PuresoftInterpolationProcessor : public align_base_64
 {
 public:
 	virtual void release(void) = 0;
-	virtual void setUserData(const void* const data[3]) = 0;
-	virtual void processLeftEnd(const float* correctedContributes) = 0;
-	virtual void processRightEnd(const float* correctedContributes) = 0;
-	virtual void processDelta(float reciprocalScanlineLength) = 0;
-	virtual void processOutput(float correctionFactor2, void* interpData) = 0;
+	virtual void interpolateByContributes(void* interpolatedUserData, const void* vertexUserData, const float* correctedContributes) = 0;
+	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) = 0;
+	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) = 0;
 };
 
 class PuresoftFragmentProcessor : public align_base_64
@@ -65,14 +63,6 @@ class PuresoftFragmentProcessor : public align_base_64
 public:
 	virtual void release(void) = 0;
 	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures) = 0;
-};
-
-class PuresoftProcessorUserDataManager
-{
-public:
-	virtual void release(void) = 0;
-	virtual void alloc(size_t count) = 0;
-	virtual void* get(size_t idx) = 0;
 };
 
 typedef void* (_stdcall *createProcessorInstance)(void);
@@ -83,15 +73,15 @@ public:
 	static const size_t MAX_FRAG_PIPES = 8;
 
 public:
-	PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, createProcessorInstance udmc);
+	PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, size_t userDataBytes);
 	~PuresoftProcessor();
-	PuresoftProcessorUserDataManager* getUDM(void);
+	size_t getUserDataBytes(void) const;
 	PuresoftVertexProcessor* getVertProc(void);
 	PuresoftInterpolationProcessor* getInterpProc(int idx);
 	PuresoftFragmentProcessor* getFragProc(int idx);
 
 private:
-	PuresoftProcessorUserDataManager* m_udm;
+	size_t m_userDataBytes;
 	PuresoftVertexProcessor* m_vertProc;
 	PuresoftInterpolationProcessor* m_interpProc[MAX_FRAG_PIPES];
 	PuresoftFragmentProcessor* m_fragProc[MAX_FRAG_PIPES];

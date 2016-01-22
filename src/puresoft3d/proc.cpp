@@ -5,9 +5,9 @@
 
 using namespace std;
 
-PuresoftProcessor::PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, createProcessorInstance udmc)
+PuresoftProcessor::PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, size_t userDataBytes)
 {
-	m_udm = (PuresoftProcessorUserDataManager*)udmc();
+	m_userDataBytes = userDataBytes;
 	m_vertProc = (PuresoftVertexProcessor*)vpc();
 
 	for(size_t i = 0; i < MAX_FRAG_PIPES; i++)
@@ -19,7 +19,6 @@ PuresoftProcessor::PuresoftProcessor(createProcessorInstance vpc, createProcesso
 
 PuresoftProcessor::~PuresoftProcessor()
 {
-	m_udm->release();
 	m_vertProc->release();
 
 	for(size_t i = 0; i < MAX_FRAG_PIPES; i++)
@@ -29,9 +28,9 @@ PuresoftProcessor::~PuresoftProcessor()
 	}
 }
 
-PuresoftProcessorUserDataManager* PuresoftProcessor::getUDM(void)
+size_t PuresoftProcessor::getUserDataBytes() const
 {
-	return m_udm;
+	return m_userDataBytes;
 }
 
 PuresoftVertexProcessor* PuresoftProcessor::getVertProc(void)

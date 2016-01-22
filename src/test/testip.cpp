@@ -9,9 +9,6 @@ void* _stdcall MyTestInterpolationProcessor::createInstance(void)
 
 MyTestInterpolationProcessor::MyTestInterpolationProcessor(void)
 {
-	memset(&m_outputExtForLeft, 0, sizeof(m_outputExt));
-	memset(&m_outputExtForRight, 0, sizeof(m_outputExt));
-	memset(&m_outputExtDelta, 0, sizeof(m_outputExt));
 }
 
 MyTestInterpolationProcessor::~MyTestInterpolationProcessor(void)
@@ -23,64 +20,10 @@ void MyTestInterpolationProcessor::release()
 	delete this;
 }
 
-void MyTestInterpolationProcessor::setUserData(const void* const data[3])
+void MyTestInterpolationProcessor::interpolateByContributes(void* interpolatedUserData, const void* vertexUserData, const float* correctedContributes)
 {
-	memcpy(m_inputs    , data[0], sizeof(MYTESTPROCDATA));
-	memcpy(m_inputs + 1, data[1], sizeof(MYTESTPROCDATA));
-	memcpy(m_inputs + 2, data[2], sizeof(MYTESTPROCDATA));
-}
-
-void MyTestInterpolationProcessor::processLeftEnd(const float* correctedContributes)
-{
-	processEndData(&m_outputExtForLeft, correctedContributes);
-}
-
-void MyTestInterpolationProcessor::processRightEnd(const float* correctedContributes)
-{
-	processEndData(&m_outputExtForRight, correctedContributes);
-}
-
-void MyTestInterpolationProcessor::processDelta(float reciprocalScanlineLength)
-{
-	mcemaths_sub_3_4(m_outputExtDelta.normal, m_outputExtForRight.normal, m_outputExtForLeft.normal);
-	mcemaths_sub_3_4(m_outputExtDelta.worldPos, m_outputExtForRight.worldPos, m_outputExtForLeft.worldPos);
-	mcemaths_sub_3_4(m_outputExtDelta.texcoord, m_outputExtForRight.texcoord, m_outputExtForLeft.texcoord);
-	mcemaths_mul_3_4(m_outputExtDelta.normal, reciprocalScanlineLength);
-	mcemaths_mul_3_4(m_outputExtDelta.worldPos, reciprocalScanlineLength);
-	mcemaths_mul_3_4(m_outputExtDelta.texcoord, reciprocalScanlineLength);
-}
-
-void MyTestInterpolationProcessor::processOutput(float correctionFactor2, void* interpData)
-{
-	MYTESTPROCDATA* output = (MYTESTPROCDATA*)interpData;
-	memcpy(output, &m_outputExtForLeft, sizeof(MYTESTPROCDATA));
-
-	mcemaths_mul_3_4(output->normal, correctionFactor2);
-	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
-	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
-
-	mcemaths_add_3_4_ip(m_outputExtForLeft.normal, m_outputExtDelta.normal);
-	mcemaths_add_3_4_ip(m_outputExtForLeft.worldPos, m_outputExtDelta.worldPos);
-	mcemaths_add_3_4_ip(m_outputExtForLeft.texcoord, m_outputExtDelta.texcoord);
-}
-
-void MyTestInterpolationProcessor::processEndData(MYTESTPROCDATA* data, const float* correctedContributes)
-{
-	/*
-	A clearer way to do it. For your reference.
-
-	m_outputExtForLeft.normal[0] = (m_inputExts[0].normal[0] * contributes[0] * vert_z[0] + m_inputExts[1].normal[0] * contributes[1] * vert_z[1] + m_inputExts[2].normal[0] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.normal[1] = (m_inputExts[0].normal[1] * contributes[0] * vert_z[0] + m_inputExts[1].normal[1] * contributes[1] * vert_z[1] + m_inputExts[2].normal[1] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.normal[2] = (m_inputExts[0].normal[2] * contributes[0] * vert_z[0] + m_inputExts[1].normal[2] * contributes[1] * vert_z[1] + m_inputExts[2].normal[2] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.worldPos[0] = (m_inputExts[0].worldPos[0] * contributes[0] * vert_z[0] + m_inputExts[1].worldPos[0] * contributes[1] * vert_z[1] + m_inputExts[2].worldPos[0] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.worldPos[1] = (m_inputExts[0].worldPos[1] * contributes[0] * vert_z[0] + m_inputExts[1].worldPos[1] * contributes[1] * vert_z[1] + m_inputExts[2].worldPos[1] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.worldPos[2] = (m_inputExts[0].worldPos[2] * contributes[0] * vert_z[0] + m_inputExts[1].worldPos[2] * contributes[1] * vert_z[1] + m_inputExts[2].worldPos[2] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.texcoord[0] =  (m_inputExts[0].texcoord[0] * contributes[0] * vert_z[0] + m_inputExts[1].texcoord[0] * contributes[1] * vert_z[1] + m_inputExts[2].texcoord[0] * contributes[2] * vert_z[2]);
-	m_outputExtForLeft.texcoord[1] =  (m_inputExts[0].texcoord[1] * contributes[0] * vert_z[0] + m_inputExts[1].texcoord[1] * contributes[1] * vert_z[1] + m_inputExts[2].texcoord[1] * contributes[2] * vert_z[2]);
-	*/
-
 	MYTESTPROCDATA temp[3];
-	memcpy(&temp, m_inputs, sizeof(MYTESTPROCDATA) * 3);
+	memcpy(&temp, vertexUserData, sizeof(MYTESTPROCDATA) * 3);
 
 	mcemaths_mul_3_4(temp[0].normal, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].worldPos, correctedContributes[0]);
@@ -94,15 +37,46 @@ void MyTestInterpolationProcessor::processEndData(MYTESTPROCDATA* data, const fl
 	mcemaths_mul_3_4(temp[2].worldPos, correctedContributes[2]);
 	mcemaths_mul_3_4(temp[2].texcoord, correctedContributes[2]);
 
-	mcemaths_quatcpy(data->normal, temp[0].normal);
-	mcemaths_quatcpy(data->worldPos, temp[0].worldPos);
-	mcemaths_quatcpy(data->texcoord, temp[0].texcoord);
+	MYTESTPROCDATA* output = (MYTESTPROCDATA*)interpolatedUserData;
 
-	mcemaths_add_3_4_ip(data->normal, temp[1].normal);
-	mcemaths_add_3_4_ip(data->worldPos, temp[1].worldPos);
-	mcemaths_add_3_4_ip(data->texcoord, temp[1].texcoord);
+	mcemaths_quatcpy(output->normal, temp[0].normal);
+	mcemaths_quatcpy(output->worldPos, temp[0].worldPos);
+	mcemaths_quatcpy(output->texcoord, temp[0].texcoord);
 
-	mcemaths_add_3_4_ip(data->normal, temp[2].normal);
-	mcemaths_add_3_4_ip(data->worldPos, temp[2].worldPos);
-	mcemaths_add_3_4_ip(data->texcoord, temp[2].texcoord);
+	mcemaths_add_3_4_ip(output->normal, temp[1].normal);
+	mcemaths_add_3_4_ip(output->worldPos, temp[1].worldPos);
+	mcemaths_add_3_4_ip(output->texcoord, temp[1].texcoord);
+
+	mcemaths_add_3_4_ip(output->normal, temp[2].normal);
+	mcemaths_add_3_4_ip(output->worldPos, temp[2].worldPos);
+	mcemaths_add_3_4_ip(output->texcoord, temp[2].texcoord);
+}
+
+void MyTestInterpolationProcessor::calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount)
+{
+	MYTESTPROCDATA* start = (MYTESTPROCDATA*)interpolatedUserDataStart;
+	MYTESTPROCDATA* end = (MYTESTPROCDATA*)interpolatedUserDataEnd;
+	MYTESTPROCDATA* step = (MYTESTPROCDATA*)interpolatedUserDataStep;
+	float reciprocalStepCount = 0 == stepCount ? 1.0f : 1.0f / (float)stepCount;
+	mcemaths_sub_3_4(step->normal, end->normal, end->normal);
+	mcemaths_sub_3_4(step->worldPos, end->worldPos, end->worldPos);
+	mcemaths_sub_3_4(step->texcoord, end->texcoord, end->texcoord);
+	mcemaths_mul_3_4(step->normal, reciprocalStepCount);
+	mcemaths_mul_3_4(step->worldPos, reciprocalStepCount);
+	mcemaths_mul_3_4(step->texcoord, reciprocalStepCount);
+}
+
+void MyTestInterpolationProcessor::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2)
+{
+	MYTESTPROCDATA* output = (MYTESTPROCDATA*)interpolatedUserData;
+	MYTESTPROCDATA* start = (MYTESTPROCDATA*)interpolatedUserDataStart;
+	memcpy(output, start, sizeof(MYTESTPROCDATA));
+	mcemaths_mul_3_4(output->normal, correctionFactor2);
+	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
+	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
+
+	const MYTESTPROCDATA* step = (MYTESTPROCDATA*)interpolatedUserDataStep;
+	mcemaths_add_3_4_ip(start->normal, step->normal);
+	mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
+	mcemaths_add_3_4_ip(start->texcoord, step->texcoord);
 }

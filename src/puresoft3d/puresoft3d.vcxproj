@@ -108,6 +108,7 @@
     <ClInclude Include="rasterizer.h" />
     <ClInclude Include="rinque.h" />
     <ClInclude Include="samplr2d.h" />
+    <ClInclude Include="udm.h" />
     <ClInclude Include="vao.h" />
     <ClInclude Include="vbo.h" />
   </ItemGroup>
@@ -118,6 +119,7 @@
     <ClCompile Include="proc.cpp" />
     <ClCompile Include="rasterizer.cpp" />
     <ClCompile Include="samplr2d.cpp" />
+    <ClCompile Include="udm.cpp" />
     <ClCompile Include="vao.cpp" />
     <ClCompile Include="vbo.cpp" />
   </ItemGroup>
