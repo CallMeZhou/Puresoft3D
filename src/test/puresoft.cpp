@@ -68,9 +68,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));
 	int diffuseTex = 0;
 	pipeline.setUniform(6, &diffuseTex, sizeof(diffuseTex));
-//	HOBJXIO objx = open_objx(_T("box.objx"));
+	HOBJXIO objx = open_objx(_T("box.objx"));
 //	HOBJXIO objx = open_objx(_T("sphere1.objx"));
-	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
+//	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
 	mesh_info mi = {0};
 	read_mesh_header(objx, mi);
 	mi.vertices = new vec4[mi.num_vertices];
@@ -99,8 +99,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	delete[] mi.texcoords;
 
 //	Bitmap* diffusePic = Bitmap::FromFile(L"icon.png");
-//	Bitmap* diffusePic = Bitmap::FromFile(L"earth.jpg");
-	Bitmap* diffusePic = Bitmap::FromFile(CA2W(mi.tex_file.c_str()));
+	Bitmap* diffusePic = Bitmap::FromFile(L"earth.jpg");
+//	Bitmap* diffusePic = Bitmap::FromFile(CA2W(mi.tex_file.c_str()));
 	diffusePic->RotateFlip(RotateNoneFlipY);
 	Rect r(0, 0, diffusePic->GetWidth(), diffusePic->GetHeight());
 	BitmapData bmpdata;
@@ -183,7 +183,8 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 			mat4 rot, tran, scale;
 			rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 			scale.scaling(1.0f, 1.0f, 1.0f);
-			tran.translation(0, 0, -100.0f);
+			//tran.translation(0, 0, -100.0f);
+			tran.translation(0, 0, -1.0f);
 			mcemaths_transform_m4m4(model, rot, scale);
 			mcemaths_transform_m4m4_r_ip(tran, model);
 			pipeline.setUniform(1, model, sizeof(model.elem));

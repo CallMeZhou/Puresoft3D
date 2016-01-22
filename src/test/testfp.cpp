@@ -34,34 +34,34 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->user;
 	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
 
-	vec4 L;
-	mcemaths_sub_3_4(L, lightPos, inData->worldPos);
-	float distance = mcemaths_len_3_4(L);
-	mcemaths_div_3_4(L, distance);
-
-	vec4 E;
-	mcemaths_sub_3_4(E, cameraPos, inData->worldPos);
-	mcemaths_norm_3_4(E);
-	vec4 H;
-	mcemaths_add_3_4(H, E, L);
-	mcemaths_norm_3_4(H);
-
-	float lambert = mcemaths_dot_3_4(L, inData->normal);
-	lambert = max(lambert, 0.0f);
-
-	float specular = mcemaths_dot_3_4(H, inData->normal);
-	specular = max(specular, 0.0f);
-	specular = pow(specular, 50.0f);
-
-	int specularColour = (int)(255.0f * specular * 0.5f);
-
-	int red = (m_singleColour.rgbRed + specularColour) * lambert + m_singleColour.rgbRed / 10;
-	int green = (m_singleColour.rgbGreen + specularColour) * lambert + m_singleColour.rgbGreen / 10;
-	int blue = (m_singleColour.rgbBlue + specularColour) * lambert + m_singleColour.rgbBlue / 10;
-
-	m_singleColour.rgbRed = min(red, 255);
-	m_singleColour.rgbGreen = min(green, 255);
-	m_singleColour.rgbBlue = min(blue, 255);
+// 	vec4 L;
+// 	mcemaths_sub_3_4(L, lightPos, inData->worldPos);
+// 	float distance = mcemaths_len_3_4(L);
+// 	mcemaths_div_3_4(L, distance);
+// 
+// 	vec4 E;
+// 	mcemaths_sub_3_4(E, cameraPos, inData->worldPos);
+// 	mcemaths_norm_3_4(E);
+// 	vec4 H;
+// 	mcemaths_add_3_4(H, E, L);
+// 	mcemaths_norm_3_4(H);
+// 
+// 	float lambert = mcemaths_dot_3_4(L, inData->normal);
+// 	lambert = max(lambert, 0.0f);
+// 
+// 	float specular = mcemaths_dot_3_4(H, inData->normal);
+// 	specular = max(specular, 0.0f);
+// 	specular = pow(specular, 50.0f);
+// 
+// 	int specularColour = (int)(255.0f * specular * 0.5f);
+// 
+// 	int red = (m_singleColour.rgbRed + specularColour) * lambert + m_singleColour.rgbRed / 10;
+// 	int green = (m_singleColour.rgbGreen + specularColour) * lambert + m_singleColour.rgbGreen / 10;
+// 	int blue = (m_singleColour.rgbBlue + specularColour) * lambert + m_singleColour.rgbBlue / 10;
+// 
+// 	m_singleColour.rgbRed = min(red, 255);
+// 	m_singleColour.rgbGreen = min(green, 255);
+// 	m_singleColour.rgbBlue = min(blue, 255);
 
 	output->data[0] = &m_singleColour;
 	output->dataSizes[0] = sizeof(RGBQUAD);

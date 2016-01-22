@@ -11,7 +11,7 @@
 
 using namespace std;
 
-size_t PuresoftPipeline::m_numberOfThreads = 4; // = getCpuCures();
+size_t PuresoftPipeline::m_numberOfThreads = 1; // = getCpuCures();
 
 PuresoftPipeline::PuresoftPipeline(int width, int height)
 	: m_width(width)
@@ -35,7 +35,7 @@ PuresoftPipeline::PuresoftPipeline(int width, int height)
 		param->index = i;
 		param->hostInstance = this;
 		m_threads[i] = _beginthreadex(NULL, 0, fragmentThread, param, 0, NULL);
-		SetThreadPriority((HANDLE)m_threads[i], THREAD_PRIORITY_ABOVE_NORMAL);
+//		SetThreadPriority((HANDLE)m_threads[i], THREAD_PRIORITY_ABOVE_NORMAL);
 	}
 }
 
@@ -43,13 +43,13 @@ PuresoftPipeline::~PuresoftPipeline(void)
 {
 	FRAGTHREADTASK task;
 	task.eot = true;
-	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
 		m_fragTaskQueues->push(task);
 	}
-	WaitForMultipleObjects(MAX_FRAGTHREADS, (const HANDLE*)m_threads, TRUE, INFINITE);
+	WaitForMultipleObjects(m_numberOfThreads, (const HANDLE*)m_threads, TRUE, INFINITE);
 
-	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
 		CloseHandle((HANDLE)m_threads[i]);
 	}
@@ -279,7 +279,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	}
 
 	// don't think of event. polling offers constant space complexity ensuring scalability
-	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
+	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
 		m_fragTaskQueues[i].pollEmpty();
 	}
@@ -302,7 +302,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 	// input data structure for Fragment Processor
 	FragmentProcessorInput fragInput;
-	fragInput.user = udbuff->fragInputs + threadIndex;
 	
 	// output data structure for Vertex Processor
 	FragmentProcessorOutput fragOuput;
@@ -319,106 +318,100 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			break;
 		}
 
-		int y = shared.rasterResult->firstRow + threadIndex;
+		fragInput.user = udbuff->fragInputs[threadIndex];
 
 		// set current row to all attached fbos
 		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
 			if(pThis->m_fbos[i])
 			{
-				pThis->m_fbos[i]->setCurRow(threadIndex, y);
+				pThis->m_fbos[i]->setCurRow(threadIndex, task.y);
 			}
 		}
 
-		pThis->m_depth.setCurRow(threadIndex, y);
+		pThis->m_depth.setCurRow(threadIndex, task.y);
 
-		// for each scanline
-		for(; y <= shared.rasterResult->lastRow; y += MAX_FRAGTHREADS)
+		// set starting column to all attached fbos
+		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
-			int x = shared.rasterResult->m_rows[y].left;
-
-			// set starting column to all attached fbos
-			for(size_t i = 0; i < MAX_FBOS; i++)
+			if(pThis->m_fbos[i])
 			{
-				if(pThis->m_fbos[i])
-				{
-					pThis->m_fbos[i]->setCurCol(threadIndex, x);
-				}
+				pThis->m_fbos[i]->setCurCol(threadIndex, task.x1);
 			}
+		}
 
-			pThis->m_depth.setCurCol(threadIndex, x);
+		pThis->m_depth.setCurCol(threadIndex, task.x1);
 
-			// process rasterization result of a scanline, column by column
+		// process rasterization result of a scanline, column by column
 
-			for(; x <= shared.rasterResult->m_rows[y].right; x++)
+		for(int x = task.x1; x <= task.x2; x++)
+		{
+			// get interpolated values as well as the other perspective correction factor
+			PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
+			stepping.proc = pThis->m_processor->getInterpProc(0);
+			stepping.interpolatedUserDataStart = task.userDataStart;
+			stepping.interpolatedUserDataStep = task.userDataStep;
+			stepping.correctionFactor2Start = task.correctionFactor2Start;
+			stepping.correctionFactor2Step = task.correctionFactor2Step;
+			stepping.projectedZStart = task.projZStart;
+			stepping.projectedZStep = task.projZStep;
+			float newDepth;
+			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
+			fragInput.position[0] = x;
+			fragInput.position[1] = task.y;
+
+			// get current depth from the depth buffer and do depth test
+			float currentDepth;
+			pThis->m_depth.read4(threadIndex, &currentDepth);
+
+			if(newDepth < currentDepth) // depth test passed
 			{
-				// get interpolated values as well as the other perspective correction factor
-				PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
-				stepping.proc = pThis->m_processor->getInterpProc(0);
-				stepping.interpolatedUserDataStart = task.userDataStart;
-				stepping.interpolatedUserDataStep = task.userDataStep;
-				stepping.correctionFactor2Start = task.correctionFactor2Start;
-				stepping.correctionFactor2Step = task.correctionFactor2Step;
-				stepping.projectedZStart = task.projZStart;
-				stepping.projectedZStep = task.projZStep;
-				float newDepth;
-				pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
-				fragInput.position[0] = x;
-				fragInput.position[1] = y;
+				// update depth buffer
+				pThis->m_depth.write4(threadIndex, &newDepth);
+				pThis->m_depth.nextCol(threadIndex);
 
-				// get current depth from the depth buffer and do depth test
-				float currentDepth;
-				pThis->m_depth.read4(threadIndex, &currentDepth);
+				// go ahead with Fragment Processor
+				pThis->m_processor->getFragProc(threadIndex)->process(&fragInput, &fragOuput, (const void**)pThis->m_uniforms, (const void**)pThis->m_textures);
 
-				if(newDepth < currentDepth) // depth test passed
+				// update each attached fbo with Fragment Processor output
+				for(size_t i = 0; i < MAX_FBOS; i++)
 				{
-					// update depth buffer
-					pThis->m_depth.write4(threadIndex, &newDepth);
-					pThis->m_depth.nextCol(threadIndex);
-
-					// go ahead with Fragment Processor
-					pThis->m_processor->getFragProc(threadIndex)->process(&fragInput, &fragOuput, (const void**)pThis->m_uniforms, (const void**)pThis->m_textures);
-
-					// update each attached fbo with Fragment Processor output
-					for(size_t i = 0; i < MAX_FBOS; i++)
+					if(pThis->m_fbos[i])
 					{
-						if(pThis->m_fbos[i])
-						{
-							pThis->m_fbos[i]->write(threadIndex, fragOuput.data[i], fragOuput.dataSizes[i]);
-							pThis->m_fbos[i]->nextCol(threadIndex);
-						}
-					}
-				}
-				else // depth test passed, skip everything of the current column
-				{
-					for(size_t i = 0; i < MAX_FBOS; i++)
-					{
-						if(pThis->m_fbos[i])
-						{
-							pThis->m_fbos[i]->nextCol(threadIndex);
-						}
-					}
-
-					pThis->m_depth.nextCol(threadIndex);
-				}
-			}
-
-			// for each attached fbo: go to next row
-			for(size_t i = 0; i < MAX_FBOS; i++)
-			{
-				if(pThis->m_fbos[i])
-				{
-					for(int j = 0; j < MAX_FRAGTHREADS; j++)
-					{
-						pThis->m_fbos[i]->nextRow(threadIndex);
+						pThis->m_fbos[i]->write(threadIndex, fragOuput.data[i], fragOuput.dataSizes[i]);
+						pThis->m_fbos[i]->nextCol(threadIndex);
 					}
 				}
 			}
-
-			for(int j = 0; j < MAX_FRAGTHREADS; j++)
+			else // depth test passed, skip everything of the current column
 			{
-				pThis->m_depth.nextRow(threadIndex);
+				for(size_t i = 0; i < MAX_FBOS; i++)
+				{
+					if(pThis->m_fbos[i])
+					{
+						pThis->m_fbos[i]->nextCol(threadIndex);
+					}
+				}
+
+				pThis->m_depth.nextCol(threadIndex);
 			}
+		}
+
+		// for each attached fbo: go to next row
+		for(size_t i = 0; i < MAX_FBOS; i++)
+		{
+			if(pThis->m_fbos[i])
+			{
+				for(int j = 0; j < MAX_FRAGTHREADS; j++)
+				{
+					pThis->m_fbos[i]->nextRow(threadIndex);
+				}
+			}
+		}
+
+		for(int j = 0; j < MAX_FRAGTHREADS; j++)
+		{
+			pThis->m_depth.nextRow(threadIndex);
 		}
 	}
 

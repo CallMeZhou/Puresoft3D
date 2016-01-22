@@ -32,9 +32,9 @@ USERDATABUFFERS* PuresoftUserDataManager::setUserDataBytes(size_t bytes)
 	}
 	else if(m_userDataBytes < bytes)
 	{
-		m_userDataBytes = ((bytes * 8 + 127) / 128) * 16;
-		
 		setUserDataBytes(0);
+
+		m_userDataBytes = ((bytes * 8 + 127) / 128) * 16;
 
 		size_t bufferCount = 
 			3 +							// 3 vertices

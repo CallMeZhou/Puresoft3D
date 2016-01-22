@@ -76,7 +76,7 @@ public:
 		}
 
 		*beginPushTracer = nextTail;
-		return m_queue + nextTail;
+		return m_queue + m_tail;
 	}
 
 	bool endPush(int beginPushTracer)

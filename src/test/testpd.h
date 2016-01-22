@@ -5,6 +5,6 @@ __declspec(align(16)) struct MYTESTPROCDATA
 {
 	float normal[4];
 	float worldPos[4];
-	float texcoord[2];
+	float texcoord[4];
 };
 #pragma pack()

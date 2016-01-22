@@ -1,3 +1,4 @@
+#include <atlbase.h>
 #include <memory.h>
 #include "mcemaths.h"
 #include "testip.h"
@@ -58,9 +59,9 @@ void MyTestInterpolationProcessor::calcStep(void* interpolatedUserDataStep, cons
 	MYTESTPROCDATA* end = (MYTESTPROCDATA*)interpolatedUserDataEnd;
 	MYTESTPROCDATA* step = (MYTESTPROCDATA*)interpolatedUserDataStep;
 	float reciprocalStepCount = 0 == stepCount ? 1.0f : 1.0f / (float)stepCount;
-	mcemaths_sub_3_4(step->normal, end->normal, end->normal);
-	mcemaths_sub_3_4(step->worldPos, end->worldPos, end->worldPos);
-	mcemaths_sub_3_4(step->texcoord, end->texcoord, end->texcoord);
+	mcemaths_sub_3_4(step->normal, end->normal, start->normal);
+	mcemaths_sub_3_4(step->worldPos, end->worldPos, start->worldPos);
+	mcemaths_sub_3_4(step->texcoord, end->texcoord, start->texcoord);
 	mcemaths_mul_3_4(step->normal, reciprocalStepCount);
 	mcemaths_mul_3_4(step->worldPos, reciprocalStepCount);
 	mcemaths_mul_3_4(step->texcoord, reciprocalStepCount);
