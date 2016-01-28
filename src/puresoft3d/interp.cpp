@@ -1,3 +1,4 @@
+#include <atlbase.h>
 #include <math.h>
 #include <stdexcept>
 #include "mcemaths.h"
@@ -61,6 +62,8 @@ void PuresoftInterpolater::interpolateNextStep(void* interpolatedUserData, float
 {
 	float _correctionFactor2 = 1.0f / params->correctionFactor2Start;
 	params->correctionFactor2Start += params->correctionFactor2Step;
+
+	//ATLTRACE("%f, ", _correctionFactor2);
 
 	params->proc->interpolateBySteps(interpolatedUserData, params->interpolatedUserDataStart, params->interpolatedUserDataStep, _correctionFactor2);
 

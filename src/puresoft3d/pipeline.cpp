@@ -45,7 +45,7 @@ PuresoftPipeline::~PuresoftPipeline(void)
 	task.eot = true;
 	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
-		m_fragTaskQueues->push(task);
+		m_fragTaskQueues[i].push(task);
 	}
 	WaitForMultipleObjects(m_numberOfThreads, (const HANDLE*)m_threads, TRUE, INFINITE);
 
@@ -344,17 +344,17 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 		// process rasterization result of a scanline, column by column
 
+		PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
+		stepping.proc = pThis->m_processor->getInterpProc(0);
+		stepping.interpolatedUserDataStart = task.userDataStart;
+		stepping.interpolatedUserDataStep = task.userDataStep;
+		stepping.correctionFactor2Start = task.correctionFactor2Start;
+		stepping.correctionFactor2Step = task.correctionFactor2Step;
+		stepping.projectedZStart = task.projZStart;
+		stepping.projectedZStep = task.projZStep;
 		for(int x = task.x1; x <= task.x2; x++)
 		{
 			// get interpolated values as well as the other perspective correction factor
-			PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
-			stepping.proc = pThis->m_processor->getInterpProc(0);
-			stepping.interpolatedUserDataStart = task.userDataStart;
-			stepping.interpolatedUserDataStep = task.userDataStep;
-			stepping.correctionFactor2Start = task.correctionFactor2Start;
-			stepping.correctionFactor2Step = task.correctionFactor2Step;
-			stepping.projectedZStart = task.projZStart;
-			stepping.projectedZStep = task.projZStep;
 			float newDepth;
 			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
 			fragInput.position[0] = x;
