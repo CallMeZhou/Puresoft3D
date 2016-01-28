@@ -35,10 +35,10 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	__declspec(align(16)) float correctedContributes[4];
 	mcemaths_quatcpy(correctedContributes, contributesForLeft);
 	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	params->proc->interpolateByContributes(params->interpolatedUserDataStart, params->vertexUserData, contributesForLeft);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStart, params->vertexUserData, correctedContributes);
 	mcemaths_quatcpy(correctedContributes, contributesForRight);
 	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	params->proc->interpolateByContributes(params->interpolatedUserDataStep, params->vertexUserData, contributesForRight);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStep, params->vertexUserData, correctedContributes);
 	int stepCount = params->rightColumn - params->leftColumn;
 	params->proc->calcStep(params->interpolatedUserDataStep, params->interpolatedUserDataStart, params->interpolatedUserDataStep, stepCount);
 

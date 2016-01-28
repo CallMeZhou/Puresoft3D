@@ -80,6 +80,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	close_objx(objx);
 
 	PuresoftVBO vertices(16, mi.num_vertices), normals(16, mi.num_vertices), texcoords(8, mi.num_vertices);
+//	PuresoftVBO vertices(16, 3), normals(16, 3), texcoords(8, 3);
 	vao1.attachVBO(0, &vertices);
 	vao1.attachVBO(1, &normals);
 	vao1.attachVBO(2, &texcoords);
@@ -90,9 +91,27 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
  		mi.normals[i].w = 1.0f;
  	}
 
+	const float testTriangleVerts[] = {
+		-1.0f, -1.0f, 0.0f, 1.0f, 
+		 1.0f,  1.0f, 0.0f, 1.0f,
+		-1.0f,  1.0f, 0.0f, 1.0f
+	};
+	const float testTriangleNorms[] = {
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+	};
+	const float testTriangleTxcds[] = {
+		0.0f, 0.0f, 
+		1.0f, 1.0f, 
+		0.0f, 1.0f, 
+	};
 	vertices.updateContent(mi.vertices);
 	normals.updateContent(mi.normals);
 	texcoords.updateContent(mi.texcoords);
+//	vertices.updateContent(testTriangleVerts);
+//	normals.updateContent(testTriangleNorms);
+//	texcoords.updateContent(testTriangleTxcds);
 
 	delete[] mi.vertices;
 	delete[] mi.normals;
@@ -184,7 +203,7 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 			rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 			scale.scaling(1.0f, 1.0f, 1.0f);
 			//tran.translation(0, 0, -100.0f);
-			tran.translation(0, 0, -1.0f);
+			tran.translation(0, 0, -1.5f);
 			mcemaths_transform_m4m4(model, rot, scale);
 			mcemaths_transform_m4m4_r_ip(tran, model);
 			pipeline.setUniform(1, model, sizeof(model.elem));

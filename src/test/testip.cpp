@@ -58,6 +58,9 @@ void MyTestInterpolationProcessor::calcStep(void* interpolatedUserDataStep, cons
 	MYTESTPROCDATA* start = (MYTESTPROCDATA*)interpolatedUserDataStart;
 	MYTESTPROCDATA* end = (MYTESTPROCDATA*)interpolatedUserDataEnd;
 	MYTESTPROCDATA* step = (MYTESTPROCDATA*)interpolatedUserDataStep;
+
+	//ATLTRACE("start.tex=(%f, %f), end.tex=(%f, %f), stepCnt=%ld, ", start->texcoord[0], start->texcoord[1], end->texcoord[0], end->texcoord[1], stepCount);
+
 	float reciprocalStepCount = 0 == stepCount ? 1.0f : 1.0f / (float)stepCount;
 	mcemaths_sub_3_4(step->normal, end->normal, start->normal);
 	mcemaths_sub_3_4(step->worldPos, end->worldPos, start->worldPos);
@@ -65,6 +68,8 @@ void MyTestInterpolationProcessor::calcStep(void* interpolatedUserDataStep, cons
 	mcemaths_mul_3_4(step->normal, reciprocalStepCount);
 	mcemaths_mul_3_4(step->worldPos, reciprocalStepCount);
 	mcemaths_mul_3_4(step->texcoord, reciprocalStepCount);
+
+	//ATLTRACE("step.tex=(%f, %f)\n", step->texcoord[0], step->texcoord[1]);
 }
 
 void MyTestInterpolationProcessor::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2)
@@ -77,7 +82,12 @@ void MyTestInterpolationProcessor::interpolateBySteps(void* interpolatedUserData
 	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
 
 	const MYTESTPROCDATA* step = (MYTESTPROCDATA*)interpolatedUserDataStep;
+
+	//ATLTRACE("(%f, %f; %f, %f; ", start->texcoord[0], start->texcoord[1], step->texcoord[0], step->texcoord[1]);
+
 	mcemaths_add_3_4_ip(start->normal, step->normal);
 	mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
 	mcemaths_add_3_4_ip(start->texcoord, step->texcoord);
+
+	//ATLTRACE("%f, %f), ", start->texcoord[0], start->texcoord[1]);
 }

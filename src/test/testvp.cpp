@@ -38,6 +38,7 @@ void MyTestVertexProcesser::process(const VertexProcessorInput* input, VertexPro
 	userOutput->worldPos[3] = 0;
 
 	mcemaths_transform_m4v4_ip(output->position, proj_view);
+	//output->position[3] = 1.0f;
 
 	mcemaths_transform_m4v4(userOutput->normal, modelRotate, normals);
 

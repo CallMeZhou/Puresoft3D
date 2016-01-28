@@ -397,22 +397,24 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			}
 		}
 
-		// for each attached fbo: go to next row
-		for(size_t i = 0; i < MAX_FBOS; i++)
-		{
-			if(pThis->m_fbos[i])
-			{
-				for(int j = 0; j < MAX_FRAGTHREADS; j++)
-				{
-					pThis->m_fbos[i]->nextRow(threadIndex);
-				}
-			}
-		}
+		//ATLTRACE("\n");
 
-		for(int j = 0; j < MAX_FRAGTHREADS; j++)
-		{
-			pThis->m_depth.nextRow(threadIndex);
-		}
+		// for each attached fbo: go to next row
+// 		for(size_t i = 0; i < MAX_FBOS; i++)
+// 		{
+// 			if(pThis->m_fbos[i])
+// 			{
+// 				for(int j = 0; j < MAX_FRAGTHREADS; j++)
+// 				{
+// 					pThis->m_fbos[i]->nextRow(threadIndex);
+// 				}
+// 			}
+// 		}
+// 
+// 		for(int j = 0; j < MAX_FRAGTHREADS; j++)
+// 		{
+// 			pThis->m_depth.nextRow(threadIndex);
+// 		}
 	}
 
 	free(param);

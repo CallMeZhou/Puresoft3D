@@ -1,3 +1,4 @@
+#include <atlbase.h>
 #include <stdlib.h>
 #include <memory.h>
 #include "samplr2d.h"
@@ -44,8 +45,6 @@ size_t PuresoftSampler2D::locate(float texcoordX, float texcoordY) const
 	// remove fractional part (!must!)
 	texcoords[0] = (float)(int)texcoords[0];
 	texcoords[1] = (float)(int)texcoords[1];
-
-	//ATLTRACE("%ld, %ld\n", (int)texcoords[0], (int)texcoords[1]);
 
 	// locate = X * elemLen + Y * scanlineLen
 	return (size_t)mcemaths_dot_3_4(texcoords, m_locatingFactors);
