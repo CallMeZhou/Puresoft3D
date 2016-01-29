@@ -11,7 +11,7 @@
 
 using namespace std;
 
-size_t PuresoftPipeline::m_numberOfThreads = 1; // = getCpuCures();
+size_t PuresoftPipeline::m_numberOfThreads = 3; // = getCpuCures();
 
 PuresoftPipeline::PuresoftPipeline(int width, int height)
 	: m_width(width)
@@ -100,7 +100,7 @@ void PuresoftPipeline::setProcessor(PuresoftProcessor* proc)
 
 	for(size_t i = 0; i < m_numberOfThreads; i++)
 	{
-		prep _prep(buffers->taskQueues[i], m_processor->getUserDataBytes());
+		prep _prep(buffers->taskQueues[i], buffers->unitBytes);
 		m_fragTaskQueues[i].prepare(_prep);
 	}
 }
@@ -159,7 +159,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	for(size_t i = 0; i < 3; i++)
 	{
 		vertOutput[i].user = (void*)user;
-		user += m_processor->getUserDataBytes();
+		user += udbuff->unitBytes;
 	}
 
 	__declspec(align(16)) float correctionFactor1[4] = {0};
@@ -251,8 +251,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			// if the mod calc is found slow, use a pre-calc table instead
 			int threadIndex = interp.row % m_numberOfThreads;
 			FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + threadIndex;
-			int beginPushTracer;
-			FRAGTHREADTASK* newTask = taskQueue->beginPush(&beginPushTracer);
+			FRAGTHREADTASK* newTask = taskQueue->beginPush();
 
 			interp.leftColumn = row.left;
 			interp.rightColumn = row.right;
@@ -274,7 +273,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			newTask->projZStep = interp.projectedZStep;
 			newTask->correctionFactor2Start = interp.correctionFactor2Start;
 			newTask->correctionFactor2Step = interp.correctionFactor2Step;
-			taskQueue->endPush(beginPushTracer);
+			taskQueue->endPush();
 		}
 	}
 
@@ -307,58 +306,65 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 	FragmentProcessorOutput fragOuput;
 
 	FRAGTHREADSHARED& shared = pThis->m_threadSharedData;
+	FragmentThreadTaskQueue* taskQueue = pThis->m_fragTaskQueues + threadIndex;
+
+	PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
 
 	while(true)
 	{
-		FRAGTHREADTASK task;
-		pThis->m_fragTaskQueues[threadIndex].pop(task);
+		FRAGTHREADTASK* task = taskQueue->beginPop();
 
-		if(task.eot)
+		if(task->eot)
 		{
+			taskQueue->endPop();
 			break;
 		}
 
+		int x1 = task->x1, x2 = task->x2, y = task->y;
 		fragInput.user = udbuff->fragInputs[threadIndex];
+		fragInput.position[1] = y;
+		stepping.proc = pThis->m_processor->getInterpProc(0);
+		stepping.interpolatedUserDataStart = udbuff->interpTemps[threadIndex];
+		stepping.interpolatedUserDataStep = (void*)((size_t)stepping.interpolatedUserDataStart + udbuff->unitBytes);
+		memcpy(stepping.interpolatedUserDataStart, task->userDataStart, udbuff->unitBytes);
+		memcpy(stepping.interpolatedUserDataStep, task->userDataStep, udbuff->unitBytes);
+		stepping.correctionFactor2Start = task->correctionFactor2Start;
+		stepping.correctionFactor2Step = task->correctionFactor2Step;
+		stepping.projectedZStart = task->projZStart;
+		stepping.projectedZStep = task->projZStep;
+
+		taskQueue->endPop();
 
 		// set current row to all attached fbos
 		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
 			if(pThis->m_fbos[i])
 			{
-				pThis->m_fbos[i]->setCurRow(threadIndex, task.y);
+				pThis->m_fbos[i]->setCurRow(threadIndex, y);
 			}
 		}
 
-		pThis->m_depth.setCurRow(threadIndex, task.y);
+		pThis->m_depth.setCurRow(threadIndex, y);
 
 		// set starting column to all attached fbos
 		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
 			if(pThis->m_fbos[i])
 			{
-				pThis->m_fbos[i]->setCurCol(threadIndex, task.x1);
+				pThis->m_fbos[i]->setCurCol(threadIndex, x1);
 			}
 		}
 
-		pThis->m_depth.setCurCol(threadIndex, task.x1);
+		pThis->m_depth.setCurCol(threadIndex, x1);
 
 		// process rasterization result of a scanline, column by column
-
-		PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
-		stepping.proc = pThis->m_processor->getInterpProc(0);
-		stepping.interpolatedUserDataStart = task.userDataStart;
-		stepping.interpolatedUserDataStep = task.userDataStep;
-		stepping.correctionFactor2Start = task.correctionFactor2Start;
-		stepping.correctionFactor2Step = task.correctionFactor2Step;
-		stepping.projectedZStart = task.projZStart;
-		stepping.projectedZStep = task.projZStep;
-		for(int x = task.x1; x <= task.x2; x++)
+		for(int x = x1; x <= x2; x++)
 		{
+			fragInput.position[0] = x;
+
 			// get interpolated values as well as the other perspective correction factor
 			float newDepth;
 			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
-			fragInput.position[0] = x;
-			fragInput.position[1] = task.y;
 
 			// get current depth from the depth buffer and do depth test
 			float currentDepth;
@@ -396,25 +402,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				pThis->m_depth.nextCol(threadIndex);
 			}
 		}
-
-		//ATLTRACE("\n");
-
-		// for each attached fbo: go to next row
-// 		for(size_t i = 0; i < MAX_FBOS; i++)
-// 		{
-// 			if(pThis->m_fbos[i])
-// 			{
-// 				for(int j = 0; j < MAX_FRAGTHREADS; j++)
-// 				{
-// 					pThis->m_fbos[i]->nextRow(threadIndex);
-// 				}
-// 			}
-// 		}
-// 
-// 		for(int j = 0; j < MAX_FRAGTHREADS; j++)
-// 		{
-// 			pThis->m_depth.nextRow(threadIndex);
-// 		}
 	}
 
 	free(param);

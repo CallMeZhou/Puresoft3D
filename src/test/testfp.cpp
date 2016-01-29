@@ -32,11 +32,7 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 	int diffuse = *(const int*)uniforms[6];
 
 	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->user;
-	//((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
-	m_singleColour.rgbRed = 100;
-	m_singleColour.rgbGreen = 200;
-	m_singleColour.rgbBlue = 50;
-	m_singleColour.rgbReserved = 0;
+	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
 
 	vec4 L;
 	mcemaths_sub_3_4(L, lightPos, inData->worldPos);

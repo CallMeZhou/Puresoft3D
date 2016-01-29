@@ -8,8 +8,7 @@ public:
 	RingQueueMT(void)
 	{
 		InitializeCriticalSection(&m_cs);
-		m_head = 0;
-		m_tail = 0;
+		m_in = m_out = m_len = 0;
 		m_abort = false;
 	}
 
@@ -29,22 +28,12 @@ public:
 
 	bool push(const T& item = NULL)
 	{
-		// push in queue tail
-		EnterCriticalSection(&m_cs);
-		memcpy(m_queue + m_tail, &item, sizeof(T));
-		int nextTail = m_tail + 1;
-		if(LEN == nextTail)
-		{
-			nextTail = 0;
-		}
-		LeaveCriticalSection(&m_cs);
-
-		// spin waiting for queue to be not full
 		while(true)
 		{
 			EnterCriticalSection(&m_cs);
-			if(nextTail == m_head) // spin around
+			if(LEN == m_len)
 			{
+				// unlock queue for others and spin around
 				LeaveCriticalSection(&m_cs);
 
 				if(m_abort)
@@ -52,58 +41,19 @@ public:
 					return false;
 				}
 			}
-			else // stop spinning
+			else
 			{
+				// go on with queue locked
 				break;
 			}
 		}
 
-		// complete pushing queue tail
-		m_tail = nextTail;
-		LeaveCriticalSection(&m_cs);
-
-		return true;
-	}
-
-	T* beginPush(int* beginPushTracer)
-	{
-		// push in queue tail
-		EnterCriticalSection(&m_cs);
-		int nextTail = m_tail + 1;
-		if(LEN == nextTail)
+		memcpy(m_queue + m_in, &item, sizeof(T));
+		if(LEN == ++m_in)
 		{
-			nextTail = 0;
+			m_in = 0;
 		}
-
-		*beginPushTracer = nextTail;
-		return m_queue + m_tail;
-	}
-
-	bool endPush(int beginPushTracer)
-	{
-		LeaveCriticalSection(&m_cs);
-
-		// spin waiting for queue to be not full
-		while(true)
-		{
-			EnterCriticalSection(&m_cs);
-			if(beginPushTracer == m_head) // spinning
-			{
-				LeaveCriticalSection(&m_cs);
-
-				if(m_abort)
-				{
-					return false;
-				}
-			}
-			else // stop spinning
-			{
-				break;
-			}
-		}
-
-		// complete pushing queue tail
-		m_tail = beginPushTracer;
+		m_len++;
 		LeaveCriticalSection(&m_cs);
 
 		return true;
@@ -111,12 +61,12 @@ public:
 
 	bool pop(T& item)
 	{
-		// spin waiting for queue to be not empty
 		while(true)
 		{
 			EnterCriticalSection(&m_cs);
-			if(m_head == m_tail) // spin around
+			if(0 == m_len)
 			{
+				// unlock queue for others and spin around
 				LeaveCriticalSection(&m_cs);
 
 				if(m_abort)
@@ -124,23 +74,92 @@ public:
 					return false;
 				}
 			}
-			else // stop spinning
+			else
 			{
+				// go on with queue locked
 				break;
 			}
 		}
 
-		// take away queue head
-		memcpy(&item, m_queue + m_head, sizeof(T));
-		m_head++;
-
-		if(LEN == m_head)
+		memcpy(&item, m_queue + m_out, sizeof(T));
+		if(LEN == ++m_out)
 		{
-			m_head = 0;
+			m_out = 0;
+		}
+		m_len--;
+		LeaveCriticalSection(&m_cs);
+
+		return true;
+	}
+
+	T* beginPush(void)
+	{
+		while(true)
+		{
+			EnterCriticalSection(&m_cs);
+			if(LEN == m_len)
+			{
+				// unlock queue for others and spin around
+				LeaveCriticalSection(&m_cs);
+
+				if(m_abort)
+				{
+					return NULL;
+				}
+			}
+			else
+			{
+				// go on with queue locked
+				break;
+			}
 		}
 
+		return m_queue + m_in;
+	}
+
+	void endPush(void)
+	{
+		if(LEN == ++m_in)
+		{
+			m_in = 0;
+		}
+		m_len++;
 		LeaveCriticalSection(&m_cs);
-		return true;
+	}
+
+	T* beginPop(void)
+	{
+		while(true)
+		{
+			EnterCriticalSection(&m_cs);
+			if(0 == m_len)
+			{
+				// unlock queue for others and spin around
+				LeaveCriticalSection(&m_cs);
+
+				if(m_abort)
+				{
+					return NULL;
+				}
+			}
+			else
+			{
+				// go on with queue locked
+				break;
+			}
+		}
+
+		return m_queue + m_out;
+	}
+
+	void endPop(void)
+	{
+		if(LEN == ++m_out)
+		{
+			m_out = 0;
+		}
+		m_len--;
+		LeaveCriticalSection(&m_cs);
 	}
 
 	void abort(void)
@@ -153,36 +172,34 @@ public:
 		m_abort = false;
 	}
 
-	bool empty(void)
+	size_t size(void) const
 	{
-		EnterCriticalSection(&m_cs);
-		bool isEmpty = (m_head == m_tail);
-		LeaveCriticalSection(&m_cs);
-		return isEmpty;
+		return m_len;
 	}
-	bool pollEmpty(void)
+
+	bool pollEmpty(void) const
 	{
 		while(true)
 		{
-			if(empty())
+			if(0 == m_len)
 			{
 				return true;
 			}
 
 			if(m_abort)
 			{
-				return false;
+				break;
 			}
 		}
 
-		// unreachable
-		return true;
+		return false;
 	}
 
 private:
 	CRITICAL_SECTION m_cs;
 	T m_queue[LEN];
-	volatile int m_head;
-	volatile int m_tail;
+	size_t m_out;
+	size_t m_in;
+	volatile size_t m_len;
 	volatile bool m_abort;
 };

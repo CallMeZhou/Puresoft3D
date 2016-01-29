@@ -34,11 +34,11 @@ USERDATABUFFERS* PuresoftUserDataManager::setUserDataBytes(size_t bytes)
 	{
 		setUserDataBytes(0);
 
-		m_userDataBytes = ((bytes * 8 + 127) / 128) * 16;
+		m_buffers.unitBytes = m_userDataBytes = ((bytes * 8 + 127) / 128) * 16;
 
 		size_t bufferCount = 
 			3 +							// 3 vertices
-			2 +							// 2 tempInterps
+			2 * m_cores +				// 2 interpTemps
 			1 * m_cores +				// 1 fragment processor input for each threads
 			MAX_FRAGTASKS * 2 * m_cores;// 1 task queue (queue length is MAX_FRAGTASKS) for each threads
 										// 2 buffers for each task
@@ -50,11 +50,12 @@ USERDATABUFFERS* PuresoftUserDataManager::setUserDataBytes(size_t bytes)
 
 		m_buffers.verts = (void*)pool;
 		pool += m_userDataBytes * 3;
-		m_buffers.tempInterp = (void*)pool;
-		pool += m_userDataBytes * 2;
 
 		for(size_t i = 0; i < m_cores; i++)
 		{
+			m_buffers.interpTemps[i] = (void*)pool;
+			pool += m_userDataBytes * 2;
+
 			m_buffers.fragInputs[i] = (void*)pool;
 			pool += m_userDataBytes;
 
