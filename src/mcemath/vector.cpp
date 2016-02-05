@@ -60,11 +60,20 @@ extern "C" MCEMATHAPI(float) mcemaths_dot_3_4(const float* v4_1, const float* v4
 		mov		eax,	v4_2
 		movaps	xmm1,	[eax]
 		mulps	xmm0,	xmm1		; multiply four floats
-		movhlps	xmm1,	xmm0
-		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
-		movaps	xmm1,	xmm0
-		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
-		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; for SS3 processor
+		haddps	xmm0,	xmm0
+		haddps	xmm0,	xmm0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; alternative version for non-SSE3 processor
+;		movhlps	xmm1,	xmm0
+;		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
+;		movaps	xmm1,	xmm0
+;		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
+;		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 		lea		eax,	result
 		movaps	[eax],	xmm0
 	}
@@ -161,15 +170,25 @@ extern "C" MCEMATHAPI(float) mcemaths_len_3_4(const float* v4)
 		mov		eax,	v4
 		movaps	xmm0,	[eax]
 		mulps	xmm0,	xmm0		; multiply four floats
-		movhlps	xmm1,	xmm0
-		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
-		movaps	xmm1,	xmm0
-		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
-		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; for SS3 processor
+		haddps	xmm0,	xmm0
+		haddps	xmm0,	xmm0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; alternative version for non-SSE3 processor
+;		movhlps	xmm1,	xmm0
+;		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
+;		movaps	xmm1,	xmm0
+;		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
+;		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		sqrtss	xmm0,	xmm0
 		lea		eax,	result
 		movaps	[eax],	xmm0
 	}
-	return sqrt(*result);
+	return result[0];
 }
 
 extern "C" MCEMATHAPI(void) mcemaths_norm_3_4(float* v4)
@@ -180,11 +199,18 @@ extern "C" MCEMATHAPI(void) mcemaths_norm_3_4(float* v4)
 		movaps	xmm0,	[eax]
 		movaps	xmm2,	xmm0
 		mulps	xmm0,	xmm0		; multiply four floats
-		movhlps	xmm1,	xmm0
-		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
-		movaps	xmm1,	xmm0
-		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
-		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; for SS3 processor
+		haddps	xmm0,	xmm0
+		haddps	xmm0,	xmm0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; alternative version for non-SSE3 processor
+;		movhlps	xmm1,	xmm0
+;		addps	xmm0,	xmm1		; [0]=[0]+[2] and [1]=[1]+[3]
+;		movaps	xmm1,	xmm0
+;		shufps	xmm1,	xmm1,	0x1	; xmm1[0] = [1]
+;		addps	xmm0,	xmm1		; xmm0[0] = [0]+[1]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 		rsqrtss	xmm0,	xmm0
 		shufps	xmm0,	xmm0,	0x0	; make 4 copies of the sqrt
 		mulps	xmm2,	xmm0

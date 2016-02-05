@@ -9,23 +9,15 @@ PuresoftProcessor::PuresoftProcessor(createProcessorInstance vpc, createProcesso
 {
 	m_userDataBytes = userDataBytes;
 	m_vertProc = (PuresoftVertexProcessor*)vpc();
-
-	for(size_t i = 0; i < MAX_FRAG_PIPES; i++)
-	{
-		m_interpProc[i] = (PuresoftInterpolationProcessor*)ipc();
-		m_fragProc[i] = (PuresoftFragmentProcessor*)fpc();
-	}
+	m_interpProc = (PuresoftInterpolationProcessor*)ipc();
+	m_fragProc = (PuresoftFragmentProcessor*)fpc();
 }
 
 PuresoftProcessor::~PuresoftProcessor()
 {
 	m_vertProc->release();
-
-	for(size_t i = 0; i < MAX_FRAG_PIPES; i++)
-	{
-		m_interpProc[i]->release();
-		m_fragProc[i]->release();
-	}
+	m_interpProc->release();
+	m_fragProc->release();
 }
 
 size_t PuresoftProcessor::getUserDataBytes() const
@@ -38,22 +30,12 @@ PuresoftVertexProcessor* PuresoftProcessor::getVertProc(void)
 	return m_vertProc;
 }
 
-PuresoftInterpolationProcessor* PuresoftProcessor::getInterpProc(int idx)
+PuresoftInterpolationProcessor* PuresoftProcessor::getInterpProc(void)
 {
-	if(idx < 0 || idx >= MAX_FRAG_PIPES)
-	{
-		throw out_of_range("PuresoftProcessor::getInterpProc");
-	}
-
-	return m_interpProc[idx];
+	return m_interpProc;
 }
 
-PuresoftFragmentProcessor* PuresoftProcessor::getFragProc(int idx)
+PuresoftFragmentProcessor* PuresoftProcessor::getFragProc(void)
 {
-	if(idx < 0 || idx >= MAX_FRAG_PIPES)
-	{
-		throw out_of_range("PuresoftProcessor::getInterpProc");
-	}
-
-	return m_fragProc[idx];
+	return m_fragProc;
 }

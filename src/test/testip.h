@@ -13,7 +13,7 @@ public:
 	~MyTestInterpolationProcessor(void);
 
 	void release(void);
-	void interpolateByContributes(void* interpolatedUserData, const void* vertexUserData, const float* correctedContributes);
+	void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes);
 	void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount);
 	void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2);
 };

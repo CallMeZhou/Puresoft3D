@@ -5,20 +5,29 @@
 
 using namespace std;
 
-PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen)
+PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown /* = false */, void* externalBuffer /* = NULL */)
 {
+	m_topDown = topDown;
 	m_width = width;
 	m_scanline = scanline;
 	m_height = height;
 	m_elemLen = elemLen;
 
 	m_bytes = m_scanline * m_height;
-	if(NULL == (m_buffer = _aligned_malloc(m_bytes, 64)))
+
+	if(externalBuffer)
 	{
-		throw bad_alloc("PuresoftFBO::PuresoftFBO");
+		m_isExternalBuffer = true;
+		m_buffer = externalBuffer;
+	}
+	else
+	{
+		m_isExternalBuffer = false;
+		m_buffer = NULL;
+		setBuffer();
 	}
 
-	for(size_t i = 0; i < MAX_WORKRANGES; i++)
+	for(size_t i = 0; i < MAX_FRAGTHREADS; i++)
 	{
 		m_workRanges[i].curRowEntry = 0;
 		m_workRanges[i].writePoint = m_buffer;
@@ -28,18 +37,27 @@ PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int
 
 PuresoftFBO::~PuresoftFBO(void)
 {
-	_aligned_free(m_buffer);
+	if(!m_isExternalBuffer && m_buffer)
+	{
+		_aligned_free(m_buffer);
+	}
 }
 
 void PuresoftFBO::setCurRow(int idx, unsigned int row)
 {
-	m_workRanges[idx].curRowEntry = row * m_scanline;
+	if(m_topDown)
+		m_workRanges[idx].curRowEntry = (m_height - row - 1) * m_scanline;
+	else
+		m_workRanges[idx].curRowEntry = row * m_scanline;
 	m_workRanges[idx].writePoint = (char*)m_buffer + m_workRanges[idx].curRowEntry;
 }
 
 void PuresoftFBO::nextRow(int idx)
 {
-	m_workRanges[idx].curRowEntry += m_scanline;
+	if(m_topDown)
+		m_workRanges[idx].curRowEntry -= m_scanline;
+	else
+		m_workRanges[idx].curRowEntry += m_scanline;
 	m_workRanges[idx].writePoint = (char*)m_buffer + m_workRanges[idx].curRowEntry;
 }
 
@@ -136,6 +154,31 @@ lup:	movaps	[edx],	xmm0
 		add		edx,	16
 		dec		ecx
 		jnz		lup
+	}
+}
+
+void PuresoftFBO::setBuffer(void* externalBuffer /* = NULL */)
+{
+	if(externalBuffer)
+	{
+		if(!m_isExternalBuffer && m_buffer)
+		{
+			_aligned_free(m_buffer);
+		}
+
+		m_isExternalBuffer = true;
+		m_buffer = externalBuffer;
+	}
+	else
+	{
+		if(m_isExternalBuffer || !m_buffer)
+		{
+			m_isExternalBuffer = false;
+			if(NULL == (m_buffer = _aligned_malloc(m_bytes, 64)))
+			{
+				throw bad_alloc("PuresoftFBO::PuresoftFBO");
+			}
+		}
 	}
 }
 

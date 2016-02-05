@@ -14,8 +14,5 @@ public:
 
 	void release(void);
 	void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures);
-
-private:
-	RGBQUAD m_singleColour;
 };
 

@@ -1,73 +1,47 @@
-#include <stdlib.h>
 #include <memory.h>
-#include <assert.h>
-#include "udm.h"
+#include "pipeline.h"
 
-PuresoftUserDataManager::PuresoftUserDataManager(size_t cores)
-{
-	assert(cores <= MAX_FRAGTHREADS);
-	m_cores = cores;
-	m_pool = NULL;
-	m_userDataBytes = 0;
-	memset(&m_buffers, 0, sizeof(m_buffers));
-}
-
-PuresoftUserDataManager::~PuresoftUserDataManager(void)
-{
-	setUserDataBytes(0);
-}
-
-USERDATABUFFERS* PuresoftUserDataManager::setUserDataBytes(size_t bytes)
+void PuresoftPipeline::setUserDataBytes(size_t bytes)
 {
 	if(0 == bytes)
 	{
-		if(m_pool)
+		if(m_userDataPool)
 		{
-			_aligned_free(m_pool);
-			m_pool = NULL;
+			_aligned_free(m_userDataPool);
+			m_userDataPool = NULL;
 		}
-
-		memset(&m_buffers, 0, sizeof(m_buffers));
-		m_userDataBytes = 0;
 	}
-	else if(m_userDataBytes < bytes)
+	else if(m_userDataBuffers.unitBytes < bytes)
 	{
 		setUserDataBytes(0);
 
-		m_buffers.unitBytes = m_userDataBytes = ((bytes * 8 + 127) / 128) * 16;
+		m_userDataBuffers.unitBytes = ((bytes * 8 + 512) / 512) * 64;
 
 		size_t bufferCount = 
-			3 +							// 3 vertices
-			2 * m_cores +				// 2 interpTemps
-			1 * m_cores +				// 1 fragment processor input for each threads
-			MAX_FRAGTASKS * 2 * m_cores;// 1 task queue (queue length is MAX_FRAGTASKS) for each threads
-										// 2 buffers for each task
+			3 +										// 3 vertices
+			2 * m_numberOfThreads +					// 2 interpTemps
+			1 * m_numberOfThreads +					// 1 fragment processor input for each threads
+			MAX_FRAGTASKS * 2 * m_numberOfThreads;	// 1 task queue (queue length is MAX_FRAGTASKS) for each threads and
+													// 2 buffers for each task
 
-		size_t totalBytes = bufferCount * m_userDataBytes;
+		size_t totalBytes = bufferCount * m_userDataBuffers.unitBytes;
 
-		m_pool = _aligned_malloc(totalBytes, 16);
-		uintptr_t pool = (uintptr_t)m_pool;
+		m_userDataPool = _aligned_malloc(totalBytes, 16);
+		uintptr_t pool = (uintptr_t)m_userDataPool;
 
-		m_buffers.verts = (void*)pool;
-		pool += m_userDataBytes * 3;
+		m_userDataBuffers.verts = (void*)pool;
+		pool += m_userDataBuffers.unitBytes * 3;
 
-		for(size_t i = 0; i < m_cores; i++)
+		for(int i = 0; i < m_numberOfThreads; i++)
 		{
-			m_buffers.interpTemps[i] = (void*)pool;
-			pool += m_userDataBytes * 2;
+			m_userDataBuffers.interpTemps[i] = (void*)pool;
+			pool += m_userDataBuffers.unitBytes * 2;
 
-			m_buffers.fragInputs[i] = (void*)pool;
-			pool += m_userDataBytes;
+			m_userDataBuffers.fragInputs[i] = (void*)pool;
+			pool += m_userDataBuffers.unitBytes;
 
-			m_buffers.taskQueues[i] = (void*)pool;
-			pool += MAX_FRAGTASKS * 2 * m_userDataBytes;
+			m_userDataBuffers.taskQueues[i] = (void*)pool;
+			pool += MAX_FRAGTASKS * 2 * m_userDataBuffers.unitBytes;
 		}
 	}
-
-	return &m_buffers;
-}
-
-USERDATABUFFERS* PuresoftUserDataManager::getBuffers(void)
-{
-	return &m_buffers;
 }

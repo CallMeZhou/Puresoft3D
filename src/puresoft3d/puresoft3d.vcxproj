@@ -85,6 +85,8 @@
       <ObjectFileName>$(IntDir)\</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)\</XMLDocumentationFileName>
       <BrowseInformationFile>$(IntDir)\</BrowseInformationFile>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -107,21 +109,28 @@
     <ClInclude Include="proc.h" />
     <ClInclude Include="rasterizer.h" />
     <ClInclude Include="rinque.h" />
+    <ClInclude Include="rndr.h" />
+    <ClInclude Include="rndrddraw.h" />
+    <ClInclude Include="rndrgdi.h" />
     <ClInclude Include="samplr2d.h" />
-    <ClInclude Include="udm.h" />
     <ClInclude Include="vao.h" />
     <ClInclude Include="vbo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="drawvao.cpp" />
     <ClCompile Include="fbo.cpp" />
+    <ClCompile Include="fragthrd.cpp" />
     <ClCompile Include="interp.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="proc.cpp" />
     <ClCompile Include="rasterizer.cpp" />
+    <ClCompile Include="rndrddraw.cpp" />
+    <ClCompile Include="rndrgdi.cpp" />
     <ClCompile Include="samplr2d.cpp" />
     <ClCompile Include="udm.cpp" />
     <ClCompile Include="vao.cpp" />
     <ClCompile Include="vbo.cpp" />
+    <ClCompile Include="vertthrd.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

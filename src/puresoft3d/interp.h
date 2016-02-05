@@ -8,7 +8,7 @@ public:
 	struct INTERPOLATIONSTARTSTEP
 	{
 		PuresoftInterpolationProcessor* proc;
-		const void* vertexUserData;
+		const void* vertexUserData[3];
 		const int* vertices;
 		const float* reciprocalWs;
 		const float* projectedZs;

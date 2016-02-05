@@ -36,11 +36,10 @@ typedef struct
 	void* user;
 } FragmentProcessorInput;
 
-typedef struct
+class FragmentProcessorOutput
 {
-	void* data[MAX_FBOS];
-	size_t dataSizes[MAX_FBOS];
-} FragmentProcessorOutput;
+public: virtual void write(int index, const void* data, size_t bytes) = 0;
+};
 
 class PuresoftVertexProcessor : public align_base_64
 {
@@ -53,7 +52,7 @@ class PuresoftInterpolationProcessor : public align_base_64
 {
 public:
 	virtual void release(void) = 0;
-	virtual void interpolateByContributes(void* interpolatedUserData, const void* vertexUserData, const float* correctedContributes) = 0;
+	virtual void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) = 0;
 	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) = 0;
 	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) = 0;
 };
@@ -70,19 +69,16 @@ typedef void* (_stdcall *createProcessorInstance)(void);
 class PuresoftProcessor
 {
 public:
-	static const size_t MAX_FRAG_PIPES = 8;
-
-public:
 	PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, size_t userDataBytes);
 	~PuresoftProcessor();
 	size_t getUserDataBytes(void) const;
 	PuresoftVertexProcessor* getVertProc(void);
-	PuresoftInterpolationProcessor* getInterpProc(int idx);
-	PuresoftFragmentProcessor* getFragProc(int idx);
+	PuresoftInterpolationProcessor* getInterpProc(void);
+	PuresoftFragmentProcessor* getFragProc(void);
 
 private:
 	size_t m_userDataBytes;
 	PuresoftVertexProcessor* m_vertProc;
-	PuresoftInterpolationProcessor* m_interpProc[MAX_FRAG_PIPES];
-	PuresoftFragmentProcessor* m_fragProc[MAX_FRAG_PIPES];
+	PuresoftInterpolationProcessor* m_interpProc;
+	PuresoftFragmentProcessor* m_fragProc;
 };

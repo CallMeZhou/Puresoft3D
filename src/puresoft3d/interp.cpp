@@ -33,28 +33,42 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	integerBasedLineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], params->rightColumn, params->row, contributesForRight);
 
 	// calculate interpolated ext-values for left and right end of scanline
-	__declspec(align(16)) float correctedContributes[4];
-	mcemaths_quatcpy(correctedContributes, contributesForLeft);
-	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	params->proc->interpolateByContributes(params->interpolatedUserDataStart, params->vertexUserData, correctedContributes);
-	mcemaths_quatcpy(correctedContributes, contributesForRight);
-	mcemaths_mulvec_3_4(correctedContributes, params->reciprocalWs);
-	params->proc->interpolateByContributes(params->interpolatedUserDataStep, params->vertexUserData, correctedContributes);
+	__declspec(align(16)) float correctedContributesForLeft[4], correctedContributesForRight[4];
+	mcemaths_quatcpy(correctedContributesForLeft, contributesForLeft);
+	mcemaths_quatcpy(correctedContributesForRight, contributesForRight);
+	mcemaths_mulvec_3_4(correctedContributesForLeft, params->reciprocalWs);
+	mcemaths_mulvec_3_4(correctedContributesForRight, params->reciprocalWs);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStart, params->vertexUserData, correctedContributesForLeft);
+	params->proc->interpolateByContributes(params->interpolatedUserDataStep, params->vertexUserData, correctedContributesForRight);
 	int stepCount = params->rightColumn - params->leftColumn;
 	params->proc->calcStep(params->interpolatedUserDataStep, params->interpolatedUserDataStart, params->interpolatedUserDataStep, stepCount);
 
 	float reciprocalScanlineLength = 1.0f / (float)stepCount;
 
-	__declspec(align(16)) float projZsWithcorrectionFactor1[4];
-	mcemaths_quatcpy(projZsWithcorrectionFactor1, params->projectedZs);
-	mcemaths_mulvec_3_4(projZsWithcorrectionFactor1, params->reciprocalWs);
-	params->projectedZStart = mcemaths_dot_3_4(contributesForLeft, projZsWithcorrectionFactor1);
-	params->projectedZStep = mcemaths_dot_3_4(contributesForRight, projZsWithcorrectionFactor1);
-	params->projectedZStep = (params->projectedZStep - params->projectedZStart) * reciprocalScanlineLength;
+	params->projectedZStart = mcemaths_dot_3_4(correctedContributesForLeft, params->projectedZs);
+	params->projectedZStep  = mcemaths_dot_3_4(correctedContributesForRight, params->projectedZs);
+	params->projectedZStep  = (params->projectedZStep - params->projectedZStart) * reciprocalScanlineLength;
 
 	// calculate perspective correction factor 2
-	params->correctionFactor2Start = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
-	params->correctionFactor2Step = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
+	__declspec(align(16)) float temp[4];
+	__asm{
+		lea		eax,	correctedContributesForLeft
+		lea		edx,	temp
+		movaps	xmm0,	[eax]
+		haddps	xmm0,	xmm0
+		haddps	xmm0,	xmm0
+		lea		eax,	correctedContributesForRight
+		movaps	xmm1,	[eax]
+		haddps	xmm1,	xmm1
+		haddps	xmm1,	xmm1
+		movss	xmm1,	xmm0
+		movaps	[edx],	xmm1
+	}
+	params->correctionFactor2Start = temp[0];
+	params->correctionFactor2Step = temp[2];
+// the 2 lines below are replaced by the above asm code, but...
+//	params->correctionFactor2Start = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
+//	params->correctionFactor2Step = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
 	params->correctionFactor2Step = (params->correctionFactor2Step - params->correctionFactor2Start) * reciprocalScanlineLength;
 }
 

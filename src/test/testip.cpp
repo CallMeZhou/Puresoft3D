@@ -21,10 +21,12 @@ void MyTestInterpolationProcessor::release()
 	delete this;
 }
 
-void MyTestInterpolationProcessor::interpolateByContributes(void* interpolatedUserData, const void* vertexUserData, const float* correctedContributes)
+void MyTestInterpolationProcessor::interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes)
 {
 	MYTESTPROCDATA temp[3];
-	memcpy(&temp, vertexUserData, sizeof(MYTESTPROCDATA) * 3);
+	memcpy(temp,     vertexUserData[0], sizeof(MYTESTPROCDATA));
+	memcpy(temp + 1, vertexUserData[1], sizeof(MYTESTPROCDATA));
+	memcpy(temp + 2, vertexUserData[2], sizeof(MYTESTPROCDATA));
 
 	mcemaths_mul_3_4(temp[0].normal, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].worldPos, correctedContributes[0]);

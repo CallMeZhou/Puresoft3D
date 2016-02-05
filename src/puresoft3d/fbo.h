@@ -1,4 +1,6 @@
 #pragma once
+#include <stddef.h>
+#include "config.h"
 
 class PuresoftFBO
 {
@@ -9,10 +11,8 @@ public:
 		void* writePoint;
 	};
 
-	static const size_t MAX_WORKRANGES = 16;
-
 public:
-	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen);
+	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL);
 	~PuresoftFBO(void);
 
 	void setCurRow(int idx, unsigned int row);
@@ -31,6 +31,7 @@ public:
 	void clear4(const void* data);
 	void clear16(const void* dataAligned16Bytes);
 
+	void setBuffer(void* externalBuffer = NULL);
 	void* getBuffer(void);
 	const void* getBuffer(void) const;
 
@@ -40,12 +41,14 @@ public:
 	unsigned int getElemLen(void) const;
 
 private:
+	bool m_topDown;
 	unsigned int m_width;
 	unsigned int m_scanline;
 	unsigned int m_height;
 	unsigned int m_elemLen;
 	size_t m_bytes;
 	void* m_buffer;
+	bool m_isExternalBuffer;
 
-	WORKRANGE m_workRanges[MAX_WORKRANGES];
+	WORKRANGE m_workRanges[MAX_FRAGTHREADS];
 };

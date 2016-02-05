@@ -27,12 +27,14 @@ void MyTestFragmentProcessor::release()
 RGBQUAD ambience = {10, 10, 10, 0};
 void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures)
 {
+	RGBQUAD outputColour;
+
 	const float* lightPos = (const float*)uniforms[4];
 	const float* cameraPos = (const float*)uniforms[5];
 	int diffuse = *(const int*)uniforms[6];
 
 	const MYTESTPROCDATA* inData = (const MYTESTPROCDATA*)input->user;
-	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &m_singleColour);
+	((PuresoftSampler2D*)textures[diffuse])->get4(inData->texcoord[0], inData->texcoord[1], &outputColour);
 
 	vec4 L;
 	mcemaths_sub_3_4(L, lightPos, inData->worldPos);
@@ -55,14 +57,13 @@ void MyTestFragmentProcessor::process(const FragmentProcessorInput* input, Fragm
 
 	int specularColour = (int)(255.0f * specular * 0.5f);
 
-	int red = (m_singleColour.rgbRed + specularColour) * lambert + m_singleColour.rgbRed / 10;
-	int green = (m_singleColour.rgbGreen + specularColour) * lambert + m_singleColour.rgbGreen / 10;
-	int blue = (m_singleColour.rgbBlue + specularColour) * lambert + m_singleColour.rgbBlue / 10;
+	int red = (outputColour.rgbRed + specularColour) * lambert + outputColour.rgbRed / 10;
+	int green = (outputColour.rgbGreen + specularColour) * lambert + outputColour.rgbGreen / 10;
+	int blue = (outputColour.rgbBlue + specularColour) * lambert + outputColour.rgbBlue / 10;
 
-	m_singleColour.rgbRed = min(red, 255);
-	m_singleColour.rgbGreen = min(green, 255);
-	m_singleColour.rgbBlue = min(blue, 255);
+	outputColour.rgbRed = min(red, 255);
+	outputColour.rgbGreen = min(green, 255);
+	outputColour.rgbBlue = min(blue, 255);
 
-	output->data[0] = &m_singleColour;
-	output->dataSizes[0] = sizeof(RGBQUAD);
+	output->write(0, &outputColour, sizeof(outputColour));
 }
