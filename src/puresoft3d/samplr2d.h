@@ -12,9 +12,14 @@ public:
 
 private:
 	const char* m_buffer;
+	const char** m_rowEntries;
+	unsigned int m_width;
+	unsigned int m_scanline;
+	unsigned int m_height;
+	unsigned int m_elemLen;
 	__declspec(align(16)) float m_rasterizingFactors[4];
 	__declspec(align(16)) float m_locatingFactors[4];
 
-	inline size_t locate(float texcoordX, float texcoordY) const;
+	inline const char* locate(float texcoordX, float texcoordY) const;
 };
 

@@ -1,5 +1,10 @@
 #pragma once
-#include <windows.h> // for CriticalSection
+#include <windows.h>
+
+#define YIELD_CPU SwitchToThread()
+//#define YIELD_CPU Sleep(0)
+//#define YIELD_CPU YieldProcessor()
+//#define YIELD_CPU
 
 template<class T, size_t LEN>
 class RingQueueMT
@@ -40,6 +45,8 @@ public:
 				{
 					return false;
 				}
+
+				YIELD_CPU;
 			}
 			else
 			{
@@ -73,6 +80,8 @@ public:
 				{
 					return false;
 				}
+
+				YIELD_CPU;
 			}
 			else
 			{
@@ -106,6 +115,8 @@ public:
 				{
 					return NULL;
 				}
+
+				YIELD_CPU;
 			}
 			else
 			{
@@ -141,6 +152,8 @@ public:
 				{
 					return NULL;
 				}
+
+				YIELD_CPU;
 			}
 			else
 			{
