@@ -26,7 +26,6 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 	, m_renderer(NULL)
 {
 	assert(m_numberOfThreads <= MAX_FRAGTHREADS);
-	memset(m_textures, 0, sizeof(m_textures));
 	memset(m_uniforms, 0, sizeof(m_uniforms));
 	memset(m_fbos, 0, sizeof(m_fbos));
 	memset(&m_userDataBuffers, 0, sizeof(m_userDataBuffers));
@@ -70,6 +69,14 @@ PuresoftPipeline::~PuresoftPipeline(void)
 	}
 
 	delete[] m_fragTaskQueues;
+	
+	for(FBOPOOL::iterator i = m_texPool.begin(); i != m_texPool.end(); i++)
+	{
+		if(*i)
+		{
+			delete *i;
+		}
+	}
 
 	for(int i = 0; i < MAX_UNIFORMS; i++)
 	{
@@ -84,16 +91,6 @@ PuresoftPipeline::~PuresoftPipeline(void)
 	m_renderer->shutdown();
 	m_renderer->release();
 	delete m_display;
-}
-
-void PuresoftPipeline::setTexture(int idx, void* sampler)
-{
-	if(idx < 0 || idx >= MAX_TEXTURES)
-	{
-		throw std::out_of_range("PuresoftPipeline::setTexture");
-	}
-
-	m_textures[idx] = sampler;
 }
 
 void PuresoftPipeline::setViewport(uintptr_t canvasWindow)

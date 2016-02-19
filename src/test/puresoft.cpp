@@ -30,6 +30,8 @@ const float PI = 3.1415927f;
 mat4 proj, view, model;
 PuresoftVAO vao1, vao2;
 
+int tex;
+
 int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -84,8 +86,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	pipeline.setUniform(4, &lightPos, sizeof(lightPos));
 	vec4 cameraPos;
 	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));
-	int diffuseTex = 0;
-	pipeline.setUniform(6, &diffuseTex, sizeof(diffuseTex));
 	//	HOBJXIO objx = open_objx(_T("box.objx"));
 	//	HOBJXIO objx = open_objx(_T("sphere1.objx"));
 	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
@@ -142,8 +142,11 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	Rect r(0, 0, diffusePic->GetWidth(), diffusePic->GetHeight());
 	BitmapData bmpdata;
 	diffusePic->LockBits(&r, ImageLockModeRead, PixelFormat32bppRGB, &bmpdata);
-	PuresoftSampler2D diffuseSmplr(bmpdata.Width, bmpdata.Stride, bmpdata.Height, 4, bmpdata.Scan0);
-	pipeline.setTexture(0, &diffuseSmplr);
+	tex = pipeline.createTexture(bmpdata.Width, bmpdata.Stride, bmpdata.Height, 4, bmpdata.Scan0);
+	diffusePic->UnlockBits(&bmpdata);
+	delete diffusePic;
+
+	pipeline.setUniform(6, &tex, sizeof(tex));
 
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
@@ -198,8 +201,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		}
 	}
 
-	diffusePic->UnlockBits(&bmpdata);
-	delete diffusePic;
 	GdiplusShutdown(gdiplusToken);
 	return (int) msg.wParam;
 }

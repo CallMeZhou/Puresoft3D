@@ -112,7 +112,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				pThis->m_depth.write4(threadIndex, &newDepth);
 
 				// go ahead with Fragment Processor (fbos are updated meanwhile)
-				pThis->m_processor->getFragProc()->process(&fragInput, &fragOutput, (const void**)pThis->m_uniforms, (const void**)pThis->m_textures);
+				pThis->m_processor->getFragProc()->process(&fragInput, &fragOutput, (const void**)pThis->m_uniforms, (const void**)&pThis->m_texPool[0]);
 			}
 
 			// move fbo data pointers

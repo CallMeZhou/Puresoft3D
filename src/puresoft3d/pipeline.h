@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "config.h"
 #include "mcemaths.hpp"
 #include "vao.h"
@@ -8,6 +9,7 @@
 #include "rasterizer.h"
 #include "rinque.h"
 #include "rndr.h"
+#include "samplr2d.h"
 
 typedef struct
 {
@@ -40,7 +42,8 @@ public:
 	~PuresoftPipeline(void);
 
 	// resource
-	void setTexture(int idx, void* sampler);
+	int  createTexture(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, void* content);
+	void destroyTexture(int idx);
 
 	// draw
 	void setRenderer(PuresoftRenderer* rndr);
@@ -60,7 +63,6 @@ private:
 	int m_width;
 	int m_height;
 	uintptr_t m_canvasWindow;
-	void* m_textures[MAX_TEXTURES];
 	void* m_uniforms[MAX_UNIFORMS];
 	PuresoftProcessor* m_processor;
 	PuresoftInterpolater m_interpolater;
@@ -69,6 +71,11 @@ private:
 	PuresoftFBO m_depth;
 	PuresoftFBO* m_display;
 	PuresoftRenderer* m_renderer;
+
+// textures
+private:
+	typedef std::vector<PuresoftFBO*> FBOPOOL;
+	FBOPOOL m_texPool;
 
 // user data buffer management
 private:

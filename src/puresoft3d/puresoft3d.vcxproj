@@ -127,6 +127,7 @@
     <ClCompile Include="rndrddraw.cpp" />
     <ClCompile Include="rndrgdi.cpp" />
     <ClCompile Include="samplr2d.cpp" />
+    <ClCompile Include="tex.cpp" />
     <ClCompile Include="udm.cpp" />
     <ClCompile Include="vao.cpp" />
     <ClCompile Include="vbo.cpp" />
