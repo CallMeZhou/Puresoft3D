@@ -20,17 +20,18 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 	: m_width(width)
 	, m_height(height)
 	, m_canvasWindow(canvasWindow)
+	, m_currentProcessor(-1)
 	, m_rasterizer(width, height)
 	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
 	, m_userDataPool(NULL)
 	, m_renderer(NULL)
 {
 	assert(m_numberOfThreads <= MAX_FRAGTHREADS);
+	memset(m_processors, 0, sizeof(m_processors));
 	memset(m_textures, 0, sizeof(m_textures));
 	memset(m_uniforms, 0, sizeof(m_uniforms));
 	memset(m_fbos, 0, sizeof(m_fbos));
 	memset(&m_userDataBuffers, 0, sizeof(m_userDataBuffers));
-	m_processor = NULL;
 
 	if(rndr)
 	{
@@ -71,7 +72,7 @@ PuresoftPipeline::~PuresoftPipeline(void)
 
 	delete[] m_fragTaskQueues;
 
-	for(int i = 0; i < MAX_UNIFORMS; i++)
+	for(size_t i = 0; i < MAX_UNIFORMS; i++)
 	{
 		if(m_uniforms[i])
 		{
@@ -81,19 +82,17 @@ PuresoftPipeline::~PuresoftPipeline(void)
 
 	setUserDataBytes(0);
 
+	for(size_t i = 0; i < MAX_PROCS; i++)
+	{
+		if(m_processors[i])
+		{
+			delete m_processors[i];
+		}
+	}
+
 	m_renderer->shutdown();
 	m_renderer->release();
 	delete m_display;
-}
-
-void PuresoftPipeline::setTexture(int idx, void* sampler)
-{
-	if(idx < 0 || idx >= MAX_TEXTURES)
-	{
-		throw std::out_of_range("PuresoftPipeline::setTexture");
-	}
-
-	m_textures[idx] = sampler;
 }
 
 void PuresoftPipeline::setViewport(uintptr_t canvasWindow)
@@ -116,11 +115,29 @@ void PuresoftPipeline::setRenderer(PuresoftRenderer* rndr)
 	}
 }
 
-void PuresoftPipeline::setProcessor(PuresoftProcessor* proc)
+void PuresoftPipeline::setProcessor(int idx, PuresoftProcessor* proc)
 {
-	m_processor = proc;
+	if(idx < 0 || idx >= MAX_PROCS)
+	{
+		throw std::out_of_range("PuresoftPipeline::setProcessor");
+	}
 
-	setUserDataBytes(m_processor->getUserDataBytes());
+	if()
+	size_t current = -1;
+	for(size_t i = 0; i < MAX_PROCS; i++)
+	{
+		if(!m_processors[i])
+		{
+			m_processors[current = i] = proc;
+		}
+	}
+
+	if(-1 == current)
+	{
+		throw bad_exception("PuresoftPipeline::setProcessor");
+	}
+
+	setUserDataBytes(m_processors[current]->getUserDataBytes());
 
 	class prep
 	{

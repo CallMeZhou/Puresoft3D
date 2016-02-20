@@ -8,7 +8,7 @@ bool PuresoftPipeline::processVertices(PuresoftVBO** vbos, VertexProcessorOutput
 	for(int i = 0; i < 3; i++)
 	{
 		// collect element data from each available vbo
-		for(size_t j = 0; j < PuresoftVAO::MAX_VBOS; j++)
+		for(size_t j = 0; j < MAX_VBOS; j++)
 		{
 			if(vbos[j])
 			{

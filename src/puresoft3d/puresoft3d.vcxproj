@@ -102,7 +102,9 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="defs.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="defproc.h" />
     <ClInclude Include="fbo.h" />
     <ClInclude Include="interp.h" />
     <ClInclude Include="pipeline.h" />
@@ -117,6 +119,7 @@
     <ClInclude Include="vbo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="defproc.cpp" />
     <ClCompile Include="drawvao.cpp" />
     <ClCompile Include="fbo.cpp" />
     <ClCompile Include="fragthrd.cpp" />
@@ -127,6 +130,7 @@
     <ClCompile Include="rndrddraw.cpp" />
     <ClCompile Include="rndrgdi.cpp" />
     <ClCompile Include="samplr2d.cpp" />
+    <ClCompile Include="texldr.cpp" />
     <ClCompile Include="udm.cpp" />
     <ClCompile Include="vao.cpp" />
     <ClCompile Include="vbo.cpp" />

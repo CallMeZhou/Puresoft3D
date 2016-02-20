@@ -57,6 +57,12 @@
     <ClInclude Include="rndrddraw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="defproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -99,6 +105,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rndrddraw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="defproc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="texldr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

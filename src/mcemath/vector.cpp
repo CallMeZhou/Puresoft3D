@@ -328,6 +328,30 @@ extern "C" MCEMATHAPI(void) mcemaths_clamp_3_4(float* v4, float min, float max)
 	}
 }
 
+extern "C" MCEMATHAPI(void) mcemaths_floor_3_4(float* v4, float min)
+{
+	__asm{
+		mov		eax,	v4
+		movaps	xmm0,	[eax]
+		movss	xmm1,	min
+		shufps	xmm1,	xmm1,	0x00
+		maxps	xmm0,	xmm1
+		movaps	[eax],	xmm0
+	}
+}
+
+extern "C" MCEMATHAPI(void) mcemaths_ceiling_3_4(float* v4, float max)
+{
+	__asm{
+		mov		eax,	v4
+		movaps	xmm0,	[eax]
+		movss	xmm1,	max
+		shufps	xmm1,	xmm1,	0x00
+		minps	xmm0,	xmm1
+		movaps	[eax],	xmm0
+	}
+}
+
 ALIGN16 const float HALF_VECTOR[] = {0.5f, 0.5f, 0.5f, 0.5f};
 extern "C" MCEMATHAPI(void) mcemaths_line_centre(float* c4, float* r, const float* e4_1, const float* e4_2)
 {
@@ -475,4 +499,28 @@ extern "C" MCEMATHAPI(void) mcemaths_div_3(float* r4, float fac)
 	r4[0] *= fac;
 	r4[1] *= fac;
 	r4[2] *= fac;
+}
+
+extern "C" MCEMATHAPI(void) mcemaths_add_1to4(float* r4, float a)
+{
+	__asm{
+		mov		eax,	r4
+		movaps	xmm0,	[eax]
+		movss	xmm1,	a
+		shufps	xmm1,	xmm1,	0x00
+		addps	xmm0,	xmm1
+		movaps	[eax],	xmm0
+	}
+}
+
+extern "C" MCEMATHAPI(void) mcemaths_sub_4by1(float* r4, float a)
+{
+	__asm{
+		mov		eax,	r4
+		movaps	xmm0,	[eax]
+		movss	xmm1,	a
+		shufps	xmm1,	xmm1,	0x00
+		subps	xmm0,	xmm1
+		movaps	[eax],	xmm0
+	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "config.h"
+#include "defs.h"
 #include "mcemaths.hpp"
 #include "vao.h"
 #include "fbo.h"
@@ -9,26 +10,6 @@
 #include "rinque.h"
 #include "rndr.h"
 
-typedef struct
-{
-	union
-	{
-		struct
-		{
-			unsigned char bgra[4];
-		} ary;
-
-		struct
-		{
-			unsigned char b;
-			unsigned char g;
-			unsigned char r;
-			unsigned char a;
-		} elems;
-
-		unsigned int i32;
-	};
-} PURESOFTBGRA;
 const PURESOFTBGRA PURESOFTBGRA_BLACK = {0};
 
 class PuresoftProcessor;
@@ -40,14 +21,15 @@ public:
 	~PuresoftPipeline(void);
 
 	// resource
-	void setTexture(int idx, void* sampler);
-
-	// draw
+	void setTexture(int idx, const wchar_t* filepath);
 	void setRenderer(PuresoftRenderer* rndr);
 	void setViewport(uintptr_t canvasWindow);
-	void setProcessor(PuresoftProcessor* proc);
+	void setProcessor(int idx, PuresoftProcessor* proc);
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
+
+	// draw
+	void useProcessor();
 	void drawVAO(PuresoftVAO* vao);
 	void swapBuffers(void);
 
@@ -60,9 +42,10 @@ private:
 	int m_width;
 	int m_height;
 	uintptr_t m_canvasWindow;
-	void* m_textures[MAX_TEXTURES];
+	int m_currentProcessor;
 	void* m_uniforms[MAX_UNIFORMS];
-	PuresoftProcessor* m_processor;
+	PURESOFTIMGBUFF32 m_textures[MAX_TEXTURES];
+	PuresoftProcessor* m_processors[MAX_PROCS];
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
 	PuresoftFBO* m_fbos[MAX_FBOS];

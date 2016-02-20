@@ -139,6 +139,12 @@ MCEMATHAPI(void) mcemaths_div_3(float* r4, float fac);
 
 /* Clamp */
 MCEMATHAPI(void) mcemaths_clamp_3_4(float* v4, float min, float max);
+MCEMATHAPI(void) mcemaths_floor_3_4(float* v4, float min);
+MCEMATHAPI(void) mcemaths_ceiling_3_4(float* v4, float max);
+
+/* Misc. */
+MCEMATHAPI(void) mcemaths_add_1to4(float* r4, float a);
+MCEMATHAPI(void) mcemaths_sub_4by1(float* r4, float a);
 
 /************************************************************************/
 /*   matrix 4x4 (matrix are stored in column-major order)               */

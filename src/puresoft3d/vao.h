@@ -1,11 +1,9 @@
 #pragma once
+#include "config.h"
 #include "vbo.h"
 
 class PuresoftVAO
 {
-public:
-	static const size_t MAX_VBOS = 16;
-
 public:
 	PuresoftVAO(void);
 	~PuresoftVAO(void);
