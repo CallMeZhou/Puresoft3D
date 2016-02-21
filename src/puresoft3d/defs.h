@@ -26,5 +26,6 @@ typedef struct
 	unsigned int width;
 	unsigned int scanline;
 	unsigned int height;
-	void* buff;
+	unsigned int elemLen;
+	void* pixels;
 } PURESOFTIMGBUFF32;

@@ -85,15 +85,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="puresoft.cpp" />
-    <ClCompile Include="testfp.cpp" />
-    <ClCompile Include="testip.cpp" />
-    <ClCompile Include="testvp.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="testfp.h" />
-    <ClInclude Include="testip.h" />
-    <ClInclude Include="testpd.h" />
-    <ClInclude Include="testvp.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="earth.jpg" />

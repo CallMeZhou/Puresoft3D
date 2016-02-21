@@ -1,47 +1,25 @@
-#include <stdlib.h>
-#include <memory.h>
-#include <stdexcept>
 #include "samplr2d.h"
 
-PuresoftSampler2D::PuresoftSampler2D(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, const void* buffer)
+void PuresoftSampler2D::get(const PuresoftFBO* imageBuffer, float texcoordX, float texcoordY, void* data, size_t len)
 {
-	m_buffer = (const char*)buffer;
-	m_width = width;
-	m_height = height;
-	m_elemLen = elemLen;
-
-	if(NULL == (m_rowEntries = (const char**)malloc(sizeof(char*) * height)))
-	{
-		throw std::bad_alloc("PuresoftSampler2D::PuresoftSampler2D");
-	}
-
-	for(unsigned int i = 0; i < height; i++)
-	{
-		m_rowEntries[i] = m_buffer + i * scanline;
-	}
+	imageBuffer->directRead(
+		(unsigned int)((float)imageBuffer->getWidth()  * texcoordX + 0.5f), 
+		(unsigned int)((float)imageBuffer->getHeight() * texcoordY + 0.5f), 
+		data, len);
 }
 
-PuresoftSampler2D::~PuresoftSampler2D(void)
+void PuresoftSampler2D::get1(const PuresoftFBO* imageBuffer, float texcoordX, float texcoordY, void* data)
 {
-	free(m_rowEntries);
+	imageBuffer->directRead1(
+		(unsigned int)((float)imageBuffer->getWidth()  * texcoordX + 0.5f), 
+		(unsigned int)((float)imageBuffer->getHeight() * texcoordY + 0.5f), 
+		data);
 }
 
-void PuresoftSampler2D::get(float texcoordX, float texcoordY, void* data, size_t len) const
+void PuresoftSampler2D::get4(const PuresoftFBO* imageBuffer, float texcoordX, float texcoordY, void* data)
 {
-	memcpy(data, locate(texcoordX, texcoordY), len);
-}
-
-void PuresoftSampler2D::get4(float texcoordX, float texcoordY, void* data) const
-{
-	*(unsigned int*)data = *(const unsigned int*)locate(texcoordX, texcoordY);
-}
-
-const char* PuresoftSampler2D::locate(float texcoordX, float texcoordY) const
-{
-	unsigned int x = (size_t)((float)m_width * texcoordX), y = (size_t)((float)m_height * texcoordY);
-	if(x > m_width)
-		x = m_width;
-	if(y > m_height)
-		y = m_height;
-	return m_rowEntries[y] + x * m_elemLen;
+	imageBuffer->directRead4(
+		(unsigned int)((float)imageBuffer->getWidth()  * texcoordX + 0.5f), 
+		(unsigned int)((float)imageBuffer->getHeight() * texcoordY + 0.5f), 
+		data);
 }

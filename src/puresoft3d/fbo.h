@@ -7,7 +7,7 @@ class PuresoftFBO
 public:
 	__declspec(align(64)) struct WORKRANGE
 	{
-		size_t curRowEntry;
+		void* curRowEntry;
 		void* writePoint;
 	};
 
@@ -15,21 +15,36 @@ public:
 	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL);
 	~PuresoftFBO(void);
 
+	// sequential r/w
 	void setCurRow(int idx, unsigned int row);
 	void nextRow(int idx);
 	void setCurCol(int idx, unsigned int col);
 	void nextCol(int idx);
 	void read(int idx, void* data, size_t bytes) const;
 	void write(int idx, const void* data, size_t bytes);
+	void read1(int idx, void* data) const;
+	void write1(int idx, const void* data);
 	void read4(int idx, void* data) const;
 	void write4(int idx, const void* data);
 	void read16(int idx, void* dataAligned16Bytes) const;  // elemLen must be 16
 	void write16(int idx, const void* dataAligned16Bytes); // elemLen must be 16
 
+	// random r/w
+	void directRead(unsigned int row, unsigned int col, void* data, size_t bytes) const;
+	void directWrite(unsigned int row, unsigned int col, const void* data, size_t bytes); // not thread safe
+	void directRead1(unsigned int row, unsigned int col, void* data) const;
+	void directWrite1(unsigned int row, unsigned int col, const void* data); // not thread safe
+	void directRead4(unsigned int row, unsigned int col, void* data) const;
+	void directWrite4(unsigned int row, unsigned int col, const void* data); // not thread safe
+	void directRead16(unsigned int row, unsigned int col, void* dataAligned16Bytes) const; // elemLen must be 16
+	void directWrite16(unsigned int row, unsigned int col, const void* dataAligned16Bytes); // elemLen must be 16, not thread safe
+
 	// must accord with elemLen
 	void clear(const void* data, size_t bytes);
+	void clear1(const void* data);
 	void clear4(const void* data);
 	void clear16(const void* dataAligned16Bytes);
+	void clearToZero(void);
 
 	void setBuffer(void* externalBuffer = NULL);
 	void* getBuffer(void);
@@ -39,6 +54,7 @@ public:
 	unsigned int getHeight(void) const;
 	unsigned int getScanline(void) const;
 	unsigned int getElemLen(void) const;
+	size_t getBytes(void) const;
 
 private:
 	bool m_topDown;
@@ -48,6 +64,7 @@ private:
 	unsigned int m_elemLen;
 	size_t m_bytes;
 	void* m_buffer;
+	void** m_rowEntries;
 	bool m_isExternalBuffer;
 
 	WORKRANGE m_workRanges[MAX_FRAGTHREADS];

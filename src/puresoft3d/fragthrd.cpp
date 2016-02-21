@@ -59,7 +59,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 		int x1 = task->x1, x2 = task->x2, y = task->y;
 		fragInput.user = pThis->m_userDataBuffers.fragInputs[threadIndex];
 		fragInput.position[1] = y;
-		stepping.proc = pThis->m_processor->getInterpProc();
+		stepping.proc = pThis->m_ip;
 		stepping.interpolatedUserDataStart = pThis->m_userDataBuffers.interpTemps[threadIndex];
 		stepping.interpolatedUserDataStep = (void*)((size_t)stepping.interpolatedUserDataStart + pThis->m_userDataBuffers.unitBytes);
 		memcpy(stepping.interpolatedUserDataStart, task->userDataStart, pThis->m_userDataBuffers.unitBytes);
@@ -112,7 +112,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				pThis->m_depth.write4(threadIndex, &newDepth);
 
 				// go ahead with Fragment Processor (fbos are updated meanwhile)
-				pThis->m_processor->getFragProc()->process(&fragInput, &fragOutput, (const void**)pThis->m_uniforms, (const void**)pThis->m_textures);
+				pThis->m_fp->process(&fragInput, &fragOutput);
 			}
 
 			// move fbo data pointers

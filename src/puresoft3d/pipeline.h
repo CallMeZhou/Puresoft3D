@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "config.h"
 #include "defs.h"
 #include "mcemaths.hpp"
@@ -9,6 +10,7 @@
 #include "rasterizer.h"
 #include "rinque.h"
 #include "rndr.h"
+#include "samplr2d.h"
 
 const PURESOFTBGRA PURESOFTBGRA_BLACK = {0};
 
@@ -20,20 +22,25 @@ public:
 	PuresoftPipeline(uintptr_t canvasWindow, int width, int height, PuresoftRenderer* rndr = NULL);
 	~PuresoftPipeline(void);
 
-	// resource
-	void setTexture(int idx, const wchar_t* filepath);
+	// texture api
+	int  createTexture(const PURESOFTIMGBUFF32* image);
+	void getTexture(int idx, PURESOFTIMGBUFF32* image);
+	void destroyTexture(int idx);
+
+	// processor api
+	int  addProcessor(PuresoftProcessor* proc);
+	void destroyProcessor(int idx);
+	int  createProgramme(int vid, int iid, int fid);
+	void destroyProgramme(int idx);
+	void useProgramme(int idx);
+
+	// rendering api
 	void setRenderer(PuresoftRenderer* rndr);
 	void setViewport(uintptr_t canvasWindow);
-	void setProcessor(int idx, PuresoftProcessor* proc);
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
-
-	// draw
-	void useProcessor();
 	void drawVAO(PuresoftVAO* vao);
 	void swapBuffers(void);
-
-	// clear series
 	void clearDepth(float furthest = 1.0f);
 	void clearColour(PURESOFTBGRA bkgnd = PURESOFTBGRA_BLACK);
 
@@ -42,16 +49,28 @@ private:
 	int m_width;
 	int m_height;
 	uintptr_t m_canvasWindow;
-	int m_currentProcessor;
 	void* m_uniforms[MAX_UNIFORMS];
-	PURESOFTIMGBUFF32 m_textures[MAX_TEXTURES];
-	PuresoftProcessor* m_processors[MAX_PROCS];
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
 	PuresoftFBO* m_fbos[MAX_FBOS];
 	PuresoftFBO m_depth;
 	PuresoftFBO* m_display;
 	PuresoftRenderer* m_renderer;
+
+// processors
+	typedef std::vector<PuresoftProcessor*> PROCCOLL;
+	PROCCOLL m_processors;
+	typedef struct {int vp; int ip; int fp;} PURESOFTPROGRAMME;
+	typedef std::vector<PURESOFTPROGRAMME> PROGCOLL;
+	PROGCOLL m_programmes;
+	PuresoftVertexProcessor* m_vp;
+	PuresoftInterpolationProcessor* m_ip;
+	PuresoftFragmentProcessor* m_fp;
+
+// textures
+private:
+	typedef std::vector<PuresoftFBO*> FBOCOLL;
+	FBOCOLL m_texPool;
 
 // user data buffer management
 private:

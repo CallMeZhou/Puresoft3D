@@ -21,7 +21,7 @@ bool PuresoftPipeline::processVertices(PuresoftVBO** vbos, VertexProcessorOutput
 		}
 
 		// call Vertex Processor
-		m_processor->getVertProc()->process(&vertInput, &output[i], (const void**)m_uniforms);
+		m_vp->process(&vertInput, &output[i]);
 
 		// homogenizing division (reciprocal W is negative reciprocal Z)
 		float reciprocalW = 1.0f / output[i].position[3];

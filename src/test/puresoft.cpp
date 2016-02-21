@@ -9,12 +9,10 @@
 #include <map>
 
 #include "pipeline.h"
+#include "defproc.h"
+#include "picldr.h"
 #include "rndrddraw.h"
-#include "testvp.h"
-#include "testip.h"
-#include "testfp.h"
 #include "libobjx.h"
-#include "samplr2d.h"
 
 using namespace Gdiplus;
 using namespace std;
@@ -27,11 +25,13 @@ const int H = 480;
 
 const float PI = 3.1415927f;
 
-mat4 proj, view, model;
-PuresoftVAO vao1, vao2;
+
+int tex;
 
 int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 {
+	USES_CONVERSION;
+
 	//////////////////////////////////////////////////////////////////////////
 	// create and show main window
 	//////////////////////////////////////////////////////////////////////////
@@ -52,40 +52,38 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		CW_USEDEFAULT, 0, NULL, NULL, inst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 
-	//////////////////////////////////////////////////////////////////////////
-	// initialize renderer
-	//////////////////////////////////////////////////////////////////////////
-	USES_CONVERSION;
-
-	GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR gdiplusToken;
-	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-
 	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, new PuresoftDDrawRenderer);
 
-	PuresoftProcessor proc(&MyTestVertexProcesser::createInstance, &MyTestInterpolationProcessor::createInstance, &MyTestFragmentProcessor::createInstance, sizeof(MYTESTPROCDATA));
-	pipeline.setProcessor(&proc);
+	pipeline.useProgramme(pipeline.createProgramme(
+		pipeline.addProcessor(new VertexProcesserDEF01), 
+		pipeline.addProcessor(new InterpolationProcessorDEF01), 
+		pipeline.addProcessor(new FragmentProcessorDEF01)));
 
+	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
 
 	mat4 proj_view;
 	mcemaths_transform_m4m4(proj_view, proj, view);
 	pipeline.setUniform(0, proj_view, sizeof(proj_view.elem));
-	mat4 rot, tran;
+
+	mat4 rot, tran, scale;
 	rot.rotation(vec4(0, 1.0f, 0, 0), 0);//-PI/4.0f);
 	tran.translation(0, 0, -2.0f);
 	mcemaths_transform_m4m4(model, tran, rot);
 	pipeline.setUniform(1, model, sizeof(model.elem));
+
 	mat4 modelRotate = rot;
 	pipeline.setUniform(2, modelRotate, sizeof(modelRotate.elem));
+
 	RGBQUAD singleColour = {200, 100, 150, 0};
 	pipeline.setUniform(3, &singleColour, sizeof(singleColour));
+
 	vec4 lightPos(-0.5f, 0, 0, 0);
 	pipeline.setUniform(4, &lightPos, sizeof(lightPos));
+
 	vec4 cameraPos;
 	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));
-	int diffuseTex = 0;
-	pipeline.setUniform(6, &diffuseTex, sizeof(diffuseTex));
+
 	//	HOBJXIO objx = open_objx(_T("box.objx"));
 	//	HOBJXIO objx = open_objx(_T("sphere1.objx"));
 	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
@@ -98,7 +96,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	close_objx(objx);
 
 	PuresoftVBO vertices(16, mi.num_vertices), normals(16, mi.num_vertices), texcoords(8, mi.num_vertices);
-	//	PuresoftVBO vertices(16, 3), normals(16, 3), texcoords(8, 3);
+	PuresoftVAO vao1, vao2;
 	vao1.attachVBO(0, &vertices);
 	vao1.attachVBO(1, &normals);
 	vao1.attachVBO(2, &texcoords);
@@ -109,41 +107,23 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		mi.normals[i].w = 1.0f;
 	}
 
-	const float testTriangleVerts[] = {
-		-1.0f, -1.0f, 0.0f, 1.0f, 
-		1.0f,  1.0f, 0.0f, 1.0f,
-		-1.0f,  1.0f, 0.0f, 1.0f
-	};
-	const float testTriangleNorms[] = {
-		0.0f, 0.0f, 1.0f, 1.0f, 
-		0.0f, 0.0f, 1.0f, 1.0f, 
-		0.0f, 0.0f, 1.0f, 1.0f, 
-	};
-	const float testTriangleTxcds[] = {
-		0.0f, 0.0f, 
-		1.0f, 1.0f, 
-		0.0f, 1.0f, 
-	};
 	vertices.updateContent(mi.vertices);
 	normals.updateContent(mi.normals);
 	texcoords.updateContent(mi.texcoords);
-	// 	vertices.updateContent(testTriangleVerts);
-	// 	normals.updateContent(testTriangleNorms);
-	// 	texcoords.updateContent(testTriangleTxcds);
 
 	delete[] mi.vertices;
 	delete[] mi.normals;
 	delete[] mi.texcoords;
 
-	//	Bitmap* diffusePic = Bitmap::FromFile(L"icon.png");
-	//	Bitmap* diffusePic = Bitmap::FromFile(L"earth.jpg");
-	Bitmap* diffusePic = Bitmap::FromFile(CA2W(mi.tex_file.c_str()));
-	diffusePic->RotateFlip(RotateNoneFlipY);
-	Rect r(0, 0, diffusePic->GetWidth(), diffusePic->GetHeight());
-	BitmapData bmpdata;
-	diffusePic->LockBits(&r, ImageLockModeRead, PixelFormat32bppRGB, &bmpdata);
-	PuresoftSampler2D diffuseSmplr(bmpdata.Width, bmpdata.Stride, bmpdata.Height, 4, bmpdata.Scan0);
-	pipeline.setTexture(0, &diffuseSmplr);
+	PURESOFTIMGBUFF32 image;
+	PuresoftDefaultPictureLoader picLoader;
+	picLoader.loadFromFile(CA2W(mi.tex_file.c_str()), &image);
+	image.pixels = malloc(image.scanline * image.height);
+	picLoader.retrievePixel(&image);
+	int tex = pipeline.createTexture(&image);
+	free(image.pixels);
+	picLoader.close();
+	pipeline.setUniform(6, &tex, sizeof(tex));
 
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
@@ -168,7 +148,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			rotRad = 0;
 		}
 
-		mat4 rot, tran, scale;
 		rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 		//scale.scaling(1.0f, 1.0f, 1.0f);
 		tran.translation(0, 0, -150.0f);
@@ -198,9 +177,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		}
 	}
 
-	diffusePic->UnlockBits(&bmpdata);
-	delete diffusePic;
-	GdiplusShutdown(gdiplusToken);
 	return (int) msg.wParam;
 }
 

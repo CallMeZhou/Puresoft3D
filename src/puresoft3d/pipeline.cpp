@@ -20,15 +20,15 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 	: m_width(width)
 	, m_height(height)
 	, m_canvasWindow(canvasWindow)
-	, m_currentProcessor(-1)
+	, m_vp(NULL)
+	, m_ip(NULL)
+	, m_fp(NULL)
 	, m_rasterizer(width, height)
 	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
 	, m_userDataPool(NULL)
 	, m_renderer(NULL)
 {
 	assert(m_numberOfThreads <= MAX_FRAGTHREADS);
-	memset(m_processors, 0, sizeof(m_processors));
-	memset(m_textures, 0, sizeof(m_textures));
 	memset(m_uniforms, 0, sizeof(m_uniforms));
 	memset(m_fbos, 0, sizeof(m_fbos));
 	memset(&m_userDataBuffers, 0, sizeof(m_userDataBuffers));
@@ -72,6 +72,22 @@ PuresoftPipeline::~PuresoftPipeline(void)
 
 	delete[] m_fragTaskQueues;
 
+	for(PROCCOLL::iterator i = m_processors.begin(); i != m_processors.end(); i++)
+	{
+		if(*i)
+		{
+			delete *i;
+		}
+	}
+
+	for(FBOCOLL::iterator i = m_texPool.begin(); i != m_texPool.end(); i++)
+	{
+		if(*i)
+		{
+			delete *i;
+		}
+	}
+
 	for(size_t i = 0; i < MAX_UNIFORMS; i++)
 	{
 		if(m_uniforms[i])
@@ -81,14 +97,6 @@ PuresoftPipeline::~PuresoftPipeline(void)
 	}
 
 	setUserDataBytes(0);
-
-	for(size_t i = 0; i < MAX_PROCS; i++)
-	{
-		if(m_processors[i])
-		{
-			delete m_processors[i];
-		}
-	}
 
 	m_renderer->shutdown();
 	m_renderer->release();
@@ -112,59 +120,6 @@ void PuresoftPipeline::setRenderer(PuresoftRenderer* rndr)
 	if(m_renderer = rndr)
 	{
 		m_renderer->startup(m_canvasWindow, m_width, m_height);
-	}
-}
-
-void PuresoftPipeline::setProcessor(int idx, PuresoftProcessor* proc)
-{
-	if(idx < 0 || idx >= MAX_PROCS)
-	{
-		throw std::out_of_range("PuresoftPipeline::setProcessor");
-	}
-
-	if()
-	size_t current = -1;
-	for(size_t i = 0; i < MAX_PROCS; i++)
-	{
-		if(!m_processors[i])
-		{
-			m_processors[current = i] = proc;
-		}
-	}
-
-	if(-1 == current)
-	{
-		throw bad_exception("PuresoftPipeline::setProcessor");
-	}
-
-	setUserDataBytes(m_processors[current]->getUserDataBytes());
-
-	class prep
-	{
-		void* m_qbuff;
-		size_t m_bbytes;
-	public:
-		prep(void* qbuff, size_t bbytes) : m_qbuff(qbuff), m_bbytes(bbytes) {}
-		void operator()(size_t idx, FRAGTHREADTASK* item)
-		{
-			item->userDataStart = (void*)((uintptr_t)m_qbuff + idx * 2 * m_bbytes);
-			item->userDataStep = (void*)((uintptr_t)item->userDataStart + m_bbytes);
-		}
-	};
-
-	// reinitialize user data buffers
-
-	uintptr_t user = (uintptr_t)m_userDataBuffers.verts;
-	for(size_t i = 0; i < 3; i++)
-	{
-		m_vertOutput[i].user = (void*)user;
-		user += m_userDataBuffers.unitBytes;
-	}
-
-	for(int i = 0; i < m_numberOfThreads; i++)
-	{
-		prep _prep(m_userDataBuffers.taskQueues[i], m_userDataBuffers.unitBytes);
-		m_fragTaskQueues[i].prepare(_prep);
 	}
 }
 

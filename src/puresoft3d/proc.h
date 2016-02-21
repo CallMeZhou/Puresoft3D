@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include "config.h"
 
+class PuresoftProcessor
+{
+public:
+	virtual ~PuresoftProcessor();
+	virtual size_t userDataBytes(void) const;
+};
+
 typedef struct
 {
 	const void* data[MAX_VBOS];
@@ -14,6 +21,24 @@ typedef __declspec(align(16)) struct
 	float position[4];
 	void* user;
 } VertexProcessorOutput;
+
+class PuresoftVertexProcessor : public PuresoftProcessor
+{
+public:
+	virtual ~PuresoftVertexProcessor() {}
+	virtual void preprocess(const void** uniforms) = 0;
+	virtual void process(const VertexProcessorInput* input, VertexProcessorOutput* output) const = 0;
+};
+
+class PuresoftInterpolationProcessor : public PuresoftProcessor
+{
+public:
+	virtual ~PuresoftInterpolationProcessor() {}
+	virtual void preprocess(const void** uniforms) = 0;
+	virtual void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) const = 0;
+	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) const = 0;
+	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const = 0;
+};
 
 typedef struct
 {
@@ -26,44 +51,10 @@ class FragmentProcessorOutput
 public: virtual void write(int index, const void* data, size_t bytes) = 0;
 };
 
-class PuresoftVertexProcessor
+class PuresoftFragmentProcessor : public PuresoftProcessor
 {
 public:
-	virtual void release(void) = 0;
-	virtual void process(const VertexProcessorInput* input, VertexProcessorOutput* output, const void** uniforms) = 0;
-};
-
-class PuresoftInterpolationProcessor
-{
-public:
-	virtual void release(void) = 0;
-	virtual void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) = 0;
-	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) = 0;
-	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) = 0;
-};
-
-class PuresoftFragmentProcessor
-{
-public:
-	virtual void release(void) = 0;
-	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output, const void** uniforms, const void** textures) = 0;
-};
-
-typedef void* (_stdcall *createProcessorInstance)(void);
-
-class PuresoftProcessor
-{
-public:
-	PuresoftProcessor(createProcessorInstance vpc, createProcessorInstance ipc, createProcessorInstance fpc, size_t userDataBytes);
-	~PuresoftProcessor();
-	size_t getUserDataBytes(void) const;
-	PuresoftVertexProcessor* getVertProc(void);
-	PuresoftInterpolationProcessor* getInterpProc(void);
-	PuresoftFragmentProcessor* getFragProc(void);
-
-private:
-	size_t m_userDataBytes;
-	PuresoftVertexProcessor* m_vertProc;
-	PuresoftInterpolationProcessor* m_interpProc;
-	PuresoftFragmentProcessor* m_fragProc;
+	virtual ~PuresoftFragmentProcessor() {}
+	virtual void preprocess(const void** uniforms, const void** textures) = 0;
+	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const = 0;
 };

@@ -19,32 +19,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="testvp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="puresoft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="testfp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="testip.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="testvp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="testfp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="testip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="testpd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="earth.jpg">

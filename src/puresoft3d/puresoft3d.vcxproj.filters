@@ -63,6 +63,9 @@
     <ClInclude Include="defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="picldr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -110,7 +113,13 @@
     <ClCompile Include="defproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="texldr.cpp">
+    <ClCompile Include="tex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="prog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="picldr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

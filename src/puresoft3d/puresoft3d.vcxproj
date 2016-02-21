@@ -115,6 +115,7 @@
     <ClInclude Include="rndrddraw.h" />
     <ClInclude Include="rndrgdi.h" />
     <ClInclude Include="samplr2d.h" />
+    <ClInclude Include="picldr.h" />
     <ClInclude Include="vao.h" />
     <ClInclude Include="vbo.h" />
   </ItemGroup>
@@ -124,13 +125,15 @@
     <ClCompile Include="fbo.cpp" />
     <ClCompile Include="fragthrd.cpp" />
     <ClCompile Include="interp.cpp" />
+    <ClCompile Include="picldr.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="proc.cpp" />
+    <ClCompile Include="prog.cpp" />
     <ClCompile Include="rasterizer.cpp" />
     <ClCompile Include="rndrddraw.cpp" />
     <ClCompile Include="rndrgdi.cpp" />
     <ClCompile Include="samplr2d.cpp" />
-    <ClCompile Include="texldr.cpp" />
+    <ClCompile Include="tex.cpp" />
     <ClCompile Include="udm.cpp" />
     <ClCompile Include="vao.cpp" />
     <ClCompile Include="vbo.cpp" />

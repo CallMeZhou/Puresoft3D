@@ -2,10 +2,14 @@
 
 void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 {
-	if(!m_processor)
+	if(!m_vp || !m_ip || !m_fp)
 	{
 		return;
 	}
+
+	m_vp->preprocess((const void**)m_uniforms);
+	m_ip->preprocess((const void**)m_uniforms);
+	m_fp->preprocess((const void**)m_uniforms, (const void**)&m_texPool[0]);
 
 	// reset vertex pointers of all vbos
 	vao->rewindAll();
@@ -14,7 +18,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	__declspec(align(16)) float correctionFactor1[4] = {0};
 	__declspec(align(16)) float projZs[4] = {0};
 	PuresoftInterpolater::INTERPOLATIONSTARTSTEP interp;
-	interp.proc = m_processor->getInterpProc();
+	interp.proc = m_ip;
 	interp.vertexUserData[0] = m_vertOutput[0].user;
 	interp.vertexUserData[1] = m_vertOutput[1].user;
 	interp.vertexUserData[2] = m_vertOutput[2].user;
