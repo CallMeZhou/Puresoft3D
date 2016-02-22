@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\defproc">
+      <UniqueIdentifier>{9a60de8d-6249-400c-8d04-1f0c21ca5613}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\defproc">
+      <UniqueIdentifier>{47b17141-449f-4e11-8ccd-4f977cb4c116}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -66,6 +72,15 @@
     <ClInclude Include="picldr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tex1light1.h">
+      <Filter>Header Files\defproc</Filter>
+    </ClInclude>
+    <ClInclude Include="colr1light1.h">
+      <Filter>Header Files\defproc</Filter>
+    </ClInclude>
+    <ClInclude Include="tex1bump1light1.h">
+      <Filter>Header Files\defproc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -110,9 +125,6 @@
     <ClCompile Include="rndrddraw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="defproc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,6 +133,15 @@
     </ClCompile>
     <ClCompile Include="picldr.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tex1light1.cpp">
+      <Filter>Source Files\defproc</Filter>
+    </ClCompile>
+    <ClCompile Include="colr1light1.cpp">
+      <Filter>Source Files\defproc</Filter>
+    </ClCompile>
+    <ClCompile Include="tex1bump1light1.cpp">
+      <Filter>Source Files\defproc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

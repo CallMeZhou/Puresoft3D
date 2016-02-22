@@ -58,3 +58,18 @@ public:
 	virtual void preprocess(const void** uniforms, const void** textures) = 0;
 	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const = 0;
 };
+
+template<typename T>
+T opt_pow(T x, unsigned int n)
+{
+	T pw = (T)1;
+	while (n > 0)
+	{
+		if (n & 1)
+			pw *= x;
+		x *= x;
+		n >>= 1;
+	}
+
+	return pw;
+}

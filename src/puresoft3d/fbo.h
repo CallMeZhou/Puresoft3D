@@ -7,12 +7,16 @@ class PuresoftFBO
 public:
 	__declspec(align(64)) struct WORKRANGE
 	{
+		unsigned int curRow;
+		unsigned int curCol;
 		void* curRowEntry;
 		void* writePoint;
 	};
 
+	enum WRAPMODE {CLAMP, WRAP};
+
 public:
-	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL);
+	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL, WRAPMODE wrapMode = CLAMP);
 	~PuresoftFBO(void);
 
 	// sequential r/w
@@ -58,9 +62,12 @@ public:
 
 private:
 	bool m_topDown;
+	WRAPMODE m_wrapMode;
 	unsigned int m_width;
+	unsigned int m_maxCol;
 	unsigned int m_scanline;
 	unsigned int m_height;
+	unsigned int m_maxRow;
 	unsigned int m_elemLen;
 	size_t m_bytes;
 	void* m_buffer;
@@ -68,4 +75,6 @@ private:
 	bool m_isExternalBuffer;
 
 	WORKRANGE m_workRanges[MAX_FRAGTHREADS];
+
+	void clampCoord(unsigned int& row, unsigned int& col) const;
 };

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "objxio.h"
 #include "privhlpr.h"
+#include "mcemaths.h"
 
 #define OBJX_CURVERSION		0x10001
 #define OBJX_FILENAMELEN	260
@@ -45,6 +46,8 @@ public:
 };
 
 static unsigned int calc_mesh_bytes(const mesh_header& header);
+static void generate_tangents(mesh_info& mesh, const mesh_header& header);
+static void generate_tangent(vec4& tangent, const vec4& a, const vec4& b, const vec4& c, const vec2& ta, const vec2& tb, const vec2& tc);
 //////////////////////////////////////////////////////////////////////////
 
 HOBJXIO _cdecl create_objxW(const wchar_t* filename)
@@ -240,6 +243,12 @@ bool _cdecl read_mesh(HOBJXIO handle, mesh_info& mesh)
 	{
 		if(1 != fread(mesh.texcoords, bytes, 1, hobjxio->file))
 			return false;
+
+		// if source has no tangents but texcoords, we can generate them from vertices and texcoords
+		if(mesh.tangents && !hobjxio->last_mesh_header.has_tangents)
+		{
+			generate_tangents(mesh, hobjxio->last_mesh_header);
+		}
 	}
 	else if(hobjxio->last_mesh_header.has_texcoords)
 	{
@@ -289,4 +298,78 @@ static unsigned int calc_mesh_bytes(const mesh_header& header)
 	if(header.num_indices > 0)
 		bytes += header.num_indices * sizeof(unsigned int);
 	return bytes;
+}
+
+static void generate_tangents(mesh_info& mesh, const mesh_header& header)
+{
+	vec4 tangent;
+
+	if(header.num_indices > 0)
+	{
+		void* p = mesh.vertices;
+		unsigned int n = mesh.num_vertices;
+		__asm
+		{
+			mov		eax,	p
+			mov		ecx,	n
+			xorps	xmm0,	xmm0
+	lup:	movaps	[eax],	xmm0
+			add		eax,	16
+			loop	lup
+		}
+
+		for(unsigned int i = 0; i < header.num_indices; i+=3)
+		{
+			int a = mesh.indices[i];
+			int b = mesh.indices[i + 1];
+			int c = mesh.indices[i + 2];
+
+			generate_tangent(tangent, mesh.vertices[a], mesh.vertices[b], mesh.vertices[c], mesh.texcoords[a], mesh.texcoords[b], mesh.texcoords[c]);
+
+			mcemaths_add_3_4_ip(mesh.tangents[a], tangent);
+			mcemaths_add_3_4_ip(mesh.tangents[b], tangent);
+			mcemaths_add_3_4_ip(mesh.tangents[c], tangent);
+		}
+
+		for(unsigned int i = 0; i < header.num_vertices; i++)
+		{
+			mcemaths_norm_3_4(mesh.tangents[i]);
+		}
+	}
+	else
+	{
+		for(unsigned int i = 0; i < header.num_vertices; i+=3)
+		{
+			generate_tangent(tangent, mesh.vertices[i], mesh.vertices[i + 1], mesh.vertices[i + 2], mesh.texcoords[i], mesh.texcoords[i + 1], mesh.texcoords[i + 2]);
+			mcemaths_norm_3_4(tangent);
+
+			mcemaths_quatcpy(mesh.tangents[i], tangent);
+			mcemaths_quatcpy(mesh.tangents[i + 1], tangent);
+			mcemaths_quatcpy(mesh.tangents[i + 2], tangent);
+		}
+	}
+}
+
+static void generate_tangent(vec4& tangent, const vec4& a, const vec4& b, const vec4& c, const vec2& ta, const vec2& tb, const vec2& tc)
+{
+	vec2 coord1;
+	coord1.x = tc.x - ta.x;
+	coord1.y = tc.y - ta.y;
+
+	vec2 coord2;
+	coord2.x = tb.x - ta.x;
+	coord2.y = tb.y - ta.y;
+
+	vec4 vector1;
+	mcemaths_sub_3_4(vector1, c, a);
+
+	vec4 vector2;
+	mcemaths_sub_3_4(vector1, b, a);
+
+	mcemaths_mul_3_4(vector1, coord2.y);
+	mcemaths_mul_3_4(vector2, coord1.y);
+	mcemaths_sub_3_4(tangent, vector1, vector2);
+
+	float factor = 1.0f / (coord1.x * coord2.y - coord1.y * coord2.x);
+	mcemaths_mul_3_4(tangent, factor);
 }

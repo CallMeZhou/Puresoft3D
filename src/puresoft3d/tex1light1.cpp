@@ -2,22 +2,7 @@
 #include "mcemaths.h"
 #include "defproc.h"
 #include "samplr2d.h"
-#include "bgra.h"
-
-template<typename T>
-T opt_pow(T x, unsigned int n)
-{
-	T pw = (T)1;
-	while (n > 0)
-	{
-		if (n & 1)
-			pw *= x;
-		x *= x;
-		n >>= 1;
-	}
-
-	return pw;
-}
+#include "defs.h"
 
 VertexProcesserDEF01::VertexProcesserDEF01(void)
 {
@@ -159,7 +144,7 @@ void FragmentProcessorDEF01::process(const FragmentProcessorInput* input, Fragme
 	PURESOFTBGRA bytesColour;
 
 	const PROCDATA_DEF01* inData = (const PROCDATA_DEF01*)input->user;
-	PuresoftSampler2D::get4(m_diffuseTex, inData->texcoord[1], inData->texcoord[0], &bytesColour);
+	PuresoftSampler2D::get4(m_diffuseTex, inData->texcoord[0], inData->texcoord[1], &bytesColour);
 	outputColour[0] = bytesColour.elems.b;
 	outputColour[1] = bytesColour.elems.g;
 	outputColour[2] = bytesColour.elems.r;

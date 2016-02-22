@@ -188,6 +188,7 @@ MCEMATHAPI(void) mcemaths_transform_m4m4_l_ip(float* l44, const float* r44);
 MCEMATHAPI(void) mcemaths_make_translation(float* m44, float x, float y, float z);
 MCEMATHAPI(void) mcemaths_make_scaling(float* m44, float x, float y, float z);
 MCEMATHAPI(void) mcemaths_make_rotation(float* m44, const float* axis4, float radian);
+MCEMATHAPI(void) mcemaths_make_tbn(float* m44, const float* tangent, const float* binormal, const float* normal);
 
 /* Build 4x4 OpenGL projection / view matrix*/
 MCEMATHAPI(void) mcemaths_make_proj_perspective(float* m44, float znear, float zfar, float aspect, float fov_rad);

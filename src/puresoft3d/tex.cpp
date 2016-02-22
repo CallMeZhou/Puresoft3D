@@ -15,7 +15,7 @@ int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image)
 		m_texPool.push_back(NULL);
 	}
 
-	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, true);
+	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, true, NULL, PuresoftFBO::WRAP);
 
 	if(image->pixels)
 	{

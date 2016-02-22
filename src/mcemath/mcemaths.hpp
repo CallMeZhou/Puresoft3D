@@ -97,6 +97,8 @@ public:
 	mat4(void);
 	mat4(const mat4& src);
 	mat4(const float* src);
+	mat4(const float* tangent, const float* binormal, const float* normal);
+	mat4(const float* col1, const float* col2, const float* col3, const float* col4);
 	const mat4& operator= (const mat4& src);
 	const mat4& operator= (const quaternion& q); // similar to mat4::rotation()
 	operator float* (void);

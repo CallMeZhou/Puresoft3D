@@ -989,3 +989,20 @@ extern "C" MCEMATHAPI(void) mcemaths_make_rotation(float* m44, const float* axis
 	memcpy(m44+12, IDENTITY4+12, sizeof(float) * 4);
 }
 
+extern "C" MCEMATHAPI(void) mcemaths_make_tbn(float* m44, const float* tangent, const float* binormal, const float* normal)
+{
+	__asm{
+		mov		eax,	tangent
+		movaps	xmm0,	[eax]
+		mov		eax,	binormal
+		movaps	xmm1,	[eax]
+		mov		eax,	normal
+		movaps	xmm2,	[eax]
+		xorps	xmm3,	xmm3
+		mov		eax,	m44
+		movaps	[eax],		xmm0
+		movaps	[eax + 16],	xmm1
+		movaps	[eax + 32],	xmm2
+		movaps	[eax + 48],	xmm3
+	}
+}

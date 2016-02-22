@@ -181,6 +181,46 @@ mat4::mat4(const float* src)
 	}
 }
 
+mat4::mat4(const float* tangent, const float* binormal, const float* normal)
+{
+	mcemaths_make_tbn(elem, tangent, binormal, normal);
+}
+
+mat4::mat4(const float* col1, const float* col2, const float* col3, const float* col4)
+{
+	__asm{
+		mov		eax,	col1
+		movaps	xmm0,	[eax]
+		mov		eax,	col2
+		movaps	xmm1,	[eax]
+		mov		eax,	col3
+		movaps	xmm2,	[eax]
+		mov		eax,	col4
+		movaps	xmm3,	[eax]
+
+		movaps	xmm4,	xmm0
+		shufps	xmm0,	xmm1,	0x44	; xmm0: tmp0
+		shufps	xmm4,	xmm1,	0xee	; xmm4: tmp2
+		movaps	xmm5,	xmm2
+		shufps	xmm2,	xmm3,	0x44	; xmm2: tmp1
+		shufps	xmm5,	xmm3,	0xee	; xmm5: tmp3
+
+		movaps	xmm6,	xmm0
+		shufps	xmm0,	xmm2,	0x88	; xmm0: row0
+		shufps	xmm6,	xmm2,	0xdd	; xmm6: row1
+		movaps	xmm7,	xmm4
+		shufps	xmm4,	xmm5,	0x88	; xmm4: row2
+		shufps	xmm7,	xmm5,	0xdd	; xmm7: row3
+
+		mov		eax,	this
+		add		eax,	elem
+		movaps [eax],	xmm0
+		movaps [eax+16],xmm6
+		movaps [eax+32],xmm4
+		movaps [eax+48],xmm7
+	}
+}
+
 const mat4& mat4::operator= (const mat4& src)
 {
 	mcemaths_mat4cpy(elem, src.elem);

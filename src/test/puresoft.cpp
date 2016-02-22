@@ -1,6 +1,7 @@
 #include <windowsx.h>
 #include <atlbase.h>
 #include <atlconv.h>
+#include <atlwin.h>
 #include <WTypes.h>
 #include <tchar.h>
 #include <GdiPlus.h>
@@ -20,8 +21,8 @@ using namespace std;
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-const int W = 640;
-const int H = 480;
+const int W = 800;
+const int H = 600;
 
 const float PI = 3.1415927f;
 
@@ -48,16 +49,26 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	wcex.hIconSm		= NULL;//LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 	RegisterClassEx(&wcex);
 
-	HWND hWnd = CreateWindow(_T("mainwnd"), _T("test"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, 
-		CW_USEDEFAULT, 0, NULL, NULL, inst, NULL);
+	RECT wndrect = {0, 0, W, H};
+	AdjustWindowRect(&wndrect, WS_OVERLAPPEDWINDOW, FALSE);
+	HWND hWnd = CreateWindow(_T("mainwnd"), _T("test"), WS_OVERLAPPEDWINDOW, wndrect.left, wndrect.top, 
+		wndrect.right - wndrect.left, wndrect.bottom - wndrect.top, NULL, NULL, inst, NULL);
+	CWindow(hWnd).CenterWindow();
 	ShowWindow(hWnd, nCmdShow);
 
 	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, new PuresoftDDrawRenderer);
 
+/*
 	pipeline.useProgramme(pipeline.createProgramme(
 		pipeline.addProcessor(new VertexProcesserDEF01), 
 		pipeline.addProcessor(new InterpolationProcessorDEF01), 
 		pipeline.addProcessor(new FragmentProcessorDEF01)));
+*/
+
+	pipeline.useProgramme(pipeline.createProgramme(
+		pipeline.addProcessor(new VertexProcesserDEF03), 
+		pipeline.addProcessor(new InterpolationProcessorDEF03), 
+		pipeline.addProcessor(new FragmentProcessorDEF03)));
 
 	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
@@ -85,35 +96,57 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));
 
 	//	HOBJXIO objx = open_objx(_T("box.objx"));
-	//	HOBJXIO objx = open_objx(_T("sphere1.objx"));
-	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
+		HOBJXIO objx = open_objx(_T("sphere1.objx"));
+	//	HOBJXIO objx = open_objx(_T("greek_vase2.objx"));
 	mesh_info mi = {0};
 	read_mesh_header(objx, mi);
 	mi.vertices = new vec4[mi.num_vertices];
 	mi.normals = new vec4[mi.num_vertices];
 	mi.texcoords = new vec2[mi.num_vertices];
+	if(mi.has_texcoords) // force tangent generation if having texcoords
+		mi.tangents = new vec4[mi.num_vertices];
 	read_mesh(objx, mi);
 	close_objx(objx);
 
-	PuresoftVBO vertices(16, mi.num_vertices), normals(16, mi.num_vertices), texcoords(8, mi.num_vertices);
+	vec4* binormal = NULL;
+	if(mi.tangents)
+	{
+		binormal = new vec4[mi.num_vertices];
+		for(unsigned int i = 0; i < mi.num_vertices; i++)
+		{
+			mcemaths_cross_3(binormal[i], mi.normals[i], mi.tangents[i]);
+			mcemaths_norm_3_4(binormal[i]);
+		}
+	}
+
+	PuresoftVBO vertices(16, mi.num_vertices), normals(16, mi.num_vertices), binormals(16, mi.num_vertices), tangents(16, mi.num_vertices), texcoords(8, mi.num_vertices);
 	PuresoftVAO vao1, vao2;
 	vao1.attachVBO(0, &vertices);
-	vao1.attachVBO(1, &normals);
-	vao1.attachVBO(2, &texcoords);
+	vao1.attachVBO(1, &tangents);
+	vao1.attachVBO(2, &binormals);
+	vao1.attachVBO(3, &normals);
+	vao1.attachVBO(4, &texcoords);
 
 	for(unsigned int i = 0; i < mi.num_vertices; i++)
 	{
 		mi.vertices[i].w = 1.0f;
-		mi.normals[i].w = 1.0f;
 	}
 
 	vertices.updateContent(mi.vertices);
 	normals.updateContent(mi.normals);
 	texcoords.updateContent(mi.texcoords);
+	if(mi.tangents)
+		tangents.updateContent(mi.tangents);
+	if(binormal)
+		binormals.updateContent(binormal);
 
 	delete[] mi.vertices;
 	delete[] mi.normals;
 	delete[] mi.texcoords;
+	if(mi.tangents)
+		delete[] mi.tangents;
+	if(binormal)
+		delete[] binormal;
 
 	PURESOFTIMGBUFF32 image;
 	PuresoftDefaultPictureLoader picLoader;
@@ -124,6 +157,15 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	free(image.pixels);
 	picLoader.close();
 	pipeline.setUniform(6, &tex, sizeof(tex));
+
+	picLoader.loadFromFile(L"earth.dot3.png", &image);
+//	picLoader.loadFromFile(CA2W(mi.bump_file.c_str()), &image);
+	image.pixels = malloc(image.scanline * image.height);
+	picLoader.retrievePixel(&image);
+	tex = pipeline.createTexture(&image);
+	free(image.pixels);
+	picLoader.close();
+	pipeline.setUniform(7, &tex, sizeof(tex));
 
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
@@ -150,8 +192,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 		rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 		//scale.scaling(1.0f, 1.0f, 1.0f);
-		tran.translation(0, 0, -150.0f);
-		//tran.translation(0, 0, -1.0f);
+		//tran.translation(0, 0, -150.0f);
+		tran.translation(0, 0, -1.2f);
 		mcemaths_transform_m4m4(model, rot, scale);
 		mcemaths_transform_m4m4_r_ip(tran, model);
 		pipeline.setUniform(1, model, sizeof(model.elem));
