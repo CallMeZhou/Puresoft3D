@@ -140,7 +140,7 @@ void* PuresoftDDrawRenderer::swapBuffers(void)
 	ddsc.dwSize = sizeof(DDSURFACEDESC2);
 	HRESULT hr;
 	// this line must throw on failure to avoid returning null pointer
-	THROWIFFAILED(((IDirectDrawSurface7*)m_back)->Lock(NULL, &ddsc, DDLOCK_WAIT | DDLOCK_NOSYSLOCK, NULL));
+	THROWIFFAILED(((IDirectDrawSurface7*)m_back)->Lock(NULL, &ddsc, DDLOCK_WRITEONLY | DDLOCK_WAIT | DDLOCK_NOSYSLOCK, NULL));
 
 	return ddsc.lpSurface;
 }

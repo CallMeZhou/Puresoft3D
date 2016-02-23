@@ -10,24 +10,41 @@
 #include <map>
 
 #include "pipeline.h"
-#include "defproc.h"
 #include "picldr.h"
 #include "rndrddraw.h"
 #include "libobjx.h"
+#include "testproc.h"
 
 using namespace Gdiplus;
 using namespace std;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+static void updateTexMatrix(mat4& m, float rad);
 
 const int W = 800;
 const int H = 600;
 
 const float PI = 3.1415927f;
 
-
 int tex;
+
+class HighResolutionTimeCounter
+{
+	LARGE_INTEGER start;
+	LARGE_INTEGER freq;
+public:
+	HighResolutionTimeCounter() 
+	{ QueryPerformanceFrequency(&freq); Start();}
+	void Start() 
+	{ QueryPerformanceCounter(&start); }
+	__int64 Now()
+	{ 
+		LARGE_INTEGER end = { 0 };
+		QueryPerformanceCounter(&end);
+		return (end.QuadPart - start.QuadPart)*1000 / freq.QuadPart;
+	}
+};
 
 int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 {
@@ -66,9 +83,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 */
 
 	pipeline.useProgramme(pipeline.createProgramme(
-		pipeline.addProcessor(new VertexProcesserDEF03), 
-		pipeline.addProcessor(new InterpolationProcessorDEF03), 
-		pipeline.addProcessor(new FragmentProcessorDEF03)));
+		pipeline.addProcessor(new VertexProcesserTEST), 
+		pipeline.addProcessor(new InterpolationProcessorTEST), 
+		pipeline.addProcessor(new FragmentProcessorTEST)));
 
 	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
@@ -89,7 +106,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	RGBQUAD singleColour = {200, 100, 150, 0};
 	pipeline.setUniform(3, &singleColour, sizeof(singleColour));
 
-	vec4 lightPos(-0.5f, 0, 0, 0);
+	vec4 lightPos(-6.0f, 0, 1.0f, 0);
 	pipeline.setUniform(4, &lightPos, sizeof(lightPos));
 
 	vec4 cameraPos;
@@ -167,9 +184,42 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	picLoader.close();
 	pipeline.setUniform(7, &tex, sizeof(tex));
 
+	picLoader.loadFromFile(L"earth.spac.png", &image);
+	image.pixels = malloc(image.scanline * image.height);
+	picLoader.retrievePixel(&image);
+	tex = pipeline.createTexture(&image);
+	free(image.pixels);
+	picLoader.close();
+	pipeline.setUniform(8, &tex, sizeof(tex));
+
+	picLoader.loadFromFile(L"earth.night.png", &image);
+	image.pixels = malloc(image.scanline * image.height);
+	picLoader.retrievePixel(&image);
+	tex = pipeline.createTexture(&image);
+	free(image.pixels);
+	picLoader.close();
+	pipeline.setUniform(9, &tex, sizeof(tex));
+
+	picLoader.loadFromFile(L"earth.cloud.png", &image);
+	image.pixels = malloc(image.scanline * image.height);
+	picLoader.retrievePixel(&image);
+	tex = pipeline.createTexture(&image);
+	free(image.pixels);
+	picLoader.close();
+	pipeline.setUniform(10, &tex, sizeof(tex));
+
+	mat4 texMatrix;
+	//updateTexMatrix(texMatrix, 0);
+	pipeline.setUniform(11, texMatrix, sizeof(texMatrix.elem));
+
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
 	//////////////////////////////////////////////////////////////////////////
+	HighResolutionTimeCounter highTimer;
+	highTimer.Start();
+
+	float rotRad = 0, trotrad = 0;
+
 	DWORD time0 = GetTickCount(), fcount = 0;
 	MSG msg;
 	while (true)
@@ -183,11 +233,18 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		if(WM_QUIT == msg.message)
 			break;
 
-		static float rotRad = 0;
-		rotRad += 0.05f;
+		rotRad += 0.1f * (float)highTimer.Now() / 1000.0f;
+		trotrad += 0.02f * (float)highTimer.Now() / 1000.0f;
+		highTimer.Start();
+
 		if(rotRad > 2 * PI)
 		{
 			rotRad = 0;
+		}
+
+		if(trotrad > 1.0f)
+		{
+			trotrad = 0;
 		}
 
 		rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
@@ -199,6 +256,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setUniform(1, model, sizeof(model.elem));
 		mat4 modelRotate = rot;
 		pipeline.setUniform(2, modelRotate, sizeof(modelRotate.elem));
+
+		texMatrix.translation(trotrad, 0, 0);
+		pipeline.setUniform(11, texMatrix, sizeof(texMatrix.elem));
 
 		pipeline.clearDepth();
 		pipeline.clearColour();
@@ -247,4 +307,15 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(wnd, message, wParam, lParam);
 	}
 	return 0;
+}
+
+static void updateTexMatrix(mat4& m, float rad)
+{
+	mat4 push, pop, rot, temp;
+	push.translation(vec4(0.5f, 0.5f, 0, 0));
+	pop.translation(vec4(-0.5f, -0.5f, 0, 0));
+	rot.rotation(vec4(0, 0, 1.0f, 0), rad);
+	
+	mcemaths_transform_m4m4(temp, rot, pop);
+	mcemaths_transform_m4m4(m, push, temp);
 }

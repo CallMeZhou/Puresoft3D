@@ -22,6 +22,9 @@
     <ClCompile Include="puresoft.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="testproc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="earth.jpg">
@@ -30,5 +33,10 @@
     <None Include="sphere1.objx">
       <Filter>Ext Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="testproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

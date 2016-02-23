@@ -85,10 +85,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="puresoft.cpp" />
+    <ClCompile Include="testproc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="earth.jpg" />
     <None Include="sphere1.objx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="testproc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
