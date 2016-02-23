@@ -42,7 +42,10 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 		setRenderer(new PuresoftGdiRenderer);
 	}
 
-	m_display = new PuresoftFBO(m_width, m_width * 4, m_height, 4, true, m_renderer->swapBuffers());
+	PURESOFTIMGBUFF32 rndrDesc;
+	m_renderer->getDesc(&rndrDesc);
+
+	m_display = new PuresoftFBO(rndrDesc.width, rndrDesc.scanline, rndrDesc.height, rndrDesc.elemLen, true, m_renderer->swapBuffers());
 	setFBO(0, NULL);
 
 	m_fragTaskQueues = new FragmentThreadTaskQueue[m_numberOfThreads];

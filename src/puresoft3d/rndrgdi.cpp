@@ -90,6 +90,14 @@ void PuresoftGdiRenderer::setCanvas(uintptr_t canvasWindow)
 	m_canvasWindow = canvasWindow;
 }
 
+void PuresoftGdiRenderer::getDesc(PURESOFTIMGBUFF32* desc)
+{
+	desc->width = (unsigned int)m_width;
+	desc->height = (unsigned int)m_height;
+	desc->scanline = desc->width * 4;
+	desc->elemLen = 4;
+}
+
 void* PuresoftGdiRenderer::swapBuffers(void)
 {
 	WaitForSingleObject((HANDLE)m_renderingCompletionEvent, INFINITE);

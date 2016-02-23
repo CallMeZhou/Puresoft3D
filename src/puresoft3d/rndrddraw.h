@@ -11,6 +11,7 @@ public:
 	void  startup(uintptr_t canvasWindow, int width, int height);
 	void  shutdown(void);
 	void  setCanvas(uintptr_t canvasWindow);
+	void  getDesc(PURESOFTIMGBUFF32* desc);
 	void* swapBuffers(void);
 	void  release(void);
 

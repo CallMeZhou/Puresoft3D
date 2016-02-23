@@ -110,6 +110,21 @@ void PuresoftDDrawRenderer::setCanvas(uintptr_t canvasWindow)
 	m_canvas = canvasWindow;
 }
 
+void  PuresoftDDrawRenderer::getDesc(PURESOFTIMGBUFF32* desc)
+{
+	assert(m_back);
+
+	DDSURFACEDESC2 ddsc;
+	ddsc.dwSize = sizeof(DDSURFACEDESC2);
+	ddsc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_PIXELFORMAT;
+	((IDirectDrawSurface7*)m_back)->GetSurfaceDesc(&ddsc);
+
+	desc->width = ddsc.dwWidth;
+	desc->height = ddsc.dwHeight;
+	desc->scanline = (unsigned int)ddsc.lPitch;
+	desc->elemLen = ddsc.ddpfPixelFormat.dwRGBBitCount / 8;
+}
+
 void* PuresoftDDrawRenderer::swapBuffers(void)
 {
 	((IDirectDrawSurface7*)m_back)->Unlock(NULL);
