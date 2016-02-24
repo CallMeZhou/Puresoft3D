@@ -16,15 +16,32 @@ public:
 
 	void write(int index, const void* data, size_t bytes)
 	{
-		if(index < 0 || index >= MAX_FBOS)
-		{
-			throw std::out_of_range("PuresoftPipeline::FragmentProcessorOutput::write");
-		}
-
+		assert(0 <= index && index < MAX_FBOS);
 		assert(m_fbos[index]);
-
 		m_fbos[index]->write(m_threadIndex, data, bytes);
 	}
+
+	void write1(int index, const void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->write1(m_threadIndex, data);
+	}
+
+	void write4(int index, const void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->write4(m_threadIndex, data);
+	}
+
+	void write16(int index, const void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->write16(m_threadIndex, data);
+	}
+
 };
 
 unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)

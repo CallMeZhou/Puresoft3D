@@ -48,7 +48,11 @@ typedef struct
 
 class FragmentProcessorOutput
 {
-public: virtual void write(int index, const void* data, size_t bytes) = 0;
+public: 
+	virtual void write(int index, const void* data, size_t bytes) = 0;
+	virtual void write1(int index, const void* data) = 0;
+	virtual void write4(int index, const void* data) = 0;
+	virtual void write16(int index, const void* data) = 0;
 };
 
 class PuresoftFragmentProcessor : public PuresoftProcessor

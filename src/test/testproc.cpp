@@ -257,5 +257,5 @@ void FragmentProcessorTEST::process(const FragmentProcessorInput* input, Fragmen
 	bytesColour.elems.b = (unsigned char)outputColour[0];
 	bytesColour.elems.a = 0;
 
-	output->write(0, &bytesColour, sizeof(bytesColour));
+	output->write4(0, &bytesColour);
 }
