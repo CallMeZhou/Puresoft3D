@@ -19,6 +19,12 @@
     <Filter Include="Header Files\defproc">
       <UniqueIdentifier>{47b17141-449f-4e11-8ccd-4f977cb4c116}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sampler">
+      <UniqueIdentifier>{4ca85bfa-06dc-46f0-ad8a-d9a2f8c9828f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sampler">
+      <UniqueIdentifier>{e5d25086-f82d-4eb1-86a9-efb7a7375f59}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -37,9 +43,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rasterizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="samplr2d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vao.h">
@@ -81,6 +84,15 @@
     <ClInclude Include="tex1bump1light1.h">
       <Filter>Header Files\defproc</Filter>
     </ClInclude>
+    <ClInclude Include="samplr2d.h">
+      <Filter>Header Files\sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="samplrcube.h">
+      <Filter>Header Files\sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="skybox.h">
+      <Filter>Header Files\defproc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -93,9 +105,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="rasterizer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="samplr2d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vao.cpp">
@@ -141,6 +150,15 @@
       <Filter>Source Files\defproc</Filter>
     </ClCompile>
     <ClCompile Include="tex1bump1light1.cpp">
+      <Filter>Source Files\defproc</Filter>
+    </ClCompile>
+    <ClCompile Include="samplr2d.cpp">
+      <Filter>Source Files\sampler</Filter>
+    </ClCompile>
+    <ClCompile Include="samplrcube.cpp">
+      <Filter>Source Files\sampler</Filter>
+    </ClCompile>
+    <ClCompile Include="skybox.cpp">
       <Filter>Source Files\defproc</Filter>
     </ClCompile>
   </ItemGroup>

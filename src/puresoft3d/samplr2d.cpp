@@ -23,3 +23,11 @@ void PuresoftSampler2D::get4(const PuresoftFBO* imageBuffer, float texcoordX, fl
 		(unsigned int)((float)imageBuffer->getWidth()  * texcoordX + 0.5f), 
 		data);
 }
+
+void PuresoftSampler2D::get16(const PuresoftFBO* imageBuffer, float texcoordX, float texcoordY, void* data)
+{
+	imageBuffer->directRead16(
+		(unsigned int)((float)imageBuffer->getHeight() * texcoordY + 0.5f), 
+		(unsigned int)((float)imageBuffer->getWidth()  * texcoordX + 0.5f), 
+		data);
+}

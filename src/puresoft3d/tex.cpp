@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "pipeline.h"
 
-int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image)
+int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image, int extraLayers /* = 0 */)
 {
 	size_t vacant = 0;
 	for(; vacant < m_texPool.size(); vacant++)
@@ -15,7 +15,7 @@ int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image)
 		m_texPool.push_back(NULL);
 	}
 
-	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, true, NULL, PuresoftFBO::WRAP);
+	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, true, NULL, PuresoftFBO::WRAP, extraLayers);
 
 	if(image->pixels)
 	{
@@ -27,7 +27,7 @@ int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image)
 	return (int)vacant;
 }
 
-void PuresoftPipeline::getTexture(int idx, PURESOFTIMGBUFF32* image)
+void PuresoftPipeline::getTexture(int idx, PURESOFTIMGBUFF32* image, PuresoftFBO::LAYER layer /* = PuresoftFBO::LAYER_DEFAULT */)
 {
 	if(idx < 0 || idx >= (int)m_texPool.size())
 	{
@@ -35,6 +35,7 @@ void PuresoftPipeline::getTexture(int idx, PURESOFTIMGBUFF32* image)
 	}
 
 	PuresoftFBO* fbo = m_texPool[idx];
+	fbo = fbo->getExtraLayer(layer);
 
 	image->width = fbo->getWidth();
 	image->scanline = fbo->getScanline();

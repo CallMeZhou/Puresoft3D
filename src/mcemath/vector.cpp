@@ -220,34 +220,57 @@ extern "C" MCEMATHAPI(void) mcemaths_norm_3_4(float* v4)
 
 extern "C" MCEMATHAPI(void) mcemaths_set_vec_ary(float* ary4, int count, const float* v4)
 {
-	__asm{
-		mov		eax,	v4
-		movaps	xmm0,	[eax]
-		mov		eax,	count
-		xor		ecx,	ecx
-		mov		edx,	ary4
+	if(1 == count)
+	{
+		__asm{
+			mov		eax,	v4
+			movaps	xmm0,	[eax]
+			mov		eax,	ary4
+			movaps	[eax],	xmm0
+		}
+	}
+	else
+	{
+		__asm{
+			mov		eax,	v4
+			movaps	xmm0,	[eax]
+			mov		eax,	count
+			xor		ecx,	ecx
+			mov		edx,	ary4
 lup:
-		movaps	[edx],	xmm0
-		add		edx,	16
-		inc		ecx
-		cmp		ecx,	eax
-		jl		lup
+			movaps	[edx],	xmm0
+			add		edx,	16
+			inc		ecx
+			cmp		ecx,	eax
+			jl		lup
+		}
 	}
 }
 
 extern "C" MCEMATHAPI(void) mcemaths_zero_vec_ary(float* ary4, int count)
 {
-	__asm{
-		xorps	xmm0,	xmm0
-		mov		eax,	count
-		xor		ecx,	ecx
-		mov		edx,	ary4
+	if(1 == count)
+	{
+		__asm{
+			xorps	xmm0,	xmm0
+			mov		eax,	ary4
+			movaps	[eax],	xmm0
+		}
+	}
+	else
+	{
+		__asm{
+			xorps	xmm0,	xmm0
+			mov		eax,	count
+			xor		ecx,	ecx
+			mov		edx,	ary4
 lup:
-		movaps	[edx],	xmm0
-		add		edx,	16
-		inc		ecx
-		cmp		ecx,	eax
-		jl		lup
+			movaps	[edx],	xmm0
+			add		edx,	16
+			inc		ecx
+			cmp		ecx,	eax
+			jl		lup
+		}
 	}
 }
 

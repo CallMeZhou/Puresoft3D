@@ -14,9 +14,10 @@ public:
 	};
 
 	enum WRAPMODE {CLAMP, WRAP};
+	enum LAYER {LAYER_DEFAULT = -1, LAYER_XPOS = LAYER_DEFAULT, LAYER_XNEG, LAYER_YPOS, LAYER_YNEG, LAYER_ZPOS, LAYER_ZNEG, LAYER_MAX};
 
 public:
-	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL, WRAPMODE wrapMode = CLAMP);
+	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL, WRAPMODE wrapMode = CLAMP, int extraLayers = 0);
 	~PuresoftFBO(void);
 
 	// sequential r/w
@@ -43,22 +44,28 @@ public:
 	void directRead16(unsigned int row, unsigned int col, void* dataAligned16Bytes) const; // elemLen must be 16
 	void directWrite16(unsigned int row, unsigned int col, const void* dataAligned16Bytes); // elemLen must be 16, not thread safe
 
-	// must accord with elemLen
+	// clearing up, must accord with elemLen
 	void clear(const void* data, size_t bytes);
 	void clear1(const void* data);
 	void clear4(const void* data);
 	void clear16(const void* dataAligned16Bytes);
 	void clearToZero(void);
 
+	// buffer manipulation and raw r/w
 	void setBuffer(void* externalBuffer = NULL);
 	void* getBuffer(void);
 	const void* getBuffer(void) const;
 
+	// attributes
 	unsigned int getWidth(void) const;
 	unsigned int getHeight(void) const;
 	unsigned int getScanline(void) const;
 	unsigned int getElemLen(void) const;
 	size_t getBytes(void) const;
+
+	// multi-layer support
+	PuresoftFBO* getExtraLayer(LAYER layer);
+	const PuresoftFBO* getExtraLayer(LAYER layer) const;
 
 private:
 	bool m_topDown;
@@ -77,4 +84,8 @@ private:
 	WORKRANGE m_workRanges[MAX_FRAGTHREADS];
 
 	void clampCoord(unsigned int& row, unsigned int& col) const;
+
+// multi-layer texture support (i.e., cube map)
+private:
+	PuresoftFBO* m_extraLayers[LAYER_MAX];
 };

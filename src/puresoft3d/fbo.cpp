@@ -6,11 +6,24 @@
 
 using namespace std;
 
-PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown /* = false */, void* externalBuffer /* = NULL */, WRAPMODE wrapMode /* = CLAMP */)
+PuresoftFBO::PuresoftFBO(
+	unsigned int width, 
+	unsigned int scanline, 
+	unsigned int height, 
+	unsigned int elemLen, 
+	bool topDown /* = false */, 
+	void* externalBuffer /* = NULL */, 
+	WRAPMODE wrapMode /* = CLAMP */, 
+	int extraLayers /* = 0 */)
 {
 	if(1 != elemLen && 4 != elemLen)
 	{
 		throw std::invalid_argument("PuresoftFBO::PuresoftFBO, (1 != elemLen && 4 != elemLen)");
+	}
+
+	if(extraLayers && externalBuffer)
+	{
+		throw std::invalid_argument("PuresoftFBO::PuresoftFBO, (extraLayers > 0 && externalBuffer != NULL)");
 	}
 
 	m_topDown = topDown;
@@ -39,6 +52,21 @@ PuresoftFBO::PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int
 		m_workRanges[i].curRowEntry = 0;
 		m_workRanges[i].writePoint = m_buffer;
 	}
+
+	memset(m_extraLayers, 0, sizeof(m_extraLayers));
+
+	if(extraLayers > 0)
+	{
+		if(extraLayers > LAYER_MAX)
+		{
+			throw out_of_range("PuresoftFBO::PuresoftFBO");
+		}
+
+		for(int i = 0; i < extraLayers; i++)
+		{
+			m_extraLayers[i] = new PuresoftFBO(width, scanline, height, elemLen, topDown, NULL, wrapMode, 0);
+		}
+	}
 }
 
 
@@ -52,6 +80,14 @@ PuresoftFBO::~PuresoftFBO(void)
 	if(m_rowEntries)
 	{
 		_aligned_free(m_rowEntries);
+	}
+
+	for(int i = 0; i < LAYER_MAX; i++)
+	{
+		if(m_extraLayers[i])
+		{
+			delete m_extraLayers[i];
+		}
 	}
 }
 
@@ -348,6 +384,22 @@ unsigned int PuresoftFBO::getElemLen(void) const
 size_t PuresoftFBO::getBytes(void) const
 {
 	return m_bytes;
+}
+
+PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer)
+{
+	if(LAYER_DEFAULT == layer)
+		return this;
+
+	return m_extraLayers[layer];
+}
+
+const PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer) const
+{
+	if(LAYER_DEFAULT == layer)
+		return this;
+
+	return m_extraLayers[layer];
 }
 
 void PuresoftFBO::clampCoord(unsigned int& row, unsigned int& col) const

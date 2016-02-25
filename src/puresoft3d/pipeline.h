@@ -23,9 +23,9 @@ public:
 	~PuresoftPipeline(void);
 
 	// texture api
-	int  createTexture(const PURESOFTIMGBUFF32* image);
-	void getTexture(int idx, PURESOFTIMGBUFF32* image);
+	int  createTexture(const PURESOFTIMGBUFF32* image, int extraLayers = 0);
 	void destroyTexture(int idx);
+	void getTexture(int idx, PURESOFTIMGBUFF32* image, PuresoftFBO::LAYER layer = PuresoftFBO::LAYER_DEFAULT);
 
 	// processor api
 	int  addProcessor(PuresoftProcessor* proc);

@@ -14,9 +14,9 @@ VertexProcesserTEST::~VertexProcesserTEST(void)
 
 void VertexProcesserTEST::preprocess(const void** uniforms)
 {
-	m_PV = (const float*)uniforms[0];
-	m_M = (const float*)uniforms[1];
-	m_Mrot = (const float*)uniforms[2];
+	m_PV = (const float*)uniforms[3];
+	m_M = (const float*)uniforms[4];
+	m_Mrot = (const float*)uniforms[5];
 }
 
 void VertexProcesserTEST::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -157,14 +157,14 @@ FragmentProcessorTEST::~FragmentProcessorTEST(void)
 
 void FragmentProcessorTEST::preprocess(const void** uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[4];
-	m_cameraPos = (const float*)uniforms[5];
-	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[6]];
-	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[7]];
-	m_specularTex = (const PuresoftFBO*)textures[*(const int*)uniforms[8]];
-	m_nightTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9]];
-	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10]];
-	m_texMatrix = (const float*)uniforms[11];
+	m_lightPos = (const float*)uniforms[7];
+	m_cameraPos = (const float*)uniforms[8];
+	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9]];
+	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10]];
+	m_specularTex = (const PuresoftFBO*)textures[*(const int*)uniforms[11]];
+	m_nightTex = (const PuresoftFBO*)textures[*(const int*)uniforms[12]];
+	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[13]];
+	m_texMatrix = (const float*)uniforms[14];
 }
 
 void FragmentProcessorTEST::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

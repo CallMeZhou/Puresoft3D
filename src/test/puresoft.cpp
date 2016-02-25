@@ -92,25 +92,25 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 	mat4 proj_view;
 	mcemaths_transform_m4m4(proj_view, proj, view);
-	pipeline.setUniform(0, proj_view, sizeof(proj_view.elem));
+	pipeline.setUniform(3, proj_view, sizeof(proj_view.elem));
 
 	mat4 rot, tran, scale;
 	rot.rotation(vec4(0, 1.0f, 0, 0), 0);//-PI/4.0f);
 	tran.translation(0, 0, -2.0f);
 	mcemaths_transform_m4m4(model, tran, rot);
-	pipeline.setUniform(1, model, sizeof(model.elem));
+	pipeline.setUniform(4, model, sizeof(model.elem));
 
 	mat4 modelRotate = rot;
-	pipeline.setUniform(2, modelRotate, sizeof(modelRotate.elem));
+	pipeline.setUniform(5, modelRotate, sizeof(modelRotate.elem));
 
 	RGBQUAD singleColour = {200, 100, 150, 0};
-	pipeline.setUniform(3, &singleColour, sizeof(singleColour));
+	pipeline.setUniform(6, &singleColour, sizeof(singleColour));
 
 	vec4 lightPos(-6.0f, 0, 1.0f, 0);
-	pipeline.setUniform(4, &lightPos, sizeof(lightPos));
+	pipeline.setUniform(7, &lightPos, sizeof(lightPos));
 
 	vec4 cameraPos;
-	pipeline.setUniform(5, &cameraPos, sizeof(cameraPos));
+	pipeline.setUniform(8, &cameraPos, sizeof(cameraPos));
 
 	//	HOBJXIO objx = open_objx(_T("box.objx"));
 		HOBJXIO objx = open_objx(_T("sphere1.objx"));
@@ -173,7 +173,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	int tex = pipeline.createTexture(&image);
 	free(image.pixels);
 	picLoader.close();
-	pipeline.setUniform(6, &tex, sizeof(tex));
+	pipeline.setUniform(9, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.dot3.png", &image);
 //	picLoader.loadFromFile(CA2W(mi.bump_file.c_str()), &image);
@@ -182,7 +182,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	tex = pipeline.createTexture(&image);
 	free(image.pixels);
 	picLoader.close();
-	pipeline.setUniform(7, &tex, sizeof(tex));
+	pipeline.setUniform(10, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.spac.png", &image);
 	image.pixels = malloc(image.scanline * image.height);
@@ -190,7 +190,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	tex = pipeline.createTexture(&image);
 	free(image.pixels);
 	picLoader.close();
-	pipeline.setUniform(8, &tex, sizeof(tex));
+	pipeline.setUniform(11, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.night.png", &image);
 	image.pixels = malloc(image.scanline * image.height);
@@ -198,7 +198,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	tex = pipeline.createTexture(&image);
 	free(image.pixels);
 	picLoader.close();
-	pipeline.setUniform(9, &tex, sizeof(tex));
+	pipeline.setUniform(12, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.cloud.png", &image);
 	image.pixels = malloc(image.scanline * image.height);
@@ -206,11 +206,11 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	tex = pipeline.createTexture(&image);
 	free(image.pixels);
 	picLoader.close();
-	pipeline.setUniform(10, &tex, sizeof(tex));
+	pipeline.setUniform(13, &tex, sizeof(tex));
 
 	mat4 texMatrix;
 	//updateTexMatrix(texMatrix, 0);
-	pipeline.setUniform(11, texMatrix, sizeof(texMatrix.elem));
+	pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
 
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
@@ -253,12 +253,12 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		tran.translation(0, 0, -1.2f);
 		mcemaths_transform_m4m4(model, rot, scale);
 		mcemaths_transform_m4m4_r_ip(tran, model);
-		pipeline.setUniform(1, model, sizeof(model.elem));
+		pipeline.setUniform(4, model, sizeof(model.elem));
 		mat4 modelRotate = rot;
-		pipeline.setUniform(2, modelRotate, sizeof(modelRotate.elem));
+		pipeline.setUniform(5, modelRotate, sizeof(modelRotate.elem));
 
 		texMatrix.translation(trotrad, 0, 0);
-		pipeline.setUniform(11, texMatrix, sizeof(texMatrix.elem));
+		pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
 
 		pipeline.clearDepth();
 		pipeline.clearColour();
