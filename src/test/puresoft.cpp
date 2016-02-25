@@ -90,6 +90,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
 
+	pipeline.setUniform(0, proj, sizeof(proj.elem));
+	pipeline.setUniform(1, view, sizeof(view.elem));
+
 	mat4 proj_view;
 	mcemaths_transform_m4m4(proj_view, proj, view);
 	pipeline.setUniform(3, proj_view, sizeof(proj_view.elem));
@@ -144,6 +147,19 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	vao1.attachVBO(3, &normals);
 	vao1.attachVBO(4, &texcoords);
 
+	__declspec(align(16)) float fullsquare[] = 
+	{
+		-1.0f,  1.0f,  0,  1.0f, 
+		-1.0f, -1.0f,  0,  1.0f, 
+		 1.0f, -1.0f,  0,  1.0f, 
+		 1.0f, -1.0f,  0,  1.0f, 
+		 1.0f,  1.0f,  0,  1.0f, 
+		-1.0f,  1.0f,  0,  1.0f, 
+	};
+	PuresoftVBO vertices2(16, 6);
+	vertices2.updateContent(fullsquare);
+	vao2.attachVBO(0, &vertices2);
+
 	for(unsigned int i = 0; i < mi.num_vertices; i++)
 	{
 		mi.vertices[i].w = 1.0f;
@@ -168,45 +184,63 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	PURESOFTIMGBUFF32 image;
 	PuresoftDefaultPictureLoader picLoader;
 	picLoader.loadFromFile(CA2W(mi.tex_file.c_str()), &image);
-	image.pixels = malloc(image.scanline * image.height);
-	picLoader.retrievePixel(&image);
 	int tex = pipeline.createTexture(&image);
-	free(image.pixels);
+	pipeline.getTexture(tex, &image);
+	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(9, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.dot3.png", &image);
-//	picLoader.loadFromFile(CA2W(mi.bump_file.c_str()), &image);
-	image.pixels = malloc(image.scanline * image.height);
-	picLoader.retrievePixel(&image);
 	tex = pipeline.createTexture(&image);
-	free(image.pixels);
+	pipeline.getTexture(tex, &image);
+	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(10, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.spac.png", &image);
-	image.pixels = malloc(image.scanline * image.height);
-	picLoader.retrievePixel(&image);
 	tex = pipeline.createTexture(&image);
-	free(image.pixels);
+	pipeline.getTexture(tex, &image);
+	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(11, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.night.png", &image);
-	image.pixels = malloc(image.scanline * image.height);
-	picLoader.retrievePixel(&image);
 	tex = pipeline.createTexture(&image);
-	free(image.pixels);
+	pipeline.getTexture(tex, &image);
+	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(12, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.cloud.png", &image);
-	image.pixels = malloc(image.scanline * image.height);
-	picLoader.retrievePixel(&image);
 	tex = pipeline.createTexture(&image);
-	free(image.pixels);
+	pipeline.getTexture(tex, &image);
+	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(13, &tex, sizeof(tex));
+
+	const wchar_t* skyboxFiles[] = 
+	{
+		  L"purplenebula_rt.png" // xpos
+		, L"purplenebula_lf.png" // xneg
+		, L"purplenebula_up.png" // ypos
+		, L"purplenebula_dn.png" // yneg
+		, L"purplenebula_ft.png" // zpos
+		, L"purplenebula_bk.png" // zneg
+	};
+
+	picLoader.loadFromFile(skyboxFiles[0], &image);
+	image.pixels = NULL;
+	tex = pipeline.createTexture(&image, 5);
+	pipeline.setUniform(2, &tex, sizeof(tex));
+	pipeline.getTexture(tex, &image, PuresoftFBO::LAYER_XPOS);
+	picLoader.retrievePixel(&image);
+	for(int i = 1; i < 6; i++)
+	{
+		picLoader.loadFromFile(skyboxFiles[i], &image);
+		pipeline.getTexture(tex, &image, (PuresoftFBO::LAYER)i);
+		picLoader.retrievePixel(&image);
+		picLoader.close();
+	}
 
 	mat4 texMatrix;
 	//updateTexMatrix(texMatrix, 0);
@@ -247,6 +281,10 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			trotrad = 0;
 		}
 
+		pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
+		pipeline.drawVAO(&vao2);
+		pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
+
 		rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 		//scale.scaling(1.0f, 1.0f, 1.0f);
 		//tran.translation(0, 0, -150.0f);
@@ -261,7 +299,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
 
 		pipeline.clearDepth();
-		pipeline.clearColour();
+		//pipeline.clearColour();
 		pipeline.drawVAO(&vao1);
 
 		pipeline.swapBuffers();

@@ -36,7 +36,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 		}
 
 		// cull back-face
-		if(isBackFace(m_vertOutput[0].position, m_vertOutput[1].position, m_vertOutput[2].position))
+		if((m_behavior & BEHAVIOR_FACE_CULLING) && isBackFace(m_vertOutput[0].position, m_vertOutput[1].position, m_vertOutput[2].position))
 		{
 			continue;
 		}

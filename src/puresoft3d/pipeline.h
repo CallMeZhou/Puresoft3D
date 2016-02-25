@@ -14,6 +14,10 @@
 
 const PURESOFTBGRA PURESOFTBGRA_BLACK = {0};
 
+const int BEHAVIOR_UPDATE_DEPTH = 0x00000001;
+const int BEHAVIOR_TEST_DEPTH   = 0x00000002;
+const int BEHAVIOR_FACE_CULLING = 0x00000004;
+
 class PuresoftProcessor;
 class PuresoftInterpolationProcessor;
 __declspec(align(16)) class PuresoftPipeline : public mcemaths::align_base_16
@@ -41,6 +45,8 @@ public:
 	void setUniform(int idx, const void* data, size_t len);
 	void drawVAO(PuresoftVAO* vao);
 	void swapBuffers(void);
+	void enable(int behavior);
+	void disable(int behavior);
 	void clearDepth(float furthest = 1.0f);
 	void clearColour(PURESOFTBGRA bkgnd = PURESOFTBGRA_BLACK);
 
@@ -50,6 +56,7 @@ private:
 	int m_height;
 	uintptr_t m_canvasWindow;
 	void* m_uniforms[MAX_UNIFORMS];
+	int m_behavior;
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
 	PuresoftFBO* m_fbos[MAX_FBOS];

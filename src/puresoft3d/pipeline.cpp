@@ -27,6 +27,7 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
 	, m_userDataPool(NULL)
 	, m_renderer(NULL)
+	, m_behavior(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH | BEHAVIOR_FACE_CULLING)
 {
 	assert(m_numberOfThreads <= MAX_FRAGTHREADS);
 	memset(m_uniforms, 0, sizeof(m_uniforms));
@@ -171,6 +172,16 @@ void PuresoftPipeline::swapBuffers(void)
 	{
 		m_fbos[0]->setBuffer(backBuffer);
 	}
+}
+
+void PuresoftPipeline::enable(int behavior)
+{
+	m_behavior |= behavior;
+}
+
+void PuresoftPipeline::disable(int behavior)
+{
+	m_behavior &= ~behavior;
 }
 
 void PuresoftPipeline::clearDepth(float furthest /* = 1.0f */)

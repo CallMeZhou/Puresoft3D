@@ -54,6 +54,7 @@ PuresoftFBO::PuresoftFBO(
 	}
 
 	memset(m_extraLayers, 0, sizeof(m_extraLayers));
+	m_extraLayers[0] = this;
 
 	if(extraLayers > 0)
 	{
@@ -62,7 +63,7 @@ PuresoftFBO::PuresoftFBO(
 			throw out_of_range("PuresoftFBO::PuresoftFBO");
 		}
 
-		for(int i = 0; i < extraLayers; i++)
+		for(int i = 1; i <= extraLayers; i++)
 		{
 			m_extraLayers[i] = new PuresoftFBO(width, scanline, height, elemLen, topDown, NULL, wrapMode, 0);
 		}
@@ -82,7 +83,7 @@ PuresoftFBO::~PuresoftFBO(void)
 		_aligned_free(m_rowEntries);
 	}
 
-	for(int i = 0; i < LAYER_MAX; i++)
+	for(int i = 1; i < LAYER_MAX; i++)
 	{
 		if(m_extraLayers[i])
 		{
@@ -388,17 +389,11 @@ size_t PuresoftFBO::getBytes(void) const
 
 PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer)
 {
-	if(LAYER_DEFAULT == layer)
-		return this;
-
 	return m_extraLayers[layer];
 }
 
 const PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer) const
 {
-	if(LAYER_DEFAULT == layer)
-		return this;
-
 	return m_extraLayers[layer];
 }
 

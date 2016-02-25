@@ -14,7 +14,7 @@ public:
 	};
 
 	enum WRAPMODE {CLAMP, WRAP};
-	enum LAYER {LAYER_DEFAULT = -1, LAYER_XPOS = LAYER_DEFAULT, LAYER_XNEG, LAYER_YPOS, LAYER_YNEG, LAYER_ZPOS, LAYER_ZNEG, LAYER_MAX};
+	enum LAYER {LAYER_DEFAULT, LAYER_XPOS = LAYER_DEFAULT, LAYER_XNEG, LAYER_YPOS, LAYER_YNEG, LAYER_ZPOS, LAYER_ZNEG, LAYER_MAX};
 
 public:
 	PuresoftFBO(unsigned int width, unsigned int scanline, unsigned int height, unsigned int elemLen, bool topDown = false, void* externalBuffer = NULL, WRAPMODE wrapMode = CLAMP, int extraLayers = 0);

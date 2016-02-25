@@ -97,7 +97,10 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			}
 		}
 
-		pThis->m_depth.setCurRow(threadIndex, y);
+		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+		{
+			pThis->m_depth.setCurRow(threadIndex, y);
+		}
 
 		// set starting column to all attached fbos
 		for(size_t i = 0; i < MAX_FBOS; i++)
@@ -108,7 +111,10 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			}
 		}
 
-		pThis->m_depth.setCurCol(threadIndex, x1);
+		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+		{
+			pThis->m_depth.setCurCol(threadIndex, x1);
+		}
 
 		// process rasterization result of a scanline, column by column
 		for(int x = x1; x <= x2; x++)
@@ -120,13 +126,21 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
 
 			// get current depth from the depth buffer and do depth test
-			float currentDepth;
-			pThis->m_depth.read4(threadIndex, &currentDepth);
+			bool depthTestPassed = true;
+			if(pThis->m_behavior & BEHAVIOR_TEST_DEPTH)
+			{
+				float currentDepth;
+				pThis->m_depth.read4(threadIndex, &currentDepth);
+				depthTestPassed = newDepth < currentDepth;
+			}
 
-			if(newDepth < currentDepth) // depth test passed
+			if(depthTestPassed)
 			{
 				// update depth buffer
-				pThis->m_depth.write4(threadIndex, &newDepth);
+				if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+				{
+					pThis->m_depth.write4(threadIndex, &newDepth);
+				}
 
 				// go ahead with Fragment Processor (fbos are updated meanwhile)
 				pThis->m_fp->process(&fragInput, &fragOutput);

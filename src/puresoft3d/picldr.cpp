@@ -54,6 +54,7 @@ void PuresoftDefaultPictureLoader::loadFromFile(const wchar_t* path, PURESOFTIMG
 		imageInfo->scanline = WIDTHBYTES(imageInfo->width * 32);
 		imageInfo->height = bmp->GetHeight();
 		imageInfo->elemLen = 4;
+		imageInfo->pixels = NULL;
 	}
 }
 
