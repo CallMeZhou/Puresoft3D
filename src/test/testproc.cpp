@@ -12,11 +12,11 @@ VertexProcesserTEST::~VertexProcesserTEST(void)
 {
 }
 
-void VertexProcesserTEST::preprocess(const void** uniforms)
+void VertexProcesserTEST::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_PV = (const float*)uniforms[3];
-	m_M = (const float*)uniforms[4];
-	m_Mrot = (const float*)uniforms[5];
+	m_PV = (const float*)uniforms[3].data;
+	m_M = (const float*)uniforms[4].data;
+	m_Mrot = (const float*)uniforms[5].data;
 }
 
 void VertexProcesserTEST::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -58,7 +58,7 @@ size_t InterpolationProcessorTEST::userDataBytes(void) const
 	return sizeof(PROCDATA_TEST);
 }
 
-void InterpolationProcessorTEST::preprocess(const void** uniforms)
+void InterpolationProcessorTEST::preprocess(const PURESOFTUNIFORM* uniforms)
 {
 }
 
@@ -155,16 +155,16 @@ FragmentProcessorTEST::~FragmentProcessorTEST(void)
 {
 }
 
-void FragmentProcessorTEST::preprocess(const void** uniforms, const void** textures)
+void FragmentProcessorTEST::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[7];
-	m_cameraPos = (const float*)uniforms[8];
-	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9]];
-	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10]];
-	m_specularTex = (const PuresoftFBO*)textures[*(const int*)uniforms[11]];
-	m_nightTex = (const PuresoftFBO*)textures[*(const int*)uniforms[12]];
-	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[13]];
-	m_texMatrix = (const float*)uniforms[14];
+	m_lightPos = (const float*)uniforms[7].data;
+	m_cameraPos = (const float*)uniforms[8].data;
+	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9].data];
+	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10].data];
+	m_specularTex = (const PuresoftFBO*)textures[*(const int*)uniforms[11].data];
+	m_nightTex = (const PuresoftFBO*)textures[*(const int*)uniforms[12].data];
+	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[13].data];
+	m_texMatrix = (const float*)uniforms[14].data;
 }
 
 void FragmentProcessorTEST::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

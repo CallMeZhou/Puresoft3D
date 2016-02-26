@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include "config.h"
+#include "defs.h"
 
 class PuresoftProcessor
 {
@@ -26,7 +27,7 @@ class PuresoftVertexProcessor : public PuresoftProcessor
 {
 public:
 	virtual ~PuresoftVertexProcessor() {}
-	virtual void preprocess(const void** uniforms) = 0;
+	virtual void preprocess(const PURESOFTUNIFORM* uniforms) = 0;
 	virtual void process(const VertexProcessorInput* input, VertexProcessorOutput* output) const = 0;
 };
 
@@ -34,7 +35,7 @@ class PuresoftInterpolationProcessor : public PuresoftProcessor
 {
 public:
 	virtual ~PuresoftInterpolationProcessor() {}
-	virtual void preprocess(const void** uniforms) = 0;
+	virtual void preprocess(const PURESOFTUNIFORM* uniforms) = 0;
 	virtual void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) const = 0;
 	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) const = 0;
 	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const = 0;
@@ -59,7 +60,7 @@ class PuresoftFragmentProcessor : public PuresoftProcessor
 {
 public:
 	virtual ~PuresoftFragmentProcessor() {}
-	virtual void preprocess(const void** uniforms, const void** textures) = 0;
+	virtual void preprocess(const PURESOFTUNIFORM* uniforms, const void** textures) = 0;
 	virtual void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const = 0;
 };
 

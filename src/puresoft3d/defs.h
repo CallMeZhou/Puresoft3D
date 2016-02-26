@@ -1,5 +1,11 @@
 #pragma once
 
+typedef struct 
+{
+	size_t capacity; 
+	void* data;
+} PURESOFTUNIFORM;
+
 typedef struct
 {
 	union

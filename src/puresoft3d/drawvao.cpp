@@ -1,15 +1,15 @@
 #include "pipeline.h"
 
-void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
+void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* = false */)
 {
 	if(!m_vp || !m_ip || !m_fp)
 	{
 		return;
 	}
 
-	m_vp->preprocess((const void**)m_uniforms);
-	m_ip->preprocess((const void**)m_uniforms);
-	m_fp->preprocess((const void**)m_uniforms, (const void**)&m_texPool[0]);
+	m_vp->preprocess(m_uniforms);
+	m_ip->preprocess(m_uniforms);
+	m_fp->preprocess(m_uniforms, (const void**)&m_texPool[0]);
 
 	// reset vertex pointers of all vbos
 	vao->rewindAll();
@@ -61,7 +61,13 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			}
 
 			// partitioning (determine which fragment thread to process this row)
-			int threadIndex = interp.row % m_numberOfThreads;
+			int threadIndex;
+			
+			if(callerThrdForFragProc)
+				threadIndex = interp.row % m_numberOfThreads;
+			else
+				threadIndex = interp.row % (m_numberOfThreads - 1);
+
 			FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + threadIndex;
 
 			// interpolation (preparation of per-fragment interpolation)
@@ -90,15 +96,23 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	}
 
 	// wait for all fragment threads to finish up tasks
-	for(int i = 0; i < m_numberOfThreads; i++)
+	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
 		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + i;
 		taskQueue->beginPush()->taskType = ENDOFDRAW;
 		taskQueue->endPush();
 	}
 
-	for(int i = 0; i < m_numberOfThreads; i++)
+	if(callerThrdForFragProc)
 	{
-		m_fragTaskQueues[i].pollEmpty();
+		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + m_numberOfThreads - 1;
+		taskQueue->beginPush()->taskType = QUIT;
+		taskQueue->endPush();
+		fragmentThread(this);
+	}
+
+	for(int i = 0; i < m_numberOfThreads - 1; i++)
+	{
+		m_fragTaskQueues[i].pollEmpty_busy();
 	}
 }

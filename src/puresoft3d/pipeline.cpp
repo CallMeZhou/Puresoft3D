@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int PuresoftPipeline::m_numberOfThreads = 3; // = getCpuCures();
+int PuresoftPipeline::m_numberOfThreads = 4; // = getCpuCures();
 
 PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height, PuresoftRenderer* rndr /* = NULL */)
 	: m_width(width)
@@ -51,25 +51,26 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 
 	m_fragTaskQueues = new FragmentThreadTaskQueue[m_numberOfThreads];
 
-	for(int i = 0; i < m_numberOfThreads; i++)
+	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
 		m_threads[i] = _beginthreadex(NULL, 0, fragmentThread, this, CREATE_SUSPENDED, NULL);
 		ResumeThread((HANDLE)m_threads[i]);
 //		SetThreadPriority((HANDLE)m_threads[i], THREAD_PRIORITY_ABOVE_NORMAL);
 	}
+	m_threads[m_numberOfThreads - 1] = (uintptr_t)GetCurrentThread();
 }
 
 PuresoftPipeline::~PuresoftPipeline(void)
 {
-	for(int i = 0; i < m_numberOfThreads; i++)
+	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
 		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + i;
 		taskQueue->beginPush()->taskType = QUIT;
 		taskQueue->endPush();
 	}
-	WaitForMultipleObjects(m_numberOfThreads, (const HANDLE*)m_threads, TRUE, INFINITE);
+	WaitForMultipleObjects(m_numberOfThreads - 1, (const HANDLE*)m_threads, TRUE, INFINITE);
 
-	for(int i = 0; i < m_numberOfThreads; i++)
+	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
 		CloseHandle((HANDLE)m_threads[i]);
 	}
@@ -94,9 +95,9 @@ PuresoftPipeline::~PuresoftPipeline(void)
 
 	for(size_t i = 0; i < MAX_UNIFORMS; i++)
 	{
-		if(m_uniforms[i])
+		if(m_uniforms[i].data)
 		{
-			_aligned_free(m_uniforms[i]);
+			_aligned_free(m_uniforms[i].data);
 		}
 	}
 
@@ -151,17 +152,34 @@ void PuresoftPipeline::setUniform(int idx, const void* data, size_t len)
 		throw std::out_of_range("PuresoftPipeline::setUniform");
 	}
 	
-	if(m_uniforms[idx])
+	if(!data)
 	{
-		_aligned_free(m_uniforms[idx]);
+		if(m_uniforms[idx].data)
+		{
+			_aligned_free(m_uniforms[idx].data);
+			m_uniforms[idx].data = NULL;
+			m_uniforms[idx].capacity = 0;
+		}
 	}
-
-	if(NULL == (m_uniforms[idx] = _aligned_malloc(len, 16)))
+	else
 	{
-		throw bad_alloc("PuresoftPipeline::setUniform");
-	}
+		if(m_uniforms[idx].capacity < len)
+		{
+			if(m_uniforms[idx].data)
+			{
+				_aligned_free(m_uniforms[idx].data);
+			}
 
-	memcpy(m_uniforms[idx], data, len);
+			if(NULL == (m_uniforms[idx].data = _aligned_malloc(len, 16)))
+			{
+				throw bad_alloc("PuresoftPipeline::setUniform");
+			}
+
+			m_uniforms[idx].capacity = len;
+		}
+
+		memcpy(m_uniforms[idx].data, data, len);
+	}
 }
 
 void PuresoftPipeline::swapBuffers(void)

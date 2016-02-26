@@ -43,7 +43,7 @@ public:
 	void setViewport(uintptr_t canvasWindow);
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
-	void drawVAO(PuresoftVAO* vao);
+	void drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc = false);
 	void swapBuffers(void);
 	void enable(int behavior);
 	void disable(int behavior);
@@ -55,7 +55,6 @@ private:
 	int m_width;
 	int m_height;
 	uintptr_t m_canvasWindow;
-	void* m_uniforms[MAX_UNIFORMS];
 	volatile int m_behavior;
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
@@ -63,6 +62,7 @@ private:
 	PuresoftFBO m_depth;
 	PuresoftFBO* m_display;
 	PuresoftRenderer* m_renderer;
+	PURESOFTUNIFORM m_uniforms[MAX_UNIFORMS];
 
 // processors
 	typedef std::vector<PuresoftProcessor*> PROCCOLL;

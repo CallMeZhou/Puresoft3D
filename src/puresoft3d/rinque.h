@@ -210,6 +210,24 @@ public:
 		return false;
 	}
 
+	bool pollEmpty_busy(void) const
+	{
+		while(true)
+		{
+			if(0 == m_len)
+			{
+				return true;
+			}
+
+			if(m_abort)
+			{
+				break;
+			}
+		}
+
+		return false;
+	}
+
 private:
 	CRITICAL_SECTION m_cs;
 	T m_queue[LEN];

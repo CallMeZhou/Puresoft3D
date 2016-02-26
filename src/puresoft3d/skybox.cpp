@@ -14,10 +14,10 @@ VertexProcesserDEF04::~VertexProcesserDEF04(void)
 {
 }
 
-void VertexProcesserDEF04::preprocess(const void** uniforms)
+void VertexProcesserDEF04::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_P = (const float*)uniforms[0];
-	m_V = (const float*)uniforms[1];
+	m_P = (const float*)uniforms[0].data;
+	m_V = (const float*)uniforms[1].data;
 }
 
 void VertexProcesserDEF04::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -54,7 +54,7 @@ size_t InterpolationProcessorDEF04::userDataBytes(void) const
 	return sizeof(PROCDATA_DEF04);
 }
 
-void InterpolationProcessorDEF04::preprocess(const void** uniforms)
+void InterpolationProcessorDEF04::preprocess(const PURESOFTUNIFORM* uniforms)
 {
 }
 
@@ -107,9 +107,9 @@ FragmentProcessorDEF04::~FragmentProcessorDEF04(void)
 {
 }
 
-void FragmentProcessorDEF04::preprocess(const void** uniforms, const void** textures)
+void FragmentProcessorDEF04::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_skyboxTex = (const PuresoftFBO*)textures[*(const int*)uniforms[2]];
+	m_skyboxTex = (const PuresoftFBO*)textures[*(const int*)uniforms[2].data];
 }
 
 void FragmentProcessorDEF04::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

@@ -13,7 +13,7 @@ public:
 	VertexProcesserDEF04(void);
 	~VertexProcesserDEF04(void);
 
-	void preprocess(const void** uniforms);
+	void preprocess(const PURESOFTUNIFORM* uniforms);
 	void process(const VertexProcessorInput* input, VertexProcessorOutput* output) const;
 
 private:
@@ -28,7 +28,7 @@ public:
 	~InterpolationProcessorDEF04(void);
 
 	size_t userDataBytes(void) const;
-	void preprocess(const void** uniforms);
+	void preprocess(const PURESOFTUNIFORM* uniforms);
 	void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) const;
 	void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) const;
 	void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const;
@@ -40,7 +40,7 @@ public:
 	FragmentProcessorDEF04(void);
 	~FragmentProcessorDEF04(void);
 
-	void preprocess(const void** uniforms, const void** textures);
+	void preprocess(const PURESOFTUNIFORM* uniforms, const void** textures);
 	void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const;
 
 private:

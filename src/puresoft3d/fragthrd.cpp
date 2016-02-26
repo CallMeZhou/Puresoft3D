@@ -49,9 +49,10 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 	// thread start off parameters
 	PuresoftPipeline* pThis = (PuresoftPipeline*)param;
 	int threadIndex = 0;
+	unsigned int myThreadId = GetThreadId(GetCurrentThread());
 	for(; threadIndex < m_numberOfThreads; threadIndex++)
 	{
-		if(GetThreadId((HANDLE)pThis->m_threads[threadIndex]) == GetThreadId(GetCurrentThread()))
+		if(GetThreadId((HANDLE)pThis->m_threads[threadIndex]) == myThreadId)
 			break;
 	}
 

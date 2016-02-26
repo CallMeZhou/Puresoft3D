@@ -23,8 +23,8 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 static void updateTexMatrix(mat4& m, float rad);
 
-const int W = 800;
-const int H = 600;
+const int W = 1024;
+const int H = 576;
 
 const float PI = 3.1415927f;
 
@@ -294,7 +294,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.useProgramme(skyProc);
 
 		pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-		pipeline.drawVAO(&vao2);
+		pipeline.drawVAO(&vao2, true);
 		pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
 
 		pipeline.useProgramme(fullProc);

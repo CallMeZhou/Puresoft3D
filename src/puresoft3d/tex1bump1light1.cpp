@@ -12,11 +12,11 @@ VertexProcesserDEF03::~VertexProcesserDEF03(void)
 {
 }
 
-void VertexProcesserDEF03::preprocess(const void** uniforms)
+void VertexProcesserDEF03::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_PV = (const float*)uniforms[0];
-	m_M = (const float*)uniforms[1];
-	m_Mrot = (const float*)uniforms[2];
+	m_PV = (const float*)uniforms[0].data;
+	m_M = (const float*)uniforms[1].data;
+	m_Mrot = (const float*)uniforms[2].data;
 }
 
 void VertexProcesserDEF03::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -58,7 +58,7 @@ size_t InterpolationProcessorDEF03::userDataBytes(void) const
 	return sizeof(PROCDATA_DEF03);
 }
 
-void InterpolationProcessorDEF03::preprocess(const void** uniforms)
+void InterpolationProcessorDEF03::preprocess(const PURESOFTUNIFORM* uniforms)
 {
 }
 
@@ -155,12 +155,12 @@ FragmentProcessorDEF03::~FragmentProcessorDEF03(void)
 {
 }
 
-void FragmentProcessorDEF03::preprocess(const void** uniforms, const void** textures)
+void FragmentProcessorDEF03::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[4];
-	m_cameraPos = (const float*)uniforms[5];
-	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[6]];
-	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[7]];
+	m_lightPos = (const float*)uniforms[4].data;
+	m_cameraPos = (const float*)uniforms[5].data;
+	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[6].data];
+	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[7].data];
 }
 
 void FragmentProcessorDEF03::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

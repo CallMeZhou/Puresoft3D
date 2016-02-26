@@ -12,11 +12,11 @@ VertexProcesserDEF02::~VertexProcesserDEF02(void)
 {
 }
 
-void VertexProcesserDEF02::preprocess(const void** uniforms)
+void VertexProcesserDEF02::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_PV = (const float*)uniforms[0];
-	m_M = (const float*)uniforms[1];
-	m_Mrot = (const float*)uniforms[2];
+	m_PV = (const float*)uniforms[0].data;
+	m_M = (const float*)uniforms[1].data;
+	m_Mrot = (const float*)uniforms[2].data;
 }
 
 void VertexProcesserDEF02::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -53,7 +53,7 @@ size_t InterpolationProcessorDEF02::userDataBytes(void) const
 	return sizeof(PROCDATA_DEF02);
 }
 
-void InterpolationProcessorDEF02::preprocess(const void** uniforms)
+void InterpolationProcessorDEF02::preprocess(const PURESOFTUNIFORM* uniforms)
 {
 }
 
@@ -130,10 +130,10 @@ FragmentProcessorDEF02::~FragmentProcessorDEF02(void)
 {
 }
 
-void FragmentProcessorDEF02::preprocess(const void** uniforms, const void** textures)
+void FragmentProcessorDEF02::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[4];
-	m_cameraPos = (const float*)uniforms[5];
+	m_lightPos = (const float*)uniforms[4].data;
+	m_cameraPos = (const float*)uniforms[5].data;
 }
 
 void FragmentProcessorDEF02::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
