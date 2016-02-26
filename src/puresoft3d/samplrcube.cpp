@@ -2,7 +2,6 @@
 #include "mcemaths.h"
 #include "samplrcube.h"
 
-#pragma warning(disable:4700)
 /*
 
 major axis
@@ -100,7 +99,8 @@ static PuresoftFBO::LAYER texcoordFromDirection(float* texcoord, const float* di
 void PuresoftSamplerCube::get(const PuresoftFBO* imageBuffer, const float* direction, void* data, size_t len)
 {
 	float texcoord[2];
-	imageBuffer->getExtraLayer(texcoordFromDirection(texcoord, direction))->directRead(
+	PuresoftFBO::LAYER layer = texcoordFromDirection(texcoord, direction);
+	imageBuffer->getExtraLayer(layer)->directRead(
 		(unsigned int)((float)imageBuffer->getHeight() * S + 0.5f), 
 		(unsigned int)((float)imageBuffer->getWidth()  * T + 0.5f), 
 		data, len);
@@ -109,7 +109,8 @@ void PuresoftSamplerCube::get(const PuresoftFBO* imageBuffer, const float* direc
 void PuresoftSamplerCube::get1(const PuresoftFBO* imageBuffer, const float* direction, void* data)
 {
 	float texcoord[2];
-	imageBuffer->getExtraLayer(texcoordFromDirection(texcoord, direction))->directRead1(
+	PuresoftFBO::LAYER layer = texcoordFromDirection(texcoord, direction);
+	imageBuffer->getExtraLayer(layer)->directRead1(
 		(unsigned int)((float)imageBuffer->getHeight() * S + 0.5f), 
 		(unsigned int)((float)imageBuffer->getWidth()  * T + 0.5f), 
 		data);
@@ -118,7 +119,8 @@ void PuresoftSamplerCube::get1(const PuresoftFBO* imageBuffer, const float* dire
 void PuresoftSamplerCube::get4(const PuresoftFBO* imageBuffer, const float* direction, void* data)
 {
 	float texcoord[2];
-	imageBuffer->getExtraLayer(texcoordFromDirection(texcoord, direction))->directRead4(
+	PuresoftFBO::LAYER layer = texcoordFromDirection(texcoord, direction);
+	imageBuffer->getExtraLayer(layer)->directRead4(
 		(unsigned int)((float)imageBuffer->getHeight() * S + 0.5f), 
 		(unsigned int)((float)imageBuffer->getWidth()  * T + 0.5f), 
 		data);
@@ -127,10 +129,9 @@ void PuresoftSamplerCube::get4(const PuresoftFBO* imageBuffer, const float* dire
 void PuresoftSamplerCube::get16(const PuresoftFBO* imageBuffer, const float* direction, void* data)
 {
 	float texcoord[2];
-	imageBuffer->getExtraLayer(texcoordFromDirection(texcoord, direction))->directRead16(
+	PuresoftFBO::LAYER layer = texcoordFromDirection(texcoord, direction);
+	imageBuffer->getExtraLayer(layer)->directRead16(
 		(unsigned int)((float)imageBuffer->getHeight() * S + 0.5f), 
 		(unsigned int)((float)imageBuffer->getWidth()  * T + 0.5f), 
 		data);
 }
-
-#pragma warning(default:4700)

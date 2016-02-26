@@ -61,11 +61,11 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 
 PuresoftPipeline::~PuresoftPipeline(void)
 {
-	FRAGTHREADTASK task;
-	task.eot = true;
 	for(int i = 0; i < m_numberOfThreads; i++)
 	{
-		m_fragTaskQueues[i].push(task);
+		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + i;
+		taskQueue->beginPush()->taskType = QUIT;
+		taskQueue->endPush();
 	}
 	WaitForMultipleObjects(m_numberOfThreads, (const HANDLE*)m_threads, TRUE, INFINITE);
 

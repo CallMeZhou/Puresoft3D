@@ -67,11 +67,17 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 	{
 		FRAGTHREADTASK* task = taskQueue->beginPop();
 
-		if(task->eot)
+		if(QUIT == task->taskType)
 		{
 			taskQueue->endPop();
 			break;
 		}
+		else if(ENDOFDRAW == task->taskType || NOOP == task->taskType)
+		{
+			taskQueue->endPop();
+			continue;
+		}
+		//else: DRAW
 
 		int x1 = task->x1, x2 = task->x2, y = task->y;
 		fragInput.user = pThis->m_userDataBuffers.fragInputs[threadIndex];

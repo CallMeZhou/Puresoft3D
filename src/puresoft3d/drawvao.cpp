@@ -75,7 +75,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 			m_interpolater.interpolateStartAndStep(&interp);
 
 			// complete the task item
-			newTask->eot = false;
+			newTask->taskType = DRAW;
 			newTask->x1 = row.left;
 			newTask->x2 = row.right;
 			newTask->y = interp.row;
@@ -90,6 +90,13 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao)
 	}
 
 	// wait for all fragment threads to finish up tasks
+	for(int i = 0; i < m_numberOfThreads; i++)
+	{
+		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + i;
+		taskQueue->beginPush()->taskType = ENDOFDRAW;
+		taskQueue->endPush();
+	}
+
 	for(int i = 0; i < m_numberOfThreads; i++)
 	{
 		m_fragTaskQueues[i].pollEmpty();

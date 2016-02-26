@@ -31,7 +31,7 @@ public:
 		}
 	}
 
-	bool push(const T& item = NULL)
+	bool push(const T& item)
 	{
 		while(true)
 		{
@@ -203,6 +203,8 @@ public:
 			{
 				break;
 			}
+
+			YIELD_CPU;
 		}
 
 		return false;

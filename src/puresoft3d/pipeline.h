@@ -56,7 +56,7 @@ private:
 	int m_height;
 	uintptr_t m_canvasWindow;
 	void* m_uniforms[MAX_UNIFORMS];
-	int m_behavior;
+	volatile int m_behavior;
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
 	PuresoftFBO* m_fbos[MAX_FBOS];
@@ -112,8 +112,10 @@ private:
 	static int m_numberOfThreads;
 	uintptr_t m_threads[MAX_FRAGTHREADS];
 
+	enum FRAGTHREADTASKTYPE {NOOP, ENDOFDRAW, QUIT, DRAW};
 	typedef struct 
 	{
+		FRAGTHREADTASKTYPE taskType; // task type
 		int x1;
 		int x2;
 		int y;
@@ -123,7 +125,6 @@ private:
 		float correctionFactor2Step;
 		void* userDataStart;
 		void* userDataStep;
-		bool eot; // end of tasks
 	} FRAGTHREADTASK;
 
 	typedef RingQueueMT<FRAGTHREADTASK, MAX_FRAGTASKS> FragmentThreadTaskQueue;

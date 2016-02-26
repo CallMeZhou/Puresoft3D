@@ -109,7 +109,7 @@ FragmentProcessorDEF04::~FragmentProcessorDEF04(void)
 
 void FragmentProcessorDEF04::preprocess(const void** uniforms, const void** textures)
 {
-	m_skyboxTex = (const PuresoftFBO*)uniforms[2];
+	m_skyboxTex = (const PuresoftFBO*)textures[*(const int*)uniforms[2]];
 }
 
 void FragmentProcessorDEF04::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

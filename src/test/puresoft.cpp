@@ -13,6 +13,7 @@
 #include "picldr.h"
 #include "rndrddraw.h"
 #include "libobjx.h"
+#include "defproc.h"
 #include "testproc.h"
 
 using namespace Gdiplus;
@@ -82,13 +83,21 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.addProcessor(new FragmentProcessorDEF01)));
 */
 
-	pipeline.useProgramme(pipeline.createProgramme(
+	int skyProc = pipeline.createProgramme(
+		pipeline.addProcessor(new VertexProcesserDEF04), 
+		pipeline.addProcessor(new InterpolationProcessorDEF04), 
+		pipeline.addProcessor(new FragmentProcessorDEF04));
+
+	int fullProc = pipeline.createProgramme(
 		pipeline.addProcessor(new VertexProcesserTEST), 
 		pipeline.addProcessor(new InterpolationProcessorTEST), 
-		pipeline.addProcessor(new FragmentProcessorTEST)));
+		pipeline.addProcessor(new FragmentProcessorTEST));
+
 
 	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
+
+	//view.rotation(vec4(0, 1.0f, 0, 0), PI/4.0f);
 
 	pipeline.setUniform(0, proj, sizeof(proj.elem));
 	pipeline.setUniform(1, view, sizeof(view.elem));
@@ -234,6 +243,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	pipeline.setUniform(2, &tex, sizeof(tex));
 	pipeline.getTexture(tex, &image, PuresoftFBO::LAYER_XPOS);
 	picLoader.retrievePixel(&image);
+	picLoader.close();
 	for(int i = 1; i < 6; i++)
 	{
 		picLoader.loadFromFile(skyboxFiles[i], &image);
@@ -281,9 +291,13 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			trotrad = 0;
 		}
 
+		pipeline.useProgramme(skyProc);
+
 		pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
 		pipeline.drawVAO(&vao2);
 		pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
+
+		pipeline.useProgramme(fullProc);
 
 		rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
 		//scale.scaling(1.0f, 1.0f, 1.0f);
