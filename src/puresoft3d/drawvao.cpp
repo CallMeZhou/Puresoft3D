@@ -14,7 +14,6 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 	// reset vertex pointers of all vbos
 	vao->rewindAll();
 
-	const PuresoftRasterizer::RESULT* rasterResult = m_rasterizer.getResultPtr();
 	__declspec(align(16)) float correctionFactor1[4] = {0};
 	__declspec(align(16)) float projZs[4] = {0};
 	PuresoftInterpolater::INTERPOLATIONSTARTSTEP interp;
@@ -22,7 +21,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 	interp.vertexUserData[0] = m_vertOutput[0].user;
 	interp.vertexUserData[1] = m_vertOutput[1].user;
 	interp.vertexUserData[2] = m_vertOutput[2].user;
-	interp.vertices = (const int*)rasterResult->vertices;
+	interp.vertices = (const int*)m_rasterResult->vertices;
 	interp.reciprocalWs = correctionFactor1;
 	interp.projectedZs = projZs;
 
@@ -49,10 +48,10 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 		}
 
 		// interpolation + fragment filling
-		for(interp.row = rasterResult->firstRow; interp.row <= rasterResult->lastRow; interp.row++)
+		for(interp.row = m_rasterResult->firstRow; interp.row <= m_rasterResult->lastRow; interp.row++)
 		{
 			// get one row of the rasterized triangle
-			PuresoftRasterizer::RESULT_ROW& row = rasterResult->m_rows[interp.row];
+			PuresoftRasterizer::RESULT_ROW& row = m_rasterResult->m_rows[interp.row];
 
 			// skip zero length row
 			if(row.left == row.right)

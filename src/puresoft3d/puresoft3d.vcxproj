@@ -126,6 +126,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="colr1light1.cpp" />
+    <ClCompile Include="dbg.cpp" />
     <ClCompile Include="drawvao.cpp" />
     <ClCompile Include="fbo.cpp" />
     <ClCompile Include="fragthrd.cpp" />

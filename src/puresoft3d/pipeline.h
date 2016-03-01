@@ -23,7 +23,7 @@ class PuresoftInterpolationProcessor;
 __declspec(align(16)) class PuresoftPipeline : public mcemaths::align_base_16
 {
 public:
-	PuresoftPipeline(uintptr_t canvasWindow, int width, int height, PuresoftRenderer* rndr = NULL);
+	PuresoftPipeline(uintptr_t canvasWindow, int deviceWidth, int deviceHeight, PuresoftRenderer* rndr = NULL);
 	~PuresoftPipeline(void);
 
 	// texture api
@@ -40,7 +40,8 @@ public:
 
 	// rendering api
 	void setRenderer(PuresoftRenderer* rndr);
-	void setViewport(uintptr_t canvasWindow);
+	void setViewport(int width, int height, uintptr_t canvasWindow = 0);
+	void setDepth(int idx = -1);
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
 	void drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc = false);
@@ -50,18 +51,23 @@ public:
 	void clearDepth(float furthest = 1.0f);
 	void clearColour(PURESOFTBGRA bkgnd = PURESOFTBGRA_BLACK);
 
+	// debug api
+	void saveTexture(int idx, const wchar_t* path, bool dataIsFloat);
+
 // fundamental data
 private:
-	int m_width;
-	int m_height;
+	int m_deviceWidth;
+	int m_deviceHeight;
 	uintptr_t m_canvasWindow;
 	volatile int m_behavior;
 	PuresoftInterpolater m_interpolater;
 	PuresoftRasterizer m_rasterizer;
+	const PuresoftRasterizer::RESULT* m_rasterResult;
 	PuresoftFBO* m_fbos[MAX_FBOS];
-	PuresoftFBO m_depth;
+	PuresoftFBO* m_depth;
 	PuresoftFBO* m_display;
 	PuresoftRenderer* m_renderer;
+	PuresoftFBO m_defaultDepth;
 	PURESOFTUNIFORM m_uniforms[MAX_UNIFORMS];
 
 // processors

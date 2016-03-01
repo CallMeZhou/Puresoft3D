@@ -106,7 +106,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
 		{
-			pThis->m_depth.setCurRow(threadIndex, y);
+			pThis->m_depth->setCurRow(threadIndex, y);
 		}
 
 		// set starting column to all attached fbos
@@ -120,7 +120,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
 		{
-			pThis->m_depth.setCurCol(threadIndex, x1);
+			pThis->m_depth->setCurCol(threadIndex, x1);
 		}
 
 		// process rasterization result of a scanline, column by column
@@ -137,7 +137,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			if(pThis->m_behavior & BEHAVIOR_TEST_DEPTH)
 			{
 				float currentDepth;
-				pThis->m_depth.read4(threadIndex, &currentDepth);
+				pThis->m_depth->read4(threadIndex, &currentDepth);
 				depthTestPassed = newDepth < currentDepth;
 			}
 
@@ -146,7 +146,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				// update depth buffer
 				if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
 				{
-					pThis->m_depth.write4(threadIndex, &newDepth);
+					pThis->m_depth->write4(threadIndex, &newDepth);
 				}
 
 				// go ahead with Fragment Processor (fbos are updated meanwhile)
@@ -161,7 +161,7 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 					pThis->m_fbos[i]->nextCol(threadIndex);
 				}
 			}
-			pThis->m_depth.nextCol(threadIndex);
+			pThis->m_depth->nextCol(threadIndex);
 		}
 	}
 

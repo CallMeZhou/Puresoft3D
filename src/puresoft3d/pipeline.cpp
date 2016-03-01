@@ -16,15 +16,14 @@ using namespace std;
 
 int PuresoftPipeline::m_numberOfThreads = 4; // = getCpuCures();
 
-PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height, PuresoftRenderer* rndr /* = NULL */)
-	: m_width(width)
-	, m_height(height)
+PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int deviceWidth, int deviceHeight, PuresoftRenderer* rndr /* = NULL */)
+	: m_deviceWidth(deviceWidth)
+	, m_deviceHeight(deviceHeight)
 	, m_canvasWindow(canvasWindow)
 	, m_vp(NULL)
 	, m_ip(NULL)
 	, m_fp(NULL)
-	, m_rasterizer(width, height)
-	, m_depth(width, ((int)(width / 4.0f + 0.5f) * 4) * sizeof(float), height, sizeof(float))
+	, m_defaultDepth(deviceWidth, ((int)(deviceWidth / 4.0f + 0.5f) * 4) * sizeof(float), deviceHeight, sizeof(float))
 	, m_userDataPool(NULL)
 	, m_renderer(NULL)
 	, m_behavior(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH | BEHAVIOR_FACE_CULLING)
@@ -33,6 +32,8 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 	memset(m_uniforms, 0, sizeof(m_uniforms));
 	memset(m_fbos, 0, sizeof(m_fbos));
 	memset(&m_userDataBuffers, 0, sizeof(m_userDataBuffers));
+
+	m_rasterResult = m_rasterizer.initialize(deviceWidth, deviceHeight);
 
 	if(rndr)
 	{
@@ -48,6 +49,8 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int width, int height
 
 	m_display = new PuresoftFBO(rndrDesc.width, rndrDesc.scanline, rndrDesc.height, rndrDesc.elemLen, true, m_renderer->swapBuffers());
 	setFBO(0, NULL);
+
+	setDepth(); // use default depth
 
 	m_fragTaskQueues = new FragmentThreadTaskQueue[m_numberOfThreads];
 
@@ -108,10 +111,38 @@ PuresoftPipeline::~PuresoftPipeline(void)
 	delete m_display;
 }
 
-void PuresoftPipeline::setViewport(uintptr_t canvasWindow)
+void PuresoftPipeline::setViewport(int width, int height, uintptr_t canvasWindow /* = 0 */)
 {
-	m_canvasWindow = canvasWindow;
-	m_renderer->setCanvas(canvasWindow);
+	m_rasterResult = m_rasterizer.initialize(width, height);
+
+	if(canvasWindow)
+	{
+		m_canvasWindow = canvasWindow;
+		m_renderer->setCanvas(canvasWindow);
+	}
+}
+
+void PuresoftPipeline::setDepth(int idx /* = -1 */)
+{
+	if(-1 == idx)
+	{
+		m_depth = &m_defaultDepth;
+	}
+	else
+	{
+		if(idx < 0 || idx >= (int)m_texPool.size())
+		{
+			throw std::out_of_range("PuresoftPipeline::setDepth");
+		}
+
+		// only support single float depth buffer, the scanline of which must be multiplication of 4
+		if(4 != m_texPool[idx]->getElemLen() || (0 != m_texPool[idx]->getScanline() % 4))
+		{
+			throw std::invalid_argument("PuresoftPipeline::setDepth");
+		}
+
+		m_depth = m_texPool[idx];
+	}
 }
 
 void PuresoftPipeline::setRenderer(PuresoftRenderer* rndr)
@@ -124,7 +155,7 @@ void PuresoftPipeline::setRenderer(PuresoftRenderer* rndr)
 
 	if(m_renderer = rndr)
 	{
-		m_renderer->startup(m_canvasWindow, m_width, m_height);
+		m_renderer->startup(m_canvasWindow, m_deviceWidth, m_deviceHeight);
 	}
 }
 
@@ -205,7 +236,7 @@ void PuresoftPipeline::disable(int behavior)
 void PuresoftPipeline::clearDepth(float furthest /* = 1.0f */)
 {
 	__declspec(align(16)) const float temp[4] = {furthest, furthest, furthest, furthest};
-	m_depth.clear16(temp);
+	m_depth->clear16(temp);
 }
 
 void PuresoftPipeline::clearColour(PURESOFTBGRA bkgnd /* = PURESOFTBGRA_BLACK */)

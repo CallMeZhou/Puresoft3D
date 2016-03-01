@@ -329,6 +329,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			fcount = 0;
 			time0 = GetTickCount();
 		}
+
+		pipeline.saveTexture(-1, L"c:\\test.bmp", true);
+		break;
 	}
 
 	return (int) msg.wParam;
