@@ -417,10 +417,10 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 			unsigned char palette[1024];
 			for(int i = 0; i < 256; i++)
 			{
-				palette[i    ] = 
-				palette[i + 1] = 
-				palette[i + 2] = (unsigned char)i;
-				palette[i + 3] = 0;
+				palette[i * 4    ] = 
+				palette[i * 4 + 1] = 
+				palette[i * 4 + 2] = 
+				palette[i * 4 + 3] = (unsigned char)i;
 			};
 
 			header1.bfOffBits += sizeof(palette);

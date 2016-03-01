@@ -14,9 +14,9 @@ VertexProcesserDEF02::~VertexProcesserDEF02(void)
 
 void VertexProcesserDEF02::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_PV = (const float*)uniforms[0].data;
-	m_M = (const float*)uniforms[1].data;
-	m_Mrot = (const float*)uniforms[2].data;
+	m_PV = (const float*)uniforms[3].data;
+	m_M = (const float*)uniforms[4].data;
+	m_Mrot = (const float*)uniforms[5].data;
 }
 
 void VertexProcesserDEF02::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -132,8 +132,8 @@ FragmentProcessorDEF02::~FragmentProcessorDEF02(void)
 
 void FragmentProcessorDEF02::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[4].data;
-	m_cameraPos = (const float*)uniforms[5].data;
+	m_lightPos = (const float*)uniforms[7].data;
+	m_cameraPos = (const float*)uniforms[8].data;
 }
 
 void FragmentProcessorDEF02::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

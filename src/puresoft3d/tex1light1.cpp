@@ -14,9 +14,9 @@ VertexProcesserDEF01::~VertexProcesserDEF01(void)
 
 void VertexProcesserDEF01::preprocess(const PURESOFTUNIFORM* uniforms)
 {
-	m_PV = (const float*)uniforms[0].data;
-	m_M = (const float*)uniforms[1].data;
-	m_Mrot = (const float*)uniforms[2].data;
+	m_PV = (const float*)uniforms[3].data;
+	m_M = (const float*)uniforms[4].data;
+	m_Mrot = (const float*)uniforms[5].data;
 }
 
 void VertexProcesserDEF01::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -24,8 +24,8 @@ void VertexProcesserDEF01::process(const VertexProcessorInput* input, VertexProc
 	PROCDATA_DEF01* userOutput = (PROCDATA_DEF01*)output->user;
 
 	const float* position = (const float*)input->data[0];
-	const float* normals = (const float*)input->data[1];
-	const float* texcoord = (const float*)input->data[2];
+	const float* normals = (const float*)input->data[3];
+	const float* texcoord = (const float*)input->data[4];
 
 	mcemaths_transform_m4v4(userOutput->worldPos, m_M, position);
 
@@ -133,9 +133,9 @@ FragmentProcessorDEF01::~FragmentProcessorDEF01(void)
 
 void FragmentProcessorDEF01::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 {
-	m_lightPos = (const float*)uniforms[4].data;
-	m_cameraPos = (const float*)uniforms[5].data;
-	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[6].data];
+	m_lightPos = (const float*)uniforms[7].data;
+	m_cameraPos = (const float*)uniforms[8].data;
+	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9].data];
 }
 
 void FragmentProcessorDEF01::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

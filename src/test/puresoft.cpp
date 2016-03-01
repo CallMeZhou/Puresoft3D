@@ -93,6 +93,10 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.addProcessor(new InterpolationProcessorTEST), 
 		pipeline.addProcessor(new FragmentProcessorTEST));
 
+	int simpTexProc = pipeline.createProgramme(
+		pipeline.addProcessor(new VertexProcesserDEF03), 
+		pipeline.addProcessor(new InterpolationProcessorDEF03), 
+		pipeline.addProcessor(new FragmentProcessorDEF03));
 
 	mat4 model, view, proj;
 	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
@@ -193,21 +197,19 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	PURESOFTIMGBUFF32 image;
 	PuresoftDefaultPictureLoader picLoader;
 	picLoader.loadFromFile(CA2W(mi.tex_file.c_str()), &image);
-	int tex = pipeline.createTexture(&image);
-	pipeline.getTexture(tex, &image);
+	int texEarthDiff = pipeline.createTexture(&image);
+	pipeline.getTexture(texEarthDiff, &image);
 	picLoader.retrievePixel(&image);
 	picLoader.close();
-	pipeline.setUniform(9, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.dot3.png", &image);
-	tex = pipeline.createTexture(&image);
-	pipeline.getTexture(tex, &image);
+	int texEarthBump = pipeline.createTexture(&image);
+	pipeline.getTexture(texEarthBump, &image);
 	picLoader.retrievePixel(&image);
 	picLoader.close();
-	pipeline.setUniform(10, &tex, sizeof(tex));
 
 	picLoader.loadFromFile(L"earth.spac.png", &image);
-	tex = pipeline.createTexture(&image);
+	int tex = pipeline.createTexture(&image);
 	pipeline.getTexture(tex, &image);
 	picLoader.retrievePixel(&image);
 	picLoader.close();
@@ -226,6 +228,18 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	picLoader.retrievePixel(&image);
 	picLoader.close();
 	pipeline.setUniform(13, &tex, sizeof(tex));
+
+	picLoader.loadFromFile(L"moon.jpg", &image);
+	int texMoonDiff = pipeline.createTexture(&image);
+	pipeline.getTexture(texMoonDiff, &image);
+	picLoader.retrievePixel(&image);
+	picLoader.close();
+
+	picLoader.loadFromFile(L"earth.dot3.png", &image);
+	int texMoonBump = pipeline.createTexture(&image);
+	pipeline.getTexture(texMoonBump, &image);
+	picLoader.retrievePixel(&image);
+	picLoader.close();
 
 	const wchar_t* skyboxFiles[] = 
 	{
@@ -262,7 +276,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	HighResolutionTimeCounter highTimer;
 	highTimer.Start();
 
-	float rotRad = 0, trotrad = 0;
+	float rotRad = 0, trotrad = 0, rotRad3 = 2 * PI;
 
 	DWORD time0 = GetTickCount(), fcount = 0;
 	MSG msg;
@@ -312,8 +326,32 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		texMatrix.translation(trotrad, 0, 0);
 		pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
 
+		pipeline.setUniform(9, &texEarthDiff, sizeof(texEarthDiff));
+		pipeline.setUniform(10, &texEarthBump, sizeof(texEarthBump));
+
 		pipeline.clearDepth();
-		//pipeline.clearColour();
+
+		pipeline.drawVAO(&vao1);
+
+		mat4 scale3, tran3, rot3;
+		scale3.scaling(0.07f, 0.07f, 0.07f);
+		tran3.translation(0.6f, 0, 0);
+		mcemaths_transform_m4m4(model, tran3, scale3);
+		rotRad3 -= 0.4f * (float)highTimer.Now() / 1000.0f;
+		if(rotRad3 < 0)
+		{
+			rotRad3 = 2 * PI;
+		}
+		rot3.rotation(vec4(0, 1.0f, 0, 0), rotRad3);
+		mcemaths_transform_m4m4_r_ip(rot3, model);
+		mcemaths_transform_m4m4_r_ip(tran, model);
+		pipeline.setUniform(4, model, sizeof(model.elem));
+		pipeline.setUniform(5, rot3, sizeof(modelRotate.elem));
+
+		pipeline.setUniform(9, &texMoonDiff, sizeof(texEarthDiff));
+		pipeline.setUniform(10, &texMoonBump, sizeof(texEarthBump));
+
+		pipeline.useProgramme(simpTexProc);
 		pipeline.drawVAO(&vao1);
 
 		pipeline.swapBuffers();
@@ -329,9 +367,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			fcount = 0;
 			time0 = GetTickCount();
 		}
-
-		pipeline.saveTexture(-1, L"c:\\test.bmp", true);
-		break;
 	}
 
 	return (int) msg.wParam;
