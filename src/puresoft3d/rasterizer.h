@@ -26,10 +26,10 @@ public:
 	} RESULT;
 
 public:
-	PuresoftRasterizer(int width, int height);
+	PuresoftRasterizer(void);
 	~PuresoftRasterizer(void);
 
-	const RESULT* getResultPtr(void) const;
+	const RESULT* initialize(int width, int height);
 	bool pushTriangle(const float* vert0, const float* vert1, const float* vert2);
 
 private:
@@ -37,6 +37,7 @@ private:
 	int m_height;
 	int m_halfWidth;
 	int m_halfHeight;
+	int m_resultCapacity;
 	RESULT m_output;
 
 	inline void pushVertex(int idx, const float* vert);

@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdexcept>
@@ -144,6 +145,7 @@ void PuresoftFBO::nextCol(int idx)
 	else
 	{
 		m_workRanges[idx].writePoint = (void*)((uintptr_t)m_workRanges[idx].writePoint + m_elemLen);
+		m_workRanges[idx].curCol++;
 	}
 }
 
@@ -395,6 +397,84 @@ PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer)
 const PuresoftFBO* PuresoftFBO::getExtraLayer(LAYER layer) const
 {
 	return m_extraLayers[layer];
+}
+
+void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
+{
+	
+	BITMAPFILEHEADER header1 = {0x4D42, 0, 0, 0, sizeof(BITMAPINFOHEADER)};
+	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), m_width, m_height, 1, (unsigned short)m_elemLen * 8, 0, 0, 0, 0, 0, 0};
+
+	FILE *fp;
+	if(0 == _wfopen_s(&fp, path, L"w+"))
+	{
+		if(dataIsFloat)
+		{
+			unsigned int chans = m_elemLen / sizeof(float);
+			unsigned int scanline = (m_width * chans * 8 + 31) / 32 * 4;
+			unsigned int bytes = scanline * m_height;
+
+			unsigned char palette[1024];
+			for(int i = 0; i < 256; i++)
+			{
+				palette[i    ] = 
+				palette[i + 1] = 
+				palette[i + 2] = (unsigned char)i;
+				palette[i + 3] = 0;
+			};
+
+			header1.bfOffBits += sizeof(palette);
+			header2.biBitCount = chans * 8;
+
+			if(1 == chans)
+			{
+				header2.biCompression = BI_BITFIELDS;
+			}
+
+			unsigned char* convertBuffer = (unsigned char*)malloc(bytes);
+			if(convertBuffer)
+			{
+				unsigned char* destLine = convertBuffer;
+				const unsigned char* srcLine = (const unsigned char*)m_buffer;
+				for(unsigned int y = 0; y < m_height; y++)
+				{
+					for(unsigned int x = 0; x < m_width; x++)
+					{
+						for(unsigned int chan = 0; chan < chans; chan++)
+						{
+							destLine[x + chan] = (unsigned char)(((const float*)srcLine)[x + chan] * 255.0f);
+						}
+					}
+
+					destLine += scanline;
+					srcLine += m_scanline;
+				}
+
+				fwrite(&header1, sizeof(header1), 1, fp);
+				fwrite(&header2, sizeof(header2), 1, fp);
+				fwrite(palette, sizeof(palette), 1, fp);
+				fwrite(convertBuffer, bytes, 1, fp);
+				free(convertBuffer);
+			}
+		}
+		else
+		{
+			fwrite(&header1, sizeof(header1), 1, fp);
+			fwrite(&header2, sizeof(header2), 1, fp);
+			fwrite(m_buffer, m_bytes, 1, fp);
+		}
+		fclose(fp);
+	}
+}
+
+void PuresoftFBO::saveAsRawFile(const wchar_t* path) const
+{
+	FILE *fp;
+	if(0 == _wfopen_s(&fp, path, L"w+"))
+	{
+		fwrite(m_buffer, m_bytes, 1, fp);
+		fclose(fp);
+	}
 }
 
 void PuresoftFBO::clampCoord(unsigned int& row, unsigned int& col) const

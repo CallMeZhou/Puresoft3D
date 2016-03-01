@@ -4,19 +4,43 @@
 
 using namespace std;
 
-PuresoftRasterizer::PuresoftRasterizer(int width, int height)
+PuresoftRasterizer::PuresoftRasterizer(void)
 {
-	m_width = width;
-	m_height = height;
-	m_halfWidth = m_width / 2;
-	m_halfHeight = m_height / 2;
-	m_output.m_rows = new RESULT_ROW[height];
+	m_width = 
+	m_height = 
+	m_halfWidth = 
+	m_halfHeight = 
+	m_resultCapacity = 0;
+	memset(&m_output, 0, sizeof(m_output));
 }
 
 
 PuresoftRasterizer::~PuresoftRasterizer(void)
 {
-	delete[] m_output.m_rows;
+	if(m_output.m_rows)
+	{
+		delete[] m_output.m_rows;
+	}
+}
+
+const PuresoftRasterizer::RESULT* PuresoftRasterizer::initialize(int width, int height)
+{
+	m_width = width;
+	m_height = height;
+	m_halfWidth = m_width / 2;
+	m_halfHeight = m_height / 2;
+
+	if(height > m_resultCapacity)
+	{
+		if(m_output.m_rows)
+		{
+			delete[] m_output.m_rows;
+		}
+
+		m_output.m_rows = new RESULT_ROW[m_resultCapacity = height];
+	}
+
+	return &m_output;
 }
 
 class LineSegment
@@ -98,16 +122,6 @@ void PuresoftRasterizer::processStandingTriangle(const VERTEX2I* verts, int top,
 		// lower half
 		processTriangle(edgeTopBottom, edgeThirdBottom, verts[bottom].y, verts[third].y);
 	}
-}
-
-const PuresoftRasterizer::RESULT* PuresoftRasterizer::getResultPtr(void) const
-{
-	if(!m_output.m_rows)
-	{
-		throw bad_alloc("PuresoftRasterizer::RESULT::RESULT_ROWS");
-	}
-
-	return &m_output;
 }
 
 bool PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, const float* vert2)

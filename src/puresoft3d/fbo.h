@@ -67,6 +67,10 @@ public:
 	PuresoftFBO* getExtraLayer(LAYER layer);
 	const PuresoftFBO* getExtraLayer(LAYER layer) const;
 
+	// debuggabilities
+	void saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const;
+	void saveAsRawFile(const wchar_t* path) const;
+
 private:
 	bool m_topDown;
 	WRAPMODE m_wrapMode;
