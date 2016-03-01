@@ -95,6 +95,14 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 		}
 	}
 
+	if(callerThrdForFragProc)
+	{
+		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + m_numberOfThreads - 1;
+		taskQueue->beginPush()->taskType = QUIT;
+		taskQueue->endPush();
+		fragmentThread_CallerThread(this);
+	}
+
 	// wait for all fragment threads to finish up tasks
 	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
@@ -103,16 +111,8 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 		taskQueue->endPush();
 	}
 
-	if(callerThrdForFragProc)
-	{
-		FragmentThreadTaskQueue* taskQueue = m_fragTaskQueues + m_numberOfThreads - 1;
-		taskQueue->beginPush()->taskType = QUIT;
-		taskQueue->endPush();
-		fragmentThread(this);
-	}
-
 	for(int i = 0; i < m_numberOfThreads - 1; i++)
 	{
-		m_fragTaskQueues[i].pollEmpty_busy();
+		m_fragTaskQueues[i].pollEmpty();
 	}
 }

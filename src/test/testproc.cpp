@@ -4,6 +4,25 @@
 #include "samplr2d.h"
 #include "testproc.h"
 
+static void copyUserData(PROCDATA_TEST* dest, const PROCDATA_TEST* src)
+{
+	__asm
+	{
+		mov		eax,		src
+		movaps	xmm0,		[eax]
+		movaps	xmm1,		[eax + 16]
+		movaps	xmm2,		[eax + 32]
+		movaps	xmm3,		[eax + 48]
+		movaps	xmm4,		[eax + 64]
+		mov		eax,		dest
+		movaps	[eax],		xmm0
+		movaps	[eax + 16],	xmm1
+		movaps	[eax + 32],	xmm2
+		movaps	[eax + 48],	xmm3
+		movaps	[eax + 64],	xmm4
+	}
+}
+
 VertexProcesserTEST::VertexProcesserTEST(void)
 {
 }
@@ -64,10 +83,10 @@ void InterpolationProcessorTEST::preprocess(const PURESOFTUNIFORM* uniforms)
 
 void InterpolationProcessorTEST::interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) const
 {
-	PROCDATA_TEST temp[3];
-	memcpy(temp,     vertexUserData[0], sizeof(PROCDATA_TEST));
-	memcpy(temp + 1, vertexUserData[1], sizeof(PROCDATA_TEST));
-	memcpy(temp + 2, vertexUserData[2], sizeof(PROCDATA_TEST));
+	__declspec(align(16)) PROCDATA_TEST temp[3];
+	copyUserData(temp,     (PROCDATA_TEST*)vertexUserData[0]);
+	copyUserData(temp + 1, (PROCDATA_TEST*)vertexUserData[1]);
+	copyUserData(temp + 2, (PROCDATA_TEST*)vertexUserData[2]);
 
 	mcemaths_mul_3_4(temp[0].tangent, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].binormal, correctedContributes[0]);
@@ -131,7 +150,7 @@ void InterpolationProcessorTEST::interpolateBySteps(void* interpolatedUserData, 
 {
 	PROCDATA_TEST* output = (PROCDATA_TEST*)interpolatedUserData;
 	PROCDATA_TEST* start = (PROCDATA_TEST*)interpolatedUserDataStart;
-	memcpy(output, start, sizeof(PROCDATA_TEST));
+	copyUserData(output, start);
 	mcemaths_mul_3_4(output->tangent, correctionFactor2);
 	mcemaths_mul_3_4(output->binormal, correctionFactor2);
 	mcemaths_mul_3_4(output->normal, correctionFactor2);

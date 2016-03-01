@@ -118,5 +118,5 @@ void FragmentProcessorDEF04::process(const FragmentProcessorInput* input, Fragme
 
 	const PROCDATA_DEF04* inData = (const PROCDATA_DEF04*)input->user;
 	PuresoftSamplerCube::get4(m_skyboxTex, inData->direction, &bytesColour);
-	output->write(0, &bytesColour, sizeof(bytesColour));
+	output->write4(0, &bytesColour);
 }

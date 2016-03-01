@@ -131,5 +131,6 @@ private:
 	FragmentThreadTaskQueue* m_fragTaskQueues;
 	
 	static unsigned __stdcall fragmentThread(void *param);
+	static unsigned __stdcall fragmentThread_CallerThread(void *param);
 };
 

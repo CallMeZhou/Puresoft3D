@@ -167,3 +167,147 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 	return 0;
 }
+
+unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
+{
+	// thread start off parameters
+	PuresoftPipeline* pThis = (PuresoftPipeline*)param;
+	int threadIndex = m_numberOfThreads - 1;
+
+	// input data structure for Fragment Processor
+	FragmentProcessorInput fragInput;
+	FBOBridge fragOutput(threadIndex, pThis->m_fbos);
+
+	FragmentThreadTaskQueue* myQueue = pThis->m_fragTaskQueues + threadIndex;
+
+	PuresoftInterpolater::INTERPOLATIONSTEPPING stepping;
+
+	while(true)
+	{
+		FRAGTHREADTASK* task = myQueue->beginPop();
+
+		if(QUIT == task->taskType)
+		{
+			myQueue->endPop();
+			break;
+		}
+
+		bool dispatched = false;
+
+		for(int i = 0; i < threadIndex; i++)
+		{
+			FragmentThreadTaskQueue* othersQueue = pThis->m_fragTaskQueues + i;
+
+			if(0 == othersQueue->size())
+			{
+				FRAGTHREADTASK* newTask = othersQueue->beginPush();
+				newTask->taskType = task->taskType;
+				newTask->x1 = task->x1;
+				newTask->x2 = task->x2;
+				newTask->y = task->y;
+				newTask->projZStart = task->projZStart;
+				newTask->projZStep = task->projZStep;
+				newTask->correctionFactor2Start = task->correctionFactor2Start;
+				newTask->correctionFactor2Step = task->correctionFactor2Step;
+				memcpy(newTask->userDataStart, task->userDataStart, pThis->m_ip->userDataBytes());
+				memcpy(newTask->userDataStep, task->userDataStep, pThis->m_ip->userDataBytes());
+				othersQueue->endPush();
+				myQueue->endPop();
+				dispatched = true;
+				break;
+			}
+		}
+
+		if(dispatched)
+		{
+			continue;
+		}
+
+		int x1 = task->x1, x2 = task->x2, y = task->y;
+		fragInput.user = pThis->m_userDataBuffers.fragInputs[threadIndex];
+		fragInput.position[1] = y;
+		stepping.proc = pThis->m_ip;
+		stepping.interpolatedUserDataStart = pThis->m_userDataBuffers.interpTemps[threadIndex];
+		stepping.interpolatedUserDataStep = (void*)((size_t)stepping.interpolatedUserDataStart + pThis->m_userDataBuffers.unitBytes);
+		memcpy(stepping.interpolatedUserDataStart, task->userDataStart, pThis->m_userDataBuffers.unitBytes);
+		memcpy(stepping.interpolatedUserDataStep, task->userDataStep, pThis->m_userDataBuffers.unitBytes);
+		stepping.correctionFactor2Start = task->correctionFactor2Start;
+		stepping.correctionFactor2Step = task->correctionFactor2Step;
+		stepping.projectedZStart = task->projZStart;
+		stepping.projectedZStep = task->projZStep;
+
+		myQueue->endPop();
+
+
+		// set current row to all attached fbos
+		for(size_t i = 0; i < MAX_FBOS; i++)
+		{
+			if(pThis->m_fbos[i])
+			{
+				pThis->m_fbos[i]->setCurRow(threadIndex, y);
+			}
+		}
+
+		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+		{
+			pThis->m_depth.setCurRow(threadIndex, y);
+		}
+
+		// set starting column to all attached fbos
+		for(size_t i = 0; i < MAX_FBOS; i++)
+		{
+			if(pThis->m_fbos[i])
+			{
+				pThis->m_fbos[i]->setCurCol(threadIndex, x1);
+			}
+		}
+
+		if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+		{
+			pThis->m_depth.setCurCol(threadIndex, x1);
+		}
+
+		// process rasterization result of a scanline, column by column
+		for(int x = x1; x <= x2; x++)
+		{
+			fragInput.position[0] = x;
+
+			// get interpolated values as well as the other perspective correction factor
+			float newDepth;
+			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
+
+			// get current depth from the depth buffer and do depth test
+			bool depthTestPassed = true;
+			if(pThis->m_behavior & BEHAVIOR_TEST_DEPTH)
+			{
+				float currentDepth;
+				pThis->m_depth.read4(threadIndex, &currentDepth);
+				depthTestPassed = newDepth < currentDepth;
+			}
+
+			if(depthTestPassed)
+			{
+				// update depth buffer
+				if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+				{
+					pThis->m_depth.write4(threadIndex, &newDepth);
+				}
+
+				// go ahead with Fragment Processor (fbos are updated meanwhile)
+				pThis->m_fp->process(&fragInput, &fragOutput);
+			}
+
+			// move fbo data pointers
+			for(size_t i = 0; i < MAX_FBOS; i++)
+			{
+				if(pThis->m_fbos[i])
+				{
+					pThis->m_fbos[i]->nextCol(threadIndex);
+				}
+			}
+			pThis->m_depth.nextCol(threadIndex);
+		}
+	}
+
+	return 0;
+}

@@ -31,86 +31,13 @@ public:
 		}
 	}
 
-	bool push(const T& item)
-	{
-		while(true)
-		{
-			EnterCriticalSection(&m_cs);
-			if(LEN == m_len)
-			{
-				// unlock queue for others and spin around
-				LeaveCriticalSection(&m_cs);
-
-				if(m_abort)
-				{
-					return false;
-				}
-
-				YIELD_CPU;
-			}
-			else
-			{
-				// go on with queue locked
-				break;
-			}
-		}
-
-		memcpy(m_queue + m_in, &item, sizeof(T));
-		if(LEN == ++m_in)
-		{
-			m_in = 0;
-		}
-		m_len++;
-		LeaveCriticalSection(&m_cs);
-
-		return true;
-	}
-
-	bool pop(T& item)
-	{
-		while(true)
-		{
-			EnterCriticalSection(&m_cs);
-			if(0 == m_len)
-			{
-				// unlock queue for others and spin around
-				LeaveCriticalSection(&m_cs);
-
-				if(m_abort)
-				{
-					return false;
-				}
-
-				YIELD_CPU;
-			}
-			else
-			{
-				// go on with queue locked
-				break;
-			}
-		}
-
-		memcpy(&item, m_queue + m_out, sizeof(T));
-		if(LEN == ++m_out)
-		{
-			m_out = 0;
-		}
-		m_len--;
-		LeaveCriticalSection(&m_cs);
-
-		return true;
-	}
-
 	T* beginPush(void)
 	{
 		while(true)
 		{
-			EnterCriticalSection(&m_cs);
 			if(LEN == m_len)
 			{
-				// unlock queue for others and spin around
-				LeaveCriticalSection(&m_cs);
-
+				// spin around
 				if(m_abort)
 				{
 					return NULL;
@@ -134,20 +61,16 @@ public:
 		{
 			m_in = 0;
 		}
-		m_len++;
-		LeaveCriticalSection(&m_cs);
+		InterlockedIncrement(&m_len);
 	}
 
 	T* beginPop(void)
 	{
 		while(true)
 		{
-			EnterCriticalSection(&m_cs);
 			if(0 == m_len)
 			{
-				// unlock queue for others and spin around
-				LeaveCriticalSection(&m_cs);
-
+				// spin around
 				if(m_abort)
 				{
 					return NULL;
@@ -171,8 +94,7 @@ public:
 		{
 			m_out = 0;
 		}
-		m_len--;
-		LeaveCriticalSection(&m_cs);
+		InterlockedDecrement(&m_len);
 	}
 
 	void abort(void)
