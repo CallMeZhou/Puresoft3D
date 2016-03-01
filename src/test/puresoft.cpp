@@ -26,6 +26,9 @@ static void updateTexMatrix(mat4& m, float rad);
 const int W = 1024;
 const int H = 576;
 
+const int SHDW_W = 640;
+const int SHDW_H = 640;
+
 const float PI = 3.1415927f;
 
 int tex;
@@ -270,6 +273,16 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	//updateTexMatrix(texMatrix, 0);
 	pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
 
+	mat4 light1View, light1Proj;
+	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, PI / 2.0f);
+	mcemaths_make_view_traditional(light1View, cameraPos, tran, vec4(0, 1.0f, 0, 0));
+	image.width = SHDW_W;
+	image.height = SHDW_H;
+	image.elemLen = 4;
+	image.scanline = SHDW_W * 4;
+	image.pixels = NULL;
+	int texShadow = pipeline.createTexture(&image);
+
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
 	//////////////////////////////////////////////////////////////////////////
@@ -305,6 +318,17 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			trotrad = 0;
 		}
 
+		pipeline.setUniform(0, light1Proj, sizeof(light1Proj.elem));
+		pipeline.setUniform(1, light1View, sizeof(light1View.elem));
+		pipeline.setDepth(texShadow);
+		pipeline.setViewport(SHDW_W, SHDW_H);
+
+
+		pipeline.setUniform(0, proj, sizeof(proj.elem));
+		pipeline.setUniform(1, view, sizeof(view.elem));
+		pipeline.setDepth();
+		pipeline.setViewport(W, H);
+
 		pipeline.useProgramme(skyProc);
 
 		pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
@@ -337,11 +361,12 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		scale3.scaling(0.07f, 0.07f, 0.07f);
 		tran3.translation(0.6f, 0, 0);
 		mcemaths_transform_m4m4(model, tran3, scale3);
-		rotRad3 -= 0.4f * (float)highTimer.Now() / 1000.0f;
-		if(rotRad3 < 0)
-		{
-			rotRad3 = 2 * PI;
-		}
+		rotRad3 = 1.3f * PI;
+//		rotRad3 -= 0.4f * (float)highTimer.Now() / 1000.0f;
+//		if(rotRad3 < 0)
+//		{
+//			rotRad3 = 2 * PI;
+//		}
 		rot3.rotation(vec4(0, 1.0f, 0, 0), rotRad3);
 		mcemaths_transform_m4m4_r_ip(rot3, model);
 		mcemaths_transform_m4m4_r_ip(tran, model);

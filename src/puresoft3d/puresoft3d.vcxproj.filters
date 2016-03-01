@@ -93,6 +93,9 @@
     <ClInclude Include="skybox.h">
       <Filter>Header Files\defproc</Filter>
     </ClInclude>
+    <ClInclude Include="shadow.h">
+      <Filter>Header Files\defproc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -163,6 +166,9 @@
     </ClCompile>
     <ClCompile Include="dbg.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shadow.cpp">
+      <Filter>Source Files\defproc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
