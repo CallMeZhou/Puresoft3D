@@ -72,6 +72,7 @@ makes one Mesh object. That's it.
 */
 #include "alloc16.hpp"
 #include "fixvec.hpp"
+#include <map>
 using namespace std;
 #include "mcemaths.hpp"
 using namespace mcemaths;

@@ -87,7 +87,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="procreator.cpp" />
     <ClCompile Include="puresoft.cpp" />
+    <ClCompile Include="scenobj.cpp" />
+    <ClCompile Include="testobjs.cpp" />
     <ClCompile Include="testproc.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +98,9 @@
     <None Include="sphere1.objx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="procreator.h" />
+    <ClInclude Include="scenobj.h" />
+    <ClInclude Include="testobjs.h" />
     <ClInclude Include="testproc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

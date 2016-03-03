@@ -104,11 +104,106 @@ PuresoftPipeline::~PuresoftPipeline(void)
 		}
 	}
 
+	for(size_t i = 0; i < m_vaoPool.size(); i++)
+	{
+		destroyVAO(i);
+	}
+	
+
 	setUserDataBytes(0);
 
 	m_renderer->shutdown();
 	m_renderer->release();
 	delete m_display;
+}
+
+int PuresoftPipeline::createVAO(void)
+{
+	size_t vacant = 0;
+	for(; vacant < m_vaoPool.size(); vacant++)
+	{
+		if(!m_vaoPool[vacant])
+			break;
+	}
+
+	if(m_vaoPool.size() == vacant)
+	{
+		m_vaoPool.push_back(NULL);
+	}
+
+	m_vaoPool[vacant] = new PuresoftVAO;
+
+	return (int)vacant;
+
+}
+
+PuresoftVBO* PuresoftPipeline::attachVBO(int vao, int idx, PuresoftVBO* vbo)
+{
+	if(vao < 0 || vao >= (int)m_vaoPool.size())
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO vao");
+	}
+
+	if(idx < 0 || idx >= (int)MAX_VBOS)
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO idx");
+	}
+
+	return m_vaoPool[vao]->attachVBO(idx, vbo);
+}
+
+PuresoftVBO* PuresoftPipeline::detachVBO(int vao, int idx)
+{
+	if(vao < 0 || vao >= (int)m_vaoPool.size())
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO vao");
+	}
+
+	if(idx < 0 || idx >= (int)MAX_VBOS)
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO idx");
+	}
+
+	return m_vaoPool[vao]->detachVBO(idx);
+}
+
+PuresoftVBO* PuresoftPipeline::getVBO(int vao, int idx)
+{
+	if(vao < 0 || vao >= (int)m_vaoPool.size())
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO vao");
+	}
+
+	if(idx < 0 || idx >= (int)MAX_VBOS)
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO idx");
+	}
+
+	return m_vaoPool[vao]->getVBO(idx);
+}
+
+void PuresoftPipeline::destroyVAO(int vao)
+{
+	if(vao < 0 || vao >= (int)m_vaoPool.size())
+	{
+		throw std::out_of_range("PuresoftPipeline::attachVBO vao");
+	}
+
+	PuresoftVAO* vaoObj = m_vaoPool[vao];
+	if(!vaoObj)
+		return;
+
+	PuresoftVBO** vbos = vaoObj->getVBOs();
+	for(size_t i = 0; i < MAX_VBOS; i++)
+	{
+		if(vbos[i])
+		{
+			delete vbos[i];
+		}
+	}
+
+	delete vaoObj;
+	m_vaoPool[vao] = NULL;
 }
 
 void PuresoftPipeline::setViewport(int width, int height, uintptr_t canvasWindow /* = 0 */)

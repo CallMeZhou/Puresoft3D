@@ -38,13 +38,20 @@ public:
 	void destroyProgramme(int idx);
 	void useProgramme(int idx);
 
+	// vao api
+	int createVAO(void);
+	PuresoftVBO* attachVBO(int vao, int idx, PuresoftVBO* vbo);
+	PuresoftVBO* detachVBO(int vao, int idx);
+	PuresoftVBO* getVBO(int vao, int idx);
+	void destroyVAO(int vao);
+
 	// rendering api
 	void setRenderer(PuresoftRenderer* rndr);
 	void setViewport(int width, int height, uintptr_t canvasWindow = 0);
 	void setDepth(int idx = -1);
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
-	void drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc = false);
+	void drawVAO(int vao, bool callerThrdForFragProc = false);
 	void swapBuffers(void);
 	void enable(int behavior);
 	void disable(int behavior);
@@ -81,9 +88,12 @@ private:
 	PuresoftFragmentProcessor* m_fp;
 
 // textures
-private:
 	typedef std::vector<PuresoftFBO*> FBOCOLL;
 	FBOCOLL m_texPool;
+
+// vao
+	typedef std::vector<PuresoftVAO*> VAOCOLL;
+	VAOCOLL m_vaoPool;
 
 // user data buffer management
 private:

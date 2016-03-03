@@ -1,18 +1,19 @@
 #include "pipeline.h"
 
-void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* = false */)
+void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */)
 {
-	if(!m_vp || !m_ip || !m_fp)
+	if(!m_vp || !m_ip || !m_fp || vao < 0 || vao >= (int)m_vaoPool.size())
 	{
 		return;
 	}
 
+	PuresoftVAO* vaoObj = m_vaoPool[vao];
 	m_vp->preprocess(m_uniforms);
 	m_ip->preprocess(m_uniforms);
 	m_fp->preprocess(m_uniforms, (const void**)&m_texPool[0]);
 
 	// reset vertex pointers of all vbos
-	vao->rewindAll();
+	vaoObj->rewindAll();
 
 	__declspec(align(16)) float correctionFactor1[4] = {0};
 	__declspec(align(16)) float projZs[4] = {0};
@@ -28,7 +29,7 @@ void PuresoftPipeline::drawVAO(PuresoftVAO* vao, bool callerThrdForFragProc /* =
 	while(true)
 	{
 		// vertex transformation
-		if(!processVertices(vao->getVBOs(), m_vertOutput, correctionFactor1, projZs))
+		if(!processVertices(vaoObj->getVBOs(), m_vertOutput, correctionFactor1, projZs))
 		{
 			// done with all vertices
 			break;

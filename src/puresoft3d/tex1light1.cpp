@@ -33,7 +33,6 @@ void VertexProcesserDEF01::process(const VertexProcessorInput* input, VertexProc
 	userOutput->worldPos[3] = 0;
 
 	mcemaths_transform_m4v4_ip(output->position, m_PV);
-	//output->position[3] = 1.0f;
 
 	mcemaths_transform_m4v4(userOutput->normal, m_Mrot, normals);
 

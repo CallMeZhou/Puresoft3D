@@ -54,7 +54,6 @@ void VertexProcesserTEST::process(const VertexProcessorInput* input, VertexProce
 	userOutput->worldPos[3] = 0;
 
 	mcemaths_transform_m4v4_ip(output->position, m_PV);
-	//output->position[3] = 1.0f;
 
 	mcemaths_transform_m4v4(userOutput->tangent, m_Mrot, tangent);
 	mcemaths_transform_m4v4(userOutput->binormal, m_Mrot, binormal);

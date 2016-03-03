@@ -25,6 +25,15 @@
     <ClCompile Include="testproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scenobj.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="testobjs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="procreator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="earth.jpg">
@@ -36,6 +45,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="testproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scenobj.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="testobjs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="procreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
