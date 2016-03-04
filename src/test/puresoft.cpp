@@ -90,7 +90,18 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 	//////////////////////////////////////////////////////////////////////////
 	// basic initialization of pipeline
-	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, new PuresoftDDrawRenderer);
+	PuresoftRenderer* ddrawRender = NULL;
+	try
+	{
+		ddrawRender = new PuresoftDDrawRenderer;
+	}
+	catch(...)
+	{
+		MessageBoxW(hWnd, L"Failed to initialize DDraw device. Fall back to GDI renderer.", L"Puresoft 3D", MB_OK);
+		ddrawRender = NULL;
+	}
+	
+	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);//new PuresoftDDrawRenderer);
 
 	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 1.2f, 0);
 	pipeline.setUniform(7, &lightPos, sizeof(lightPos));

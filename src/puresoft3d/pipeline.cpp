@@ -14,7 +14,8 @@
 
 using namespace std;
 
-int PuresoftPipeline::m_numberOfThreads = 4; // = getCpuCures();
+int logicCPUs(void);
+int PuresoftPipeline::m_numberOfThreads = logicCPUs();
 
 PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int deviceWidth, int deviceHeight, PuresoftRenderer* rndr /* = NULL */)
 	: m_deviceWidth(deviceWidth)

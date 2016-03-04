@@ -176,5 +176,8 @@
     <ClCompile Include="samplrproj.cpp">
       <Filter>Source Files\sampler</Filter>
     </ClCompile>
+    <ClCompile Include="cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
