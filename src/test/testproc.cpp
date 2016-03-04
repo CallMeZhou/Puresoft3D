@@ -183,6 +183,8 @@ void FragmentProcessorTEST::preprocess(const PURESOFTUNIFORM* uniforms, const vo
 	m_nightTex = (const PuresoftFBO*)textures[*(const int*)uniforms[12].data];
 	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[13].data];
 	m_texMatrix = (const float*)uniforms[14].data;
+	m_shadowTex = (const PuresoftFBO*)textures[*(const int*)uniforms[15].data];
+	m_shadowPV = (const float*)uniforms[16].data;
 }
 
 void FragmentProcessorTEST::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const

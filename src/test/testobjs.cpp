@@ -62,6 +62,8 @@ void Earth::draw(PuresoftPipeline& pipeline)
 	pipeline.setUniform(12, &m_night, sizeof(int));
 	pipeline.setUniform(13, &m_cloud, sizeof(int));
 	pipeline.setUniform(14, m_texTrans, sizeof(m_texTrans.elem));
+	pipeline.setUniform(15, &m_shadowMaps[0], sizeof(int));
+	pipeline.setUniform(16, m_shadowPVs[0], sizeof(m_shadowPVs[0].elem));
 	__super::draw(pipeline);
 }
 

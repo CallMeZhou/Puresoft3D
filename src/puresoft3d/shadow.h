@@ -18,7 +18,6 @@ public:
 private:
 	const float* m_PV;
 	const float* m_M;
-	const float* m_Mrot;
 };
 
 class InterpolationProcessorDEF05 : public PuresoftInterpolationProcessor
@@ -42,9 +41,4 @@ public:
 
 	void preprocess(const PURESOFTUNIFORM* uniforms, const void** textures);
 	void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const;
-
-private:
-	const float* m_lightPos;
-	const float* m_cameraPos;
-	const PuresoftFBO* m_diffuseTex;
 };

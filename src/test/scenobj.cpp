@@ -13,6 +13,9 @@ Str2Idx SceneObject::m_textures;
 Str2Idx SceneObject::m_processers;
 Str2Idx SceneObject::m_programmes;
 
+int SceneObject::m_shadowMaps[MAX_SHADOWMAPS];
+mat4 SceneObject::m_shadowPVs[MAX_SHADOWMAPS];
+
 SceneObject::SceneObject(PuresoftPipeline& pipeline, SceneObject* parent)
 	: m_pipeline(pipeline)
 	, m_vao(-1)

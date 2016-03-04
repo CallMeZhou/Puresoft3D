@@ -60,4 +60,6 @@ private:
 	const PuresoftFBO* m_specularTex;
 	const PuresoftFBO* m_nightTex;
 	const PuresoftFBO* m_cloudTex;
+	const PuresoftFBO* m_shadowTex;
+	const float* m_shadowPV;
 };

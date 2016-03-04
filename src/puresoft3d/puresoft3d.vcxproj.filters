@@ -96,6 +96,9 @@
     <ClInclude Include="shadow.h">
       <Filter>Header Files\defproc</Filter>
     </ClInclude>
+    <ClInclude Include="samplrproj.h">
+      <Filter>Header Files\sampler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fbo.cpp">
@@ -169,6 +172,9 @@
     </ClCompile>
     <ClCompile Include="shadow.cpp">
       <Filter>Source Files\defproc</Filter>
+    </ClCompile>
+    <ClCompile Include="samplrproj.cpp">
+      <Filter>Source Files\sampler</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -12,6 +12,8 @@ using namespace mcemaths;
 #define PROCNAME(cls) (typeid(cls).raw_name())
 typedef map<string, int> Str2Idx;
 
+const int MAX_SHADOWMAPS = 16;
+
 class MeshBuilder
 {
 public:
@@ -22,6 +24,8 @@ class SceneObject
 {
 public:
 	static bool m_usePrivateProgramme;
+	static int m_shadowMaps[MAX_SHADOWMAPS];
+	static mat4 m_shadowPVs[MAX_SHADOWMAPS];
 
 public:
 	SceneObject(PuresoftPipeline& pipeline, SceneObject* parent);

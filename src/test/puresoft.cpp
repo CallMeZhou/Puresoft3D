@@ -92,7 +92,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	// basic initialization of pipeline
 	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, new PuresoftDDrawRenderer);
 
-	vec4 lightPos(-6.0f, 0, 1.0f, 0), cameraPos(0, 0, 1.2f, 0);
+	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 1.2f, 0);
 	pipeline.setUniform(7, &lightPos, sizeof(lightPos));
 	pipeline.setUniform(8, &cameraPos, sizeof(cameraPos));
 
@@ -109,15 +109,25 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	Moon moon(pipeline, &root);
 	Skybox skybox(pipeline, &root);
 
-// 	mat4 light1View, light1Proj;
-// 	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, PI / 2.0f);
-// 	mcemaths_make_view_traditional(light1View, cameraPos, tran, vec4(0, 1.0f, 0, 0));
-// 	image.width = SHDW_W;
-// 	image.height = SHDW_H;
-// 	image.elemLen = 4;
-// 	image.scanline = SHDW_W * 4;
-// 	image.pixels = NULL;
-// 	int texShadow = pipeline.createTexture(&image);
+	//////////////////////////////////////////////////////////////////////////
+	// shadow
+	//////////////////////////////////////////////////////////////////////////
+	mat4 light1View, light1Proj, light1pv;
+	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, 2 * PI * (60.0f / 360.0f));
+	mcemaths_make_view_traditional(light1View, lightPos, vec4(), vec4(0, 1.0f, 0, 0));
+	mcemaths_transform_m4m4(light1pv, light1Proj, light1View);
+	PURESOFTIMGBUFF32 shadowBuffer;
+	shadowBuffer.width = SHDW_W;
+	shadowBuffer.height = SHDW_H;
+	shadowBuffer.elemLen = 4; // 1 float
+	shadowBuffer.scanline = SHDW_W * 4;
+	shadowBuffer.pixels = NULL;
+	int texShadow = pipeline.createTexture(&shadowBuffer);
+
+	int progShadow = pipeline.createProgramme(
+		pipeline.addProcessor(new VertexProcesserDEF05), 
+		pipeline.addProcessor(new InterpolationProcessorDEF05), 
+		pipeline.addProcessor(new FragmentProcessorDEF05));
 
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
@@ -136,22 +146,40 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		if(WM_QUIT == msg.message)
 			break;
 
+		// update objects' positions
+		root.update((float)highTimer.span() / 1000.0f, rootTransform);
+		highTimer.reset();
+
+		// create shadow map
+		pipeline.setUniform(0, light1Proj, sizeof(light1Proj.elem));
+		pipeline.setUniform(1, light1View, sizeof(light1View.elem));
+		pipeline.setUniform(3, light1pv, sizeof(light1pv.elem));
+		pipeline.setDepth(texShadow);
+		pipeline.clearDepth();
+		pipeline.setViewport(SHDW_W, SHDW_H);
+		SceneObject::m_usePrivateProgramme = false;
+		pipeline.useProgramme(progShadow);
+
+		earth.draw(pipeline);
+		moon.draw(pipeline);
+
+		// draw scene
 		pipeline.setUniform(0, proj, sizeof(proj.elem));
 		pipeline.setUniform(1, view, sizeof(view.elem));
 		pipeline.setUniform(3, proj_view, sizeof(proj_view.elem));
 		pipeline.setDepth();
 		pipeline.clearDepth();
 		pipeline.setViewport(W, H);
-
-		root.update((float)highTimer.span() / 1000.0f, rootTransform);
-		highTimer.reset();
+		SceneObject::m_usePrivateProgramme = true;
+		SceneObject::m_shadowMaps[0] = texShadow;
+		mcemaths_mat4cpy(SceneObject::m_shadowPVs[0], light1pv);
 
 		skybox.draw(pipeline);
 		earth.draw(pipeline);
 		moon.draw(pipeline);
 
 		pipeline.swapBuffers();
-		
+
 // 		pipeline.setUniform(0, light1Proj, sizeof(light1Proj.elem));
 // 		pipeline.setUniform(1, light1View, sizeof(light1View.elem));
 // 		pipeline.setDepth(texShadow);

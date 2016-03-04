@@ -118,6 +118,7 @@
     <ClInclude Include="samplr2d.h" />
     <ClInclude Include="picldr.h" />
     <ClInclude Include="samplrcube.h" />
+    <ClInclude Include="samplrproj.h" />
     <ClInclude Include="shadow.h" />
     <ClInclude Include="skybox.h" />
     <ClInclude Include="tex1bump1light1.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="rndrgdi.cpp" />
     <ClCompile Include="samplr2d.cpp" />
     <ClCompile Include="samplrcube.cpp" />
+    <ClCompile Include="samplrproj.cpp" />
     <ClCompile Include="shadow.cpp" />
     <ClCompile Include="skybox.cpp" />
     <ClCompile Include="tex.cpp" />
