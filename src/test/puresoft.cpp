@@ -28,8 +28,8 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 const int W = 1024;
 const int H = 576;
 
-const int SHDW_W = 640;
-const int SHDW_H = 640;
+const int SHDW_W = 2048;
+const int SHDW_H = 2048;
 
 const float PI = 3.1415927f;
 

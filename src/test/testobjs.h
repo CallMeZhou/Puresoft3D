@@ -30,6 +30,7 @@ public:
 
 private:
 	int m_diffuse;
+	int m_bump;
 	float m_meshRotateRad;
 };
 

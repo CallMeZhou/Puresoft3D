@@ -2,6 +2,7 @@
 #include "defs.h"
 #include "mcemaths.h"
 #include "samplr2d.h"
+#include "samplrproj.h"
 #include "testproc.h"
 
 static void copyUserData(PROCDATA_TEST* dest, const PROCDATA_TEST* src)
@@ -220,6 +221,8 @@ void FragmentProcessorTEST::process(const FragmentProcessorInput* input, Fragmen
 	bumpNormal[2] = bytesColour.elems.b;
 	bumpNormal[3] = 0;
 
+	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->worldPos, m_shadowPV);
+
 	PuresoftSampler2D::get4(m_cloudTex, texcoord[0], texcoord[1], &bytesColour);
 	float cloudControl = bytesColour.elems.r / 255.0f;
 
@@ -232,7 +235,6 @@ void FragmentProcessorTEST::process(const FragmentProcessorInput* input, Fragmen
 
 	ALIGN16 float tbn[16];
 	mcemaths_make_tbn(tbn, inData->tangent, inData->binormal, inData->normal);
-	//mcemaths_mat4transpose(tbn);
 
 	mcemaths_transform_m4v4_ip(bumpNormal, tbn);
 	mcemaths_norm_3_4(bumpNormal);
@@ -270,6 +272,91 @@ void FragmentProcessorTEST::process(const FragmentProcessorInput* input, Fragmen
 		mcemaths_add_3_4_ip(outputColour, nightColour);
 	}
 
+	mcemaths_mul_3_4(outputColour, shadowFactor);
+	mcemaths_clamp_3_4(outputColour, 0, 255.0f);
+
+	bytesColour.elems.r = (unsigned char)outputColour[2];
+	bytesColour.elems.g = (unsigned char)outputColour[1];
+	bytesColour.elems.b = (unsigned char)outputColour[0];
+	bytesColour.elems.a = 0;
+
+	output->write4(0, &bytesColour);
+}
+
+FragmentProcessorTESTSIMP::FragmentProcessorTESTSIMP(void)
+{
+}
+
+FragmentProcessorTESTSIMP::~FragmentProcessorTESTSIMP(void)
+{
+}
+
+void FragmentProcessorTESTSIMP::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
+{
+	m_lightPos = (const float*)uniforms[7].data;
+	m_cameraPos = (const float*)uniforms[8].data;
+	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9].data];
+	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10].data];
+	m_shadowTex = (const PuresoftFBO*)textures[*(const int*)uniforms[15].data];
+	m_shadowPV = (const float*)uniforms[16].data;
+}
+
+void FragmentProcessorTESTSIMP::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
+{
+	ALIGN16 float outputColour[4];
+	ALIGN16 float bumpNormal[4];
+	PURESOFTBGRA bytesColour;
+
+	const PROCDATA_TEST* inData = (const PROCDATA_TEST*)input->user;
+
+	PuresoftSampler2D::get4(m_diffuseTex, inData->texcoord[0], inData->texcoord[1], &bytesColour);
+	outputColour[0] = bytesColour.elems.b;
+	outputColour[1] = bytesColour.elems.g;
+	outputColour[2] = bytesColour.elems.r;
+	outputColour[3] = bytesColour.elems.a;
+
+	PuresoftSampler2D::get4(m_bumpTex, inData->texcoord[0], inData->texcoord[1], &bytesColour);
+	bumpNormal[0] = bytesColour.elems.r;
+	bumpNormal[1] = bytesColour.elems.g;
+	bumpNormal[2] = bytesColour.elems.b;
+	bumpNormal[3] = 0;
+
+	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->worldPos, m_shadowPV);
+
+	mcemaths_div_3_4(bumpNormal, 255.0f);
+	mcemaths_mul_3_4(bumpNormal, 2.0f);
+	mcemaths_sub_4by1(bumpNormal, 1.0f);
+
+	ALIGN16 float tbn[16];
+	mcemaths_make_tbn(tbn, inData->tangent, inData->binormal, inData->normal);
+
+	mcemaths_transform_m4v4_ip(bumpNormal, tbn);
+	mcemaths_norm_3_4(bumpNormal);
+
+	ALIGN16 float L[4];
+	mcemaths_sub_3_4(L, m_lightPos, inData->worldPos);
+	float distance = mcemaths_len_3_4(L);
+	mcemaths_div_3_4(L, distance);
+
+	ALIGN16 float E[4];
+	mcemaths_sub_3_4(E, m_cameraPos, inData->worldPos);
+	mcemaths_norm_3_4(E);
+	ALIGN16 float H[4];
+	mcemaths_add_3_4(H, E, L);
+	mcemaths_norm_3_4(H);
+
+	float lambert = mcemaths_dot_3_4(L, bumpNormal);
+
+	float specular = mcemaths_dot_3_4(H, bumpNormal);
+	specular = specular < 0 ? 0 : specular;
+	//specular = pow(specular, 50.0f);
+	specular = opt_pow(specular, 50);
+
+	mcemaths_add_1to4(outputColour, 255.0f * specular);
+
+	mcemaths_mul_3_4(outputColour, lambert);
+
+	mcemaths_mul_3_4(outputColour, shadowFactor);
 	mcemaths_clamp_3_4(outputColour, 0, 255.0f);
 
 	bytesColour.elems.r = (unsigned char)outputColour[2];

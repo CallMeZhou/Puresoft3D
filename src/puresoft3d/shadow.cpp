@@ -21,9 +21,11 @@ void VertexProcesserDEF05::preprocess(const PURESOFTUNIFORM* uniforms)
 void VertexProcesserDEF05::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
 {
 	const float* position = (const float*)input->data[0];
-	ALIGN16 float pvm[16];
+	ALIGN16 float position_adjusted[4], pvm[16];
+	mcemaths_quatcpy(position_adjusted, position);
+	mcemaths_mul_3(position_adjusted, 0.9f);
 	mcemaths_transform_m4m4(pvm, m_PV, m_M);
-	mcemaths_transform_m4v4(output->position, pvm, position);
+	mcemaths_transform_m4v4(output->position, pvm, position_adjusted);
 }
 
 InterpolationProcessorDEF05::InterpolationProcessorDEF05(void)

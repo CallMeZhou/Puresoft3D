@@ -74,10 +74,11 @@ Moon::Moon(PuresoftPipeline& pipeline, SceneObject* parent)
 	m_vao = findOrCreateVao("sphere.objx");
 
 	m_diffuse = findOrCreateTexture("moon.jpg");
+	m_bump = findOrCreateTexture("moon.dot3.png");
 
-	m_programme = findOrCreateProgramme(PROCNAME(VertexProcesserDEF01), PROCNAME(InterpolationProcessorDEF01), PROCNAME(FragmentProcessorDEF01));
-	m_translation.translation(0.62f, 0, 0);
-	m_scale.scaling(0.1f, 0.1f, 0.1f);
+	m_programme = findOrCreateProgramme(PROCNAME(VertexProcesserTEST), PROCNAME(InterpolationProcessorTEST), PROCNAME(FragmentProcessorTESTSIMP));
+	m_translation.translation(0.7f, 0, 0);
+	m_scale.scaling(0.2f, 0.2f, 0.2f);
 
 	m_meshRotateRad = 3.1415927f;
 }
@@ -108,6 +109,7 @@ void Moon::draw(PuresoftPipeline& pipeline)
 	pipeline.setUniform(4, m_model, sizeof(m_model.elem));
 	pipeline.setUniform(5, m_rotation, sizeof(m_rotation.elem));
 	pipeline.setUniform(9, &m_diffuse, sizeof(int));
+	pipeline.setUniform(10, &m_bump, sizeof(int));
 	__super::draw(pipeline);
 }
 

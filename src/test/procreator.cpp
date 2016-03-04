@@ -26,6 +26,7 @@ class ProcCreator
 	static PuresoftProcessor* createVertTEST(void)		{return new VertexProcesserTEST;}
 	static PuresoftProcessor* createInterpTEST(void)	{return new InterpolationProcessorTEST;}
 	static PuresoftProcessor* createFragTEST(void)		{return new FragmentProcessorTEST;}
+	static PuresoftProcessor* createFragTESTSIMP(void)	{return new FragmentProcessorTESTSIMP;}
 public:
 	ProcCreator(void)
 	{
@@ -44,6 +45,7 @@ public:
 		m_creators[typeid(VertexProcesserTEST).raw_name()]			= createVertTEST;
 		m_creators[typeid(InterpolationProcessorTEST).raw_name()]	= createInterpTEST;
 		m_creators[typeid(FragmentProcessorTEST).raw_name()]		= createFragTEST;
+		m_creators[typeid(FragmentProcessorTESTSIMP).raw_name()]	= createFragTESTSIMP;
 	}
 	PuresoftProcessor* createProcessor(const char* classname)
 	{

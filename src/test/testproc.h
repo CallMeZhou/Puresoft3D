@@ -63,3 +63,22 @@ private:
 	const PuresoftFBO* m_shadowTex;
 	const float* m_shadowPV;
 };
+
+class FragmentProcessorTESTSIMP : public PuresoftFragmentProcessor
+{
+public:
+	FragmentProcessorTESTSIMP(void);
+	~FragmentProcessorTESTSIMP(void);
+
+	void preprocess(const PURESOFTUNIFORM* uniforms, const void** textures);
+	void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const;
+
+private:
+	const float* m_lightPos;
+	const float* m_cameraPos;
+	const float* m_texMatrix;
+	const PuresoftFBO* m_diffuseTex;
+	const PuresoftFBO* m_bumpTex;
+	const PuresoftFBO* m_shadowTex;
+	const float* m_shadowPV;
+};
