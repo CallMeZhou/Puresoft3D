@@ -23,14 +23,21 @@ float PuresoftSamplerProjection::get(const PuresoftFBO* imageBuffer, const float
 	position_horm[3] = 1.0f;
 	texcoordFromProjection(texcoord, position_horm, projection);
 
-	float depthInShadowMap;
-	imageBuffer->directRead4(
-		(unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f), 
-		(unsigned int)((float)imageBuffer->getWidth()  * texcoord[0] + 0.5f), 
-		&depthInShadowMap);
+	float depthInShadowMap, shadowFactor = 0;
+	unsigned int y_cntr = (unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f);
+	unsigned int x_cntr = (unsigned int)((float)imageBuffer->getWidth() * texcoord[0] + 0.5f);
+
+	for(unsigned int y = y_cntr - 2; y <= y_cntr + 2; y++)
+	{
+		for(unsigned int x = x_cntr - 2; x <= x_cntr + 2; x++)
+		{
+			imageBuffer->directRead4(y, x, &depthInShadowMap);
+			shadowFactor += depthInShadowMap > texcoord[2] ? 1.0f : 0.15f;
+		}
+	}
 
 	// the bigger the further from light source
-	return depthInShadowMap > texcoord[2] ? 1.0f : 0.3f;
+	return shadowFactor / 25.0f;
 }
 /*
 void PuresoftSamplerProjection::get1(const PuresoftFBO* imageBuffer, const float* position, const float* projection, void* data)
