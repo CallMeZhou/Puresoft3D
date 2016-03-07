@@ -4,5 +4,5 @@
 class PuresoftSamplerProjection
 {
 public:
-	static float get(const PuresoftFBO* imageBuffer, const float* position, const float* projection);
+	static float get(const PuresoftFBO* imageBuffer, const float* projection);
 };

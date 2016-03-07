@@ -1,80 +1,38 @@
 #include "mcemaths.h"
 #include "samplrproj.h"
 
-ALIGN16 static const float bias[16] = 
+const float POISSON_DISK_X[4] = 
 {
-	0.5f,    0,    0,    0, 
-	   0, 0.5f,    0,    0, 
-	   0,    0, 1.0f,    0, 
-	0.5f, 0.5f,    0,    0
+	-0.94201624f,
+	 0.94558609f, 
+	-0.094184101f,
+	 0.34495938f
 };
 
-static void texcoordFromProjection(float* texcoord, const float* position, const float* projection)
+const float POISSON_DISK_Y[4] = 
 {
-	mcemaths_transform_m4v4(texcoord, projection, position);
+	-0.39906216f,
+	-0.76890725f,
+	-0.92938870f,
+	 0.29387760f
+};
+
+float PuresoftSamplerProjection::get(const PuresoftFBO* imageBuffer, const float* projection)
+{
+	ALIGN16 float texcoord[4];
+	mcemaths_quatcpy(texcoord, projection);
 	mcemaths_div_3_4(texcoord, texcoord[3]);
-	mcemaths_transform_m4v4_ip(texcoord, bias);
-}
 
-float PuresoftSamplerProjection::get(const PuresoftFBO* imageBuffer, const float* position, const float* projection)
-{
-	ALIGN16 float texcoord[4], position_horm[4];
-	mcemaths_quatcpy(position_horm, position);
-	position_horm[3] = 1.0f;
-	texcoordFromProjection(texcoord, position_horm, projection);
-
-	float depthInShadowMap, shadowFactor = 0;
-	unsigned int y_cntr = (unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f);
-	unsigned int x_cntr = (unsigned int)((float)imageBuffer->getWidth() * texcoord[0] + 0.5f);
-
-	for(unsigned int y = y_cntr - 2; y <= y_cntr + 2; y++)
+	float depthInShadowMap, shadowFactor = 1.0f;
+	for(int i = 0; i < 4; i++)
 	{
-		for(unsigned int x = x_cntr - 2; x <= x_cntr + 2; x++)
-		{
-			imageBuffer->directRead4(y, x, &depthInShadowMap);
-			shadowFactor += depthInShadowMap > texcoord[2] ? 1.0f : 0.15f;
-		}
+		unsigned int y = (unsigned int)((float)imageBuffer->getHeight() * (texcoord[1] + POISSON_DISK_X[i] / 700.0f));
+		unsigned int x = (unsigned int)((float)imageBuffer->getWidth()  * (texcoord[0] + POISSON_DISK_Y[i] / 700.0f));
+		imageBuffer->directRead4(y, x, &depthInShadowMap);
+		if(depthInShadowMap < texcoord[2])
+			shadowFactor -=  0.2f;
 	}
 
 	// the bigger the further from light source
-	return shadowFactor / 25.0f;
+	return shadowFactor;
 }
-/*
-void PuresoftSamplerProjection::get1(const PuresoftFBO* imageBuffer, const float* position, const float* projection, void* data)
-{
-	ALIGN16 float texcoord[4], position_horm[4];
-	mcemaths_quatcpy(position_horm, position);
-	position_horm[3] = 1.0f;
-	texcoordFromProjection(texcoord, position_horm, projection);
-
-	imageBuffer->directRead1(
-		(unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f), 
-		(unsigned int)((float)imageBuffer->getWidth()  * texcoord[0] + 0.5f), 
-		data);
-}
-
-void PuresoftSamplerProjection::get4(const PuresoftFBO* imageBuffer, const float* position, const float* projection, void* data)
-{
-	ALIGN16 float texcoord[4], position_horm[4];
-	mcemaths_quatcpy(position_horm, position);
-	position_horm[3] = 1.0f;
-	texcoordFromProjection(texcoord, position_horm, projection);
-
-	imageBuffer->directRead4(
-		(unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f), 
-		(unsigned int)((float)imageBuffer->getWidth()  * texcoord[0] + 0.5f), 
-		data);
-}
-
-void PuresoftSamplerProjection::get16(const PuresoftFBO* imageBuffer, const float* position, const float* projection, void* data)
-{
-	ALIGN16 float texcoord[4], position_horm[4];
-	mcemaths_quatcpy(position_horm, position);
-	position_horm[3] = 1.0f;
-	texcoordFromProjection(texcoord, position_horm, projection);
-
-	imageBuffer->directRead16(
-		(unsigned int)((float)imageBuffer->getHeight() * texcoord[1] + 0.5f), 
-		(unsigned int)((float)imageBuffer->getWidth()  * texcoord[0] + 0.5f), 
-		data);
-}*/

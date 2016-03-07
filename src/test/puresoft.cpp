@@ -33,7 +33,14 @@ const int SHDW_H = 2048;
 
 const float PI = 3.1415927f;
 
-int tex;
+ALIGN16 static const float bias[16] = 
+{
+	0.5f,    0,    0,    0, 
+	0,    0.5f,    0,    0, 
+	0,       0, 1.0f,    0, 
+	0.5f, 0.5f, 0, 1.0f
+};
+
 
 class HighResolutionTimeCounter
 {
@@ -123,10 +130,12 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	//////////////////////////////////////////////////////////////////////////
 	// shadow
 	//////////////////////////////////////////////////////////////////////////
-	mat4 light1View, light1Proj, light1pv;
-	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, 2 * PI * (60.0f / 360.0f));
+	mat4 light1View, light1Proj, light1pv, light1pvb;
+//	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, 2 * PI * (45.0f / 360.0f));
+	mcemaths_make_proj_orthographic(light1Proj, -10.0f, 20.0f, -3.0f, 3.0f, -3.0f, 3.0f);
 	mcemaths_make_view_traditional(light1View, lightPos, vec4(), vec4(0, 1.0f, 0, 0));
 	mcemaths_transform_m4m4(light1pv, light1Proj, light1View);
+	mcemaths_transform_m4m4(light1pvb, bias, light1pv);
 	PURESOFTIMGBUFF32 shadowBuffer;
 	shadowBuffer.width = SHDW_W;
 	shadowBuffer.height = SHDW_H;
@@ -183,7 +192,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setViewport(W, H);
 		SceneObject::m_usePrivateProgramme = true;
 		SceneObject::m_shadowMaps[0] = texShadow;
-		mcemaths_mat4cpy(SceneObject::m_shadowPVs[0], light1pv);
+		mcemaths_mat4cpy(SceneObject::m_shadowPVs[0], light1pvb);
 
 		skybox.draw(pipeline);
 		earth.draw(pipeline);

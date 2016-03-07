@@ -15,12 +15,14 @@ static void copyUserData(PROCDATA_TEST* dest, const PROCDATA_TEST* src)
 		movaps	xmm2,		[eax + 32]
 		movaps	xmm3,		[eax + 48]
 		movaps	xmm4,		[eax + 64]
+		movaps	xmm5,		[eax + 80]
 		mov		eax,		dest
 		movaps	[eax],		xmm0
 		movaps	[eax + 16],	xmm1
 		movaps	[eax + 32],	xmm2
 		movaps	[eax + 48],	xmm3
 		movaps	[eax + 64],	xmm4
+		movaps	[eax + 80],	xmm5
 	}
 }
 
@@ -37,6 +39,7 @@ void VertexProcesserTEST::preprocess(const PURESOFTUNIFORM* uniforms)
 	m_PV = (const float*)uniforms[3].data;
 	m_M = (const float*)uniforms[4].data;
 	m_Mrot = (const float*)uniforms[5].data;
+	m_shadowPV = (const float*)uniforms[16].data;
 }
 
 void VertexProcesserTEST::process(const VertexProcessorInput* input, VertexProcessorOutput* output) const
@@ -49,17 +52,30 @@ void VertexProcesserTEST::process(const VertexProcessorInput* input, VertexProce
 	const float* normal = (const float*)input->data[3];
 	const float* texcoord = (const float*)input->data[4];
 
+	// get vertex position in world space
 	mcemaths_transform_m4v4(userOutput->worldPos, m_M, position);
 
-	mcemaths_quatcpy(output->position, userOutput->worldPos);
-	userOutput->worldPos[3] = 0;
+	// project world-position into shadow map's UV space, inp:userOutput->worldPos, outp:userOutput->shadowcoord
+	mcemaths_quatcpy(userOutput->shadowcoord, userOutput->worldPos);
+//	ALIGN16 float enlarge[4];
+//	mcemaths_quatcpy(enlarge, normal);
+//	mcemaths_mul_3_4(enlarge, 1.5f);
+//	mcemaths_add_3_4_ip(userOutput->shadowcoord, enlarge); // slightly enlarge the model for anti-acne
+	mcemaths_transform_m4v4_ip(userOutput->shadowcoord, m_shadowPV);
 
+	// project world-position into view space
+	mcemaths_quatcpy(output->position, userOutput->worldPos);
 	mcemaths_transform_m4v4_ip(output->position, m_PV);
 
+	// remove world-position's w (later we'll use it as an xyz coordinate)
+	userOutput->worldPos[3] = 0;
+
+	// transform normals
 	mcemaths_transform_m4v4(userOutput->tangent, m_Mrot, tangent);
 	mcemaths_transform_m4v4(userOutput->binormal, m_Mrot, binormal);
 	mcemaths_transform_m4v4(userOutput->normal, m_Mrot, normal);
 
+	// pass on texture coord
 	userOutput->texcoord[0] = texcoord[0];
 	userOutput->texcoord[1] = texcoord[1];
 }
@@ -93,18 +109,21 @@ void InterpolationProcessorTEST::interpolateByContributes(void* interpolatedUser
 	mcemaths_mul_3_4(temp[0].normal, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].worldPos, correctedContributes[0]);
 	mcemaths_mul_3_4(temp[0].texcoord, correctedContributes[0]);
+	mcemaths_mul_3_4(temp[0].shadowcoord, correctedContributes[0]);
 
 	mcemaths_mul_3_4(temp[1].tangent, correctedContributes[1]);
 	mcemaths_mul_3_4(temp[1].binormal, correctedContributes[1]);
 	mcemaths_mul_3_4(temp[1].normal, correctedContributes[1]);
 	mcemaths_mul_3_4(temp[1].worldPos, correctedContributes[1]);
 	mcemaths_mul_3_4(temp[1].texcoord, correctedContributes[1]);
+	mcemaths_mul_3_4(temp[1].shadowcoord, correctedContributes[1]);
 
 	mcemaths_mul_3_4(temp[2].tangent, correctedContributes[2]);
 	mcemaths_mul_3_4(temp[2].binormal, correctedContributes[2]);
 	mcemaths_mul_3_4(temp[2].normal, correctedContributes[2]);
 	mcemaths_mul_3_4(temp[2].worldPos, correctedContributes[2]);
 	mcemaths_mul_3_4(temp[2].texcoord, correctedContributes[2]);
+	mcemaths_mul_3_4(temp[2].shadowcoord, correctedContributes[2]);
 
 	PROCDATA_TEST* output = (PROCDATA_TEST*)interpolatedUserData;
 
@@ -113,18 +132,21 @@ void InterpolationProcessorTEST::interpolateByContributes(void* interpolatedUser
 	mcemaths_quatcpy(output->normal, temp[0].normal);
 	mcemaths_quatcpy(output->worldPos, temp[0].worldPos);
 	mcemaths_quatcpy(output->texcoord, temp[0].texcoord);
+	mcemaths_quatcpy(output->shadowcoord, temp[0].shadowcoord);
 
 	mcemaths_add_3_4_ip(output->tangent, temp[1].tangent);
 	mcemaths_add_3_4_ip(output->binormal, temp[1].binormal);
 	mcemaths_add_3_4_ip(output->normal, temp[1].normal);
 	mcemaths_add_3_4_ip(output->worldPos, temp[1].worldPos);
 	mcemaths_add_3_4_ip(output->texcoord, temp[1].texcoord);
+	mcemaths_add_3_4_ip(output->shadowcoord, temp[1].shadowcoord);
 
 	mcemaths_add_3_4_ip(output->tangent, temp[2].tangent);
 	mcemaths_add_3_4_ip(output->binormal, temp[2].binormal);
 	mcemaths_add_3_4_ip(output->normal, temp[2].normal);
 	mcemaths_add_3_4_ip(output->worldPos, temp[2].worldPos);
 	mcemaths_add_3_4_ip(output->texcoord, temp[2].texcoord);
+	mcemaths_add_3_4_ip(output->shadowcoord, temp[2].shadowcoord);
 }
 
 void InterpolationProcessorTEST::calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) const
@@ -139,11 +161,14 @@ void InterpolationProcessorTEST::calcStep(void* interpolatedUserDataStep, const 
 	mcemaths_sub_3_4(step->normal, end->normal, start->normal);
 	mcemaths_sub_3_4(step->worldPos, end->worldPos, start->worldPos);
 	mcemaths_sub_3_4(step->texcoord, end->texcoord, start->texcoord);
+	mcemaths_sub_3_4(step->shadowcoord, end->shadowcoord, start->shadowcoord);
+
 	mcemaths_mul_3_4(step->tangent, reciprocalStepCount);
 	mcemaths_mul_3_4(step->binormal, reciprocalStepCount);
 	mcemaths_mul_3_4(step->normal, reciprocalStepCount);
 	mcemaths_mul_3_4(step->worldPos, reciprocalStepCount);
 	mcemaths_mul_3_4(step->texcoord, reciprocalStepCount);
+	mcemaths_mul_3_4(step->shadowcoord, reciprocalStepCount);
 }
 
 void InterpolationProcessorTEST::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const
@@ -156,6 +181,7 @@ void InterpolationProcessorTEST::interpolateBySteps(void* interpolatedUserData, 
 	mcemaths_mul_3_4(output->normal, correctionFactor2);
 	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
 	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
+	mcemaths_mul_3_4(output->shadowcoord, correctionFactor2);
 
 	const PROCDATA_TEST* step = (PROCDATA_TEST*)interpolatedUserDataStep;
 
@@ -164,6 +190,7 @@ void InterpolationProcessorTEST::interpolateBySteps(void* interpolatedUserData, 
 	mcemaths_add_3_4_ip(start->normal, step->normal);
 	mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
 	mcemaths_add_3_4_ip(start->texcoord, step->texcoord);
+	mcemaths_add_3_4_ip(start->shadowcoord, step->shadowcoord);
 }
 
 FragmentProcessorTEST::FragmentProcessorTEST(void)
@@ -185,7 +212,6 @@ void FragmentProcessorTEST::preprocess(const PURESOFTUNIFORM* uniforms, const vo
 	m_cloudTex = (const PuresoftFBO*)textures[*(const int*)uniforms[13].data];
 	m_texMatrix = (const float*)uniforms[14].data;
 	m_shadowTex = (const PuresoftFBO*)textures[*(const int*)uniforms[15].data];
-	m_shadowPV = (const float*)uniforms[16].data;
 }
 
 void FragmentProcessorTEST::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
@@ -221,7 +247,7 @@ void FragmentProcessorTEST::process(const FragmentProcessorInput* input, Fragmen
 	bumpNormal[2] = bytesColour.elems.b;
 	bumpNormal[3] = 0;
 
-	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->worldPos, m_shadowPV);
+	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->shadowcoord);
 
 	PuresoftSampler2D::get4(m_cloudTex, texcoord[0], texcoord[1], &bytesColour);
 	float cloudControl = bytesColour.elems.r / 255.0f;
@@ -298,7 +324,6 @@ void FragmentProcessorTESTSIMP::preprocess(const PURESOFTUNIFORM* uniforms, cons
 	m_diffuseTex = (const PuresoftFBO*)textures[*(const int*)uniforms[9].data];
 	m_bumpTex = (const PuresoftFBO*)textures[*(const int*)uniforms[10].data];
 	m_shadowTex = (const PuresoftFBO*)textures[*(const int*)uniforms[15].data];
-	m_shadowPV = (const float*)uniforms[16].data;
 }
 
 void FragmentProcessorTESTSIMP::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
@@ -321,7 +346,7 @@ void FragmentProcessorTESTSIMP::process(const FragmentProcessorInput* input, Fra
 	bumpNormal[2] = bytesColour.elems.b;
 	bumpNormal[3] = 0;
 
-	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->worldPos, m_shadowPV);
+	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->shadowcoord);
 
 	mcemaths_div_3_4(bumpNormal, 255.0f);
 	mcemaths_mul_3_4(bumpNormal, 2.0f);

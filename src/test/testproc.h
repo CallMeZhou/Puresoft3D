@@ -11,6 +11,7 @@ __declspec(align(16)) struct PROCDATA_TEST
 	float normal[4];
 	float worldPos[4];
 	float texcoord[4];
+	float shadowcoord[4];
 };
 #pragma pack()
 
@@ -27,6 +28,7 @@ private:
 	const float* m_PV;
 	const float* m_M;
 	const float* m_Mrot;
+	const float* m_shadowPV;
 };
 
 class InterpolationProcessorTEST : public PuresoftInterpolationProcessor
@@ -61,7 +63,6 @@ private:
 	const PuresoftFBO* m_nightTex;
 	const PuresoftFBO* m_cloudTex;
 	const PuresoftFBO* m_shadowTex;
-	const float* m_shadowPV;
 };
 
 class FragmentProcessorTESTSIMP : public PuresoftFragmentProcessor
@@ -80,5 +81,4 @@ private:
 	const PuresoftFBO* m_diffuseTex;
 	const PuresoftFBO* m_bumpTex;
 	const PuresoftFBO* m_shadowTex;
-	const float* m_shadowPV;
 };
