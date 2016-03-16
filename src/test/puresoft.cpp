@@ -22,8 +22,6 @@ using namespace std;
 
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//static void updateTexMatrix(mat4& m, float rad);
 
 const int W = 1024;
 const int H = 640;
@@ -108,9 +106,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		ddrawRender = NULL;
 	}
 	
-	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);//new PuresoftDDrawRenderer);
+	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);
 
-	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 2.2f, 0), cameraYPR;
+	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 2.2f, 0);
 	pipeline.setUniform(7, &lightPos, sizeof(lightPos));
 	pipeline.setUniform(8, &cameraPos, sizeof(cameraPos));
 
@@ -133,7 +131,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	//////////////////////////////////////////////////////////////////////////
 	mat4 light1View, light1Proj, light1pv, light1pvb;
 	mcemaths_make_proj_perspective(light1Proj, 0.1f, 10.0f, (float)SHDW_W / SHDW_H, 2 * PI * (30.0f / 360.0f));
-//	mcemaths_make_proj_orthographic(light1Proj, -10.0f, 20.0f, -3.0f, 3.0f, -3.0f, 3.0f);
 	mcemaths_make_view_traditional(light1View, lightPos, vec4(), vec4(0, 1.0f, 0, 0));
 	mcemaths_transform_m4m4(light1pv, light1Proj, light1View);
 	mcemaths_transform_m4m4(light1pvb, bias, light1pv);
@@ -202,13 +199,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 		pipeline.swapBuffers();
 
-// 		pipeline.setUniform(0, light1Proj, sizeof(light1Proj.elem));
-// 		pipeline.setUniform(1, light1View, sizeof(light1View.elem));
-// 		pipeline.setDepth(texShadow);
-// 		pipeline.setViewport(SHDW_W, SHDW_H);
-
-
-
 		fcount++;
 		DWORD timeSpan = GetTickCount() - time0;
 		if(timeSpan > 2000)
@@ -250,94 +240,3 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-/*
-static void updateTexMatrix(mat4& m, float rad)
-{
-	mat4 push, pop, rot, temp;
-	push.translation(vec4(0.5f, 0.5f, 0, 0));
-	pop.translation(vec4(-0.5f, -0.5f, 0, 0));
-	rot.rotation(vec4(0, 0, 1.0f, 0), rad);
-	
-	mcemaths_transform_m4m4(temp, rot, pop);
-	mcemaths_transform_m4m4(m, push, temp);
-}
-
-
-static float rotRad = 0, trotrad = 0, rotRad3 = 2 * PI;
-
-static void drawObjects(PuresoftPipeline& pipeline, const mat4& proj, const mat4& view)
-{
-
-	rotRad += 0.1f * (float)highTimer.Now() / 1000.0f;
-	trotrad += 0.02f * (float)highTimer.Now() / 1000.0f;
-	highTimer.Start();
-
-	if(rotRad > 2 * PI)
-	{
-		rotRad = 0;
-	}
-
-	if(trotrad > 1.0f)
-	{
-		trotrad = 0;
-	}
-
-	pipeline.setUniform(0, proj, sizeof(proj.elem));
-	pipeline.setUniform(1, view, sizeof(view.elem));
-	pipeline.setDepth();
-	pipeline.setViewport(W, H);
-
-	pipeline.useProgramme(skyProc);
-
-	pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-	pipeline.drawVAO(&vao2, true);
-	pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-
-	pipeline.useProgramme(fullProc);
-
-	mat4 rot;
-	rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
-	//scale.scaling(1.0f, 1.0f, 1.0f);
-	//tran.translation(0, 0, -150.0f);
-	tran.translation(0, 0, -1.2f);
-	mcemaths_transform_m4m4(model, rot, scale);
-	mcemaths_transform_m4m4_r_ip(tran, model);
-	pipeline.setUniform(4, model, sizeof(model.elem));
-	mat4 modelRotate = rot;
-	pipeline.setUniform(5, modelRotate, sizeof(modelRotate.elem));
-
-	mat4 texMatrix;
-	texMatrix.translation(trotrad, 0, 0);
-	pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
-
-	pipeline.setUniform(9, &texEarthDiff, sizeof(texEarthDiff));
-	pipeline.setUniform(10, &texEarthBump, sizeof(texEarthBump));
-
-	pipeline.clearDepth();
-
-	pipeline.drawVAO(&vao1);
-
-	mat4 scale3, tran3, rot3;
-	scale3.scaling(0.07f, 0.07f, 0.07f);
-	tran3.translation(0.6f, 0, 0);
-	mcemaths_transform_m4m4(model, tran3, scale3);
-	rotRad3 = 1.3f * PI;
-	//		rotRad3 -= 0.4f * (float)highTimer.Now() / 1000.0f;
-	//		if(rotRad3 < 0)
-	//		{
-	//			rotRad3 = 2 * PI;
-	//		}
-	rot3.rotation(vec4(0, 1.0f, 0, 0), rotRad3);
-	mcemaths_transform_m4m4_r_ip(rot3, model);
-	mcemaths_transform_m4m4_r_ip(tran, model);
-	pipeline.setUniform(4, model, sizeof(model.elem));
-	pipeline.setUniform(5, rot3, sizeof(modelRotate.elem));
-
-	pipeline.setUniform(9, &texMoonDiff, sizeof(texEarthDiff));
-	pipeline.setUniform(10, &texMoonBump, sizeof(texEarthBump));
-
-	pipeline.useProgramme(simpTexProc);
-	pipeline.drawVAO(&vao1);
-
-	pipeline.swapBuffers();
-}*/

@@ -4,30 +4,19 @@
 #include <atlwin.h>
 #include <WTypes.h>
 #include <tchar.h>
-#include <GdiPlus.h>
-
-#include <map>
 #include "fixvec.hpp"
 #include "mcemaths.hpp"
-
 #include "pipeline.h"
-#include "picldr.h"
 #include "rndrddraw.h"
-#include "libobjx.h"
-#include "defproc.h"
 #include "testproc.h"
-
 #include "loadscene.h"
 #include "input.h"
 
-using namespace Gdiplus;
 using namespace std;
 using namespace mcemaths;
 
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-//static void updateTexMatrix(mat4& m, float rad);
 
 const int W = 800;
 const int H = 600;
@@ -99,11 +88,14 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	CWindow(hWnd).CenterWindow();
 	ShowWindow(hWnd, nCmdShow);
 
+	// start keyboard and mouse input module
 	Input input;
 	input.startup(hWnd);
 
 	//////////////////////////////////////////////////////////////////////////
 	// basic initialization of pipeline
+	//////////////////////////////////////////////////////////////////////////
+
 	PuresoftRenderer* ddrawRender = NULL;
 	try
 	{
@@ -115,20 +107,16 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		ddrawRender = NULL;
 	}
 	
-	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);//new PuresoftDDrawRenderer);
+	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);
 
-	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0.8f, 1.3f, 0), cameraYPR;
-	pipeline.setUniform(7, &lightPos, sizeof(lightPos));
-	pipeline.setUniform(8, &cameraPos, sizeof(cameraPos));
-
+	// make projection matrix
 	mat4 view, proj, proj_view;
 	mcemaths_make_proj_perspective(proj, 0.1f, 5.0f, (float)W / H, 2 * PI * (45.0f / 360.0f));
-	view.translation(-cameraPos.x, -cameraPos.y, -cameraPos.z);
-	mcemaths_transform_m4m4(proj_view, proj, view);
 
 	//////////////////////////////////////////////////////////////////////////
-	// scene objects
+	// load scene
 	//////////////////////////////////////////////////////////////////////////
+
 	scene_desc sceneDesc;
 	SceneObject::SceneObjects scene;
 	SceneObject::loadScene("plane.objx", &pipeline, scene, sceneDesc);
@@ -139,9 +127,14 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	mcemaths_sub_3_4(light1RDir, light1from, light1to);
 	mcemaths_norm_3_4(light1RDir);
 
+	vec4 cameraPos, cameraYPR;
+	cameraPos = sceneDesc.camera_pos;
+	cameraYPR = sceneDesc.camera_ypr;
+
 	//////////////////////////////////////////////////////////////////////////
 	// shadow
 	//////////////////////////////////////////////////////////////////////////
+
 	mat4 light1View, light1Proj, light1pv, light1pvb;
 	mcemaths_make_proj_perspective(light1Proj, 0.1f, 5.0f, (float)SHDW_W / SHDW_H, 2 * PI * (90.0f / 360.0f));
 	mcemaths_make_view_traditional(light1View, light1from, light1to, vec4(0, 1.0f, 0, 0));
@@ -163,13 +156,14 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	//////////////////////////////////////////////////////////////////////////
 	// run main window's message loop
 	//////////////////////////////////////////////////////////////////////////
+
 	DWORD time0 = GetTickCount(), fcount = 0;
-	MSG msg;
 	mat4 rootTransform;
 	
 	while (true)
 	{
 		bool quit = false;
+		MSG msg;
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -181,14 +175,14 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		if(quit)
 			break;
 
-		// update objects' positions
+		//////////////////////////////////////////////////////////////////////////
+		// render shadow map
+		//////////////////////////////////////////////////////////////////////////
+
+		// place objects by the view matrix of light source
 		root.update((float)highTimer.span() / 1000.0f, rootTransform, light1pv);
 
-		pipeline.setUniform(20, light1from, sizeof(vec4));
-		pipeline.setUniform(21, light1RDir, sizeof(vec4));
-		pipeline.setUniform(22, cameraPos, sizeof(vec4));
-
-		// create shadow map
+		// draw call for shadow map
 		pipeline.setUniform(2, light1View, sizeof(mat4));
 		pipeline.setUniform(3, light1Proj, sizeof(mat4));
 		pipeline.setUniform(4, light1pv, sizeof(mat4));
@@ -206,16 +200,27 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			it->second.draw(pipeline);
 		}
 
+		// un-comment these if you wanna see shadow map
 //		pipeline.saveTexture(-1, L"c:\\shadow.bmp", true);
 //		break;
 
+		//////////////////////////////////////////////////////////////////////////
+		// render real scene
+		//////////////////////////////////////////////////////////////////////////
+
+		// place objects by the camera matrix
+		view.view(cameraPos, cameraYPR);
+		mcemaths_transform_m4m4(proj_view, proj, view);
 		root.update(0, rootTransform, proj_view);
 
-		// draw scene
+		// draw call for real scene
 		pipeline.setUniform(2, view, sizeof(mat4));
 		pipeline.setUniform(3, proj, sizeof(mat4));
 		pipeline.setUniform(4, proj_view, sizeof(mat4));
 		pipeline.setUniform(6, light1pvb, sizeof(mat4));
+		pipeline.setUniform(20, light1from, sizeof(vec4));
+		pipeline.setUniform(21, light1RDir, sizeof(vec4));
+		pipeline.setUniform(22, cameraPos, sizeof(vec4));
 		pipeline.setUniform(23, &texShadow, sizeof(int));
 		pipeline.setDepth();
 		pipeline.clearDepth();
@@ -223,30 +228,35 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setViewport(W, H);
 		SceneObject::m_usePrivateProgramme = true;
 
-		// draw meshes in unsorted way
+		// draw meshes in -unsorted- way
 		for(SceneObject::SceneObjects::iterator it = scene.begin(); it != scene.end(); it++)
 		{
 			it->second.draw(pipeline);
 		}
 
+		// flip back buffer to screen, and front buffer to back buffer for next drawing
 		pipeline.swapBuffers();
 
-// 		pipeline.setUniform(0, light1Proj, sizeof(light1Proj.elem));
-// 		pipeline.setUniform(1, light1View, sizeof(light1View.elem));
-// 		pipeline.setDepth(texShadow);
-// 		pipeline.setViewport(SHDW_W, SHDW_H);
-
+		// calculate and display frame rate
 		fcount++;
 		DWORD timeSpan = GetTickCount() - time0;
 		if(timeSpan > 2000)
 		{
-			char frate[64];
-			sprintf_s(frate, 64, "%.1f", 1000.0f * (float)fcount / (float)timeSpan);
+			char frate[1024];
+			sprintf_s(frate, 1024, "frate=%.1f, campos=(%.2f, %.2f, %.2f) cam-ypr=(%.2f, %.2f, %.2f)", 
+				1000.0f * (float)fcount / (float)timeSpan, 
+				cameraPos.x, cameraPos.y, cameraPos.z, 
+				cameraYPR.x, cameraYPR.y, cameraYPR.z);
 			SetWindowTextA(hWnd, frate);
 
 			fcount = 0;
 			time0 = GetTickCount();
 		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// process user input and remake view matrix
+		// sorry I really don't have time to keep the following code tidy
+		//////////////////////////////////////////////////////////////////////////
 
 		float dyaw, dpitch, deltaMouse = 0.4f * (float)highTimer.span() / 1000.0f;
 		input.getRelPos(&dyaw, &dpitch);
@@ -290,8 +300,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			cameraPos.y -= movement;
 		}
 		
-		view.view(cameraPos, cameraYPR);
-		mcemaths_transform_m4m4(proj_view, proj, view);
 		input.frameUpdate();
 
 		highTimer.reset();
@@ -299,7 +307,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 	input.shutdown();
 
-	return (int) msg.wParam;
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -326,95 +334,3 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return 0;
 }
-
-/*
-static void updateTexMatrix(mat4& m, float rad)
-{
-	mat4 push, pop, rot, temp;
-	push.translation(vec4(0.5f, 0.5f, 0, 0));
-	pop.translation(vec4(-0.5f, -0.5f, 0, 0));
-	rot.rotation(vec4(0, 0, 1.0f, 0), rad);
-	
-	mcemaths_transform_m4m4(temp, rot, pop);
-	mcemaths_transform_m4m4(m, push, temp);
-}
-
-
-static float rotRad = 0, trotrad = 0, rotRad3 = 2 * PI;
-
-static void drawObjects(PuresoftPipeline& pipeline, const mat4& proj, const mat4& view)
-{
-
-	rotRad += 0.1f * (float)highTimer.Now() / 1000.0f;
-	trotrad += 0.02f * (float)highTimer.Now() / 1000.0f;
-	highTimer.Start();
-
-	if(rotRad > 2 * PI)
-	{
-		rotRad = 0;
-	}
-
-	if(trotrad > 1.0f)
-	{
-		trotrad = 0;
-	}
-
-	pipeline.setUniform(0, proj, sizeof(proj.elem));
-	pipeline.setUniform(1, view, sizeof(view.elem));
-	pipeline.setDepth();
-	pipeline.setViewport(W, H);
-
-	pipeline.useProgramme(skyProc);
-
-	pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-	pipeline.drawVAO(&vao2, true);
-	pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-
-	pipeline.useProgramme(fullProc);
-
-	mat4 rot;
-	rot.rotation(vec4(0, 1.0f, 0, 0), rotRad);
-	//scale.scaling(1.0f, 1.0f, 1.0f);
-	//tran.translation(0, 0, -150.0f);
-	tran.translation(0, 0, -1.2f);
-	mcemaths_transform_m4m4(model, rot, scale);
-	mcemaths_transform_m4m4_r_ip(tran, model);
-	pipeline.setUniform(4, model, sizeof(model.elem));
-	mat4 modelRotate = rot;
-	pipeline.setUniform(5, modelRotate, sizeof(modelRotate.elem));
-
-	mat4 texMatrix;
-	texMatrix.translation(trotrad, 0, 0);
-	pipeline.setUniform(14, texMatrix, sizeof(texMatrix.elem));
-
-	pipeline.setUniform(9, &texEarthDiff, sizeof(texEarthDiff));
-	pipeline.setUniform(10, &texEarthBump, sizeof(texEarthBump));
-
-	pipeline.clearDepth();
-
-	pipeline.drawVAO(&vao1);
-
-	mat4 scale3, tran3, rot3;
-	scale3.scaling(0.07f, 0.07f, 0.07f);
-	tran3.translation(0.6f, 0, 0);
-	mcemaths_transform_m4m4(model, tran3, scale3);
-	rotRad3 = 1.3f * PI;
-	//		rotRad3 -= 0.4f * (float)highTimer.Now() / 1000.0f;
-	//		if(rotRad3 < 0)
-	//		{
-	//			rotRad3 = 2 * PI;
-	//		}
-	rot3.rotation(vec4(0, 1.0f, 0, 0), rotRad3);
-	mcemaths_transform_m4m4_r_ip(rot3, model);
-	mcemaths_transform_m4m4_r_ip(tran, model);
-	pipeline.setUniform(4, model, sizeof(model.elem));
-	pipeline.setUniform(5, rot3, sizeof(modelRotate.elem));
-
-	pipeline.setUniform(9, &texMoonDiff, sizeof(texEarthDiff));
-	pipeline.setUniform(10, &texMoonBump, sizeof(texEarthBump));
-
-	pipeline.useProgramme(simpTexProc);
-	pipeline.drawVAO(&vao1);
-
-	pipeline.swapBuffers();
-}*/

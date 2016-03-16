@@ -1,6 +1,7 @@
 #include <memory.h>
 #include "pipeline.h"
 
+/*it's a long story, see wiki for details*/
 void PuresoftPipeline::setUserDataBytes(size_t bytes)
 {
 	if(0 == bytes)

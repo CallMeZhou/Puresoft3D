@@ -31,7 +31,7 @@ void PuresoftPipeline::getTexture(int idx, PURESOFTIMGBUFF32* image, PuresoftFBO
 {
 	if(idx < 0 || idx >= (int)m_texPool.size())
 	{
-		throw std::out_of_range("PuresoftPipeline::getTexture");
+		throw std::out_of_range("PuresoftPipeline::getTexture, index out of range");
 	}
 
 	PuresoftFBO* fbo = m_texPool[idx];
@@ -48,7 +48,7 @@ void PuresoftPipeline::destroyTexture(int idx)
 {
 	if(idx < 0 || idx >= (int)m_texPool.size())
 	{
-		throw std::out_of_range("PuresoftPipeline::destroyTexture");
+		throw std::out_of_range("PuresoftPipeline::destroyTexture, index out of range");
 	}
 
 	if(m_texPool[idx])

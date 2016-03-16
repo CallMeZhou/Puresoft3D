@@ -1,5 +1,6 @@
 #include <memory.h>
 #include <stdexcept>
+#include <assert.h>
 #include "vao.h"
 
 using namespace std;
@@ -9,17 +10,13 @@ PuresoftVAO::PuresoftVAO(void)
 	memset(m_vbos, 0, sizeof(m_vbos));
 }
 
-
 PuresoftVAO::~PuresoftVAO(void)
 {
 }
 
 PuresoftVBO* PuresoftVAO::attachVBO(unsigned int idx, PuresoftVBO* vbo)
 {
-	if(idx >= MAX_VBOS)
-	{
-		throw new std::out_of_range("attachVBO");
-	}
+	assert(idx < MAX_VBOS);
 
 	PuresoftVBO* old = m_vbos[idx];
 	m_vbos[idx] = vbo;
@@ -28,10 +25,7 @@ PuresoftVBO* PuresoftVAO::attachVBO(unsigned int idx, PuresoftVBO* vbo)
 
 PuresoftVBO* PuresoftVAO::detachVBO(unsigned int idx)
 {
-	if(idx >= MAX_VBOS)
-	{
-		throw new std::out_of_range("detachVBO");
-	}
+	assert(idx < MAX_VBOS);
 
 	PuresoftVBO* old = m_vbos[idx];
 	m_vbos[idx] = NULL;
@@ -52,10 +46,7 @@ void PuresoftVAO::rewindAll(void)
 
 PuresoftVBO* PuresoftVAO::getVBO(unsigned int idx)
 {
-	if(idx >= MAX_VBOS)
-	{
-		throw new std::out_of_range("getVBO");
-	}
+	assert(idx < MAX_VBOS);
 
 	return m_vbos[idx];
 }

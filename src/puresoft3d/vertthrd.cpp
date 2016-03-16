@@ -1,8 +1,18 @@
 #include "pipeline.h"
 
+/*
+This function represents the 1st phase of graphical pipeline:
+
+vertex input -> vertex shading -> perspective division
+
+It pulls three vertices out from vao/vbo, calls vertex processor, and returns them to caller.
+It returns false if one of the vbos is empty, other wise true.
+
+This phase could be redesigned to multi-threaded way. I'm not doing this because I only have
+a four-core machine. For now it's called by drawVAO() in client's thread.
+*/
 bool PuresoftPipeline::processVertices(PuresoftVBO** vbos, VertexProcessorOutput* output, float* reciprocalWs, float* projectedZs)
 {
-	// vertex processor input
 	VertexProcessorInput vertInput;
 
 	for(int i = 0; i < 3; i++)
@@ -23,11 +33,11 @@ bool PuresoftPipeline::processVertices(PuresoftVBO** vbos, VertexProcessorOutput
 		// call Vertex Processor
 		m_vp->process(&vertInput, &output[i]);
 
-		// homogenizing division (reciprocal W is negative reciprocal Z)
+		// perspective division
 		float reciprocalW = 1.0f / output[i].position[3];
 		mcemaths_mul_3_4(output[i].position, reciprocalW);
 
-		// collect projected Zs, we'll interpolate it for depth later
+		// collect projected Zs, we'll interpolate it for fragments later as their depth
 		projectedZs[i] = output[i].position[2];
 
 		// save -(1/Z) as one of the two factors for interpolation perspective correction
@@ -40,6 +50,9 @@ bool PuresoftPipeline::processVertices(PuresoftVBO** vbos, VertexProcessorOutput
 	return true;
 }
 
+/*
+for back face culling.
+*/
 bool PuresoftPipeline::isBackFace(float* vert0, float* vert1, float* vert2)
 {
 	// determine back face in naive way :-(

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdexcept>
+#include <assert.h>
 #include "vbo.h"
 
 using namespace std;
@@ -39,12 +40,9 @@ void PuresoftVBO::rewindRanges(int idx /* = -1 */)
 			m_workRanges[i].end = (unsigned char*)m_buffer + m_bufferBytes;
 		}
 	}
-	else if(idx >= MAX_WORKRANGES)
-	{
-		throw out_of_range("PuresoftVBO::rewindRanges");
-	}
 	else
 	{
+		assert(idx < MAX_WORKRANGES);
 		m_workRanges[idx].current = (unsigned char*)m_buffer;
 		m_workRanges[idx].end = (unsigned char*)m_buffer + m_bufferBytes;
 	}
@@ -52,10 +50,7 @@ void PuresoftVBO::rewindRanges(int idx /* = -1 */)
 
 void PuresoftVBO::evenOutRanges(int rangeAmount /* = MAX_WORKRANGES */)
 {
-	if(rangeAmount <= 0 && rangeAmount > MAX_WORKRANGES)
-	{
-		throw invalid_argument("PuresoftVBO::evenOutRanges");
-	}
+	assert((0 < rangeAmount) && (rangeAmount < MAX_WORKRANGES));
 
 	size_t unitsPerRange = m_unitCount / rangeAmount;
 	size_t bytesPerRange = unitsPerRange * m_unitBytes;
@@ -73,10 +68,7 @@ void PuresoftVBO::evenOutRanges(int rangeAmount /* = MAX_WORKRANGES */)
 
 const void* PuresoftVBO::next(size_t idx /* = 0 */)
 {
-	if(idx < 0 || idx >= MAX_WORKRANGES)
-	{
-		throw out_of_range("PuresoftVBO::next");
-	}
+	assert((0 < idx) && (idx < MAX_WORKRANGES));
 
 	WORKRANGE& range = m_workRanges[idx];
 
