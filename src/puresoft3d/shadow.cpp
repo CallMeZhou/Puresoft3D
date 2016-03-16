@@ -53,7 +53,11 @@ void InterpolationProcessorDEF05::calcStep(void* interpolatedUserDataStep, const
 {
 }
 
-void InterpolationProcessorDEF05::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const
+void InterpolationProcessorDEF05::correctInterpolation(void* interpolatedUserData, const void* interpolatedUserDataStart, float correctionFactor2) const
+{
+}
+
+void InterpolationProcessorDEF05::stepForward(void* interpolatedUserDataStart, const void* interpolatedUserDataStep, int stepCount) const
 {
 }
 

@@ -23,7 +23,8 @@ public:
 class SceneObject
 {
 public:
-	static bool m_usePrivateProgramme;
+	static bool m_useShadowProgramme;
+	static int m_defaultShadowProgramme;
 	static int m_shadowMaps[MAX_SHADOWMAPS];
 	static mat4 m_shadowPVs[MAX_SHADOWMAPS];
 

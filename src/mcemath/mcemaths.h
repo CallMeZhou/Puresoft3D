@@ -81,6 +81,8 @@ MCEMATHAPI(void) mcemaths_add_3_4(float* r4, const float* v4_1, const float* v4_
 MCEMATHAPI(void) mcemaths_sub_3_4(float* r4, const float* v4_l, const float* v4_r);
 MCEMATHAPI(void) mcemaths_add_3_4_ip(float* v4_1, const float* v4_2);
 MCEMATHAPI(void) mcemaths_sub_3_4_ip(float* v4_l, const float* v4_r);
+MCEMATHAPI(void) mcemaths_step_3_4(float* result4, const float* base4, const float* step4, float n_steps);
+MCEMATHAPI(void) mcemaths_step_3_4_ip(float* target4, const float* step4, float n_steps);
 
 /* Calculate dot product of two 3d vectors, or 4d vectors, or quaternions.
    NOTICE: The forth elements of the inputs MUST be zero for 3d vectors.*/

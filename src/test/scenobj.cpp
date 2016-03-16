@@ -7,7 +7,8 @@
 
 using namespace mcemaths;
 
-bool SceneObject::m_usePrivateProgramme = true;
+bool SceneObject::m_useShadowProgramme = true;
+int SceneObject::m_defaultShadowProgramme = -1;
 Str2Idx SceneObject::m_meshes;
 Str2Idx SceneObject::m_textures;
 Str2Idx SceneObject::m_processers;
@@ -43,7 +44,11 @@ void SceneObject::update(float timeSpanSec, const mat4& parent /* = mat4 */)
 
 void SceneObject::draw(PuresoftPipeline& pipeline)
 {
-	if(m_usePrivateProgramme)
+	if(m_useShadowProgramme)
+	{
+		pipeline.useProgramme(m_defaultShadowProgramme);
+	}
+	else
 	{
 		pipeline.useProgramme(m_programme);
 	}
@@ -88,9 +93,10 @@ int SceneObject::findOrCreateVao(const char* objx)
 		return it->second;
 	}
 
-	HOBJXIO hobjx = open_objx(_T("sphere1.objx"));
+	scene_desc unused;
+	HOBJXIO hobjx = open_objxA(objx, unused);
 
-	mesh_info mi = {0};
+	mesh_info mi;
 	read_mesh_header(hobjx, mi);
 	mi.vertices = new vec4[mi.num_vertices];
 	
@@ -169,7 +175,7 @@ int SceneObject::findOrCreateTexture(const char* pictureFile)
 	PURESOFTIMGBUFF32 image;
 	PuresoftDefaultPictureLoader picLoader;
 	picLoader.loadFromFile(CA2W(pictureFile), &image);
-	int tex = m_pipeline.createTexture(&image);
+	int tex = m_pipeline.createTexture(&image, 0, PuresoftFBO::WRAP);
 	m_pipeline.getTexture(tex, &image);
 	picLoader.retrievePixel(&image);
 	picLoader.close();

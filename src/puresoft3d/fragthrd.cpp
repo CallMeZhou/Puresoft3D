@@ -7,12 +7,47 @@ using namespace std;
 class FBOBridge : public FragmentProcessorOutput
 {
 	int m_threadIndex;
+	bool m_discarded;
 	PuresoftFBO** m_fbos;
 public:
 	FBOBridge(int threadIndex, PuresoftFBO** fbos)
 		: m_threadIndex(threadIndex)
+		, m_discarded(false)
 		, m_fbos(fbos)
 	{}
+
+	void discard(void)
+	{
+		m_discarded = true;
+	}
+
+	void read(int index, void* data, size_t bytes)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->read(m_threadIndex, data, bytes);
+	}
+
+	void read1(int index, void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->read1(m_threadIndex, data);
+	}
+
+	void read4(int index, void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->read4(m_threadIndex, data);
+	}
+
+	void read16(int index, void* data)
+	{
+		assert(0 <= index && index < MAX_FBOS);
+		assert(m_fbos[index]);
+		m_fbos[index]->read16(m_threadIndex, data);
+	}
 
 	void write(int index, const void* data, size_t bytes)
 	{
@@ -42,6 +77,18 @@ public:
 		m_fbos[index]->write16(m_threadIndex, data);
 	}
 
+	bool discarded(void)
+	{
+		if(m_discarded)
+		{
+			m_discarded = false;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 };
 
 unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
@@ -133,24 +180,26 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
 
 			// get current depth from the depth buffer and do depth test
-			bool depthTestPassed = true;
+			float currentDepth;
 			if(pThis->m_behavior & BEHAVIOR_TEST_DEPTH)
 			{
-				float currentDepth;
 				pThis->m_depth->read4(threadIndex, &currentDepth);
-				depthTestPassed = newDepth < currentDepth;
+			}
+			else
+			{
+				currentDepth = 1.0f;
 			}
 
-			if(depthTestPassed)
+			if(-1.0f < newDepth && newDepth < currentDepth)
 			{
+				// call Fragment Processor to update FBOs
+				pThis->m_fp->process(&fragInput, &fragOutput);
+
 				// update depth buffer
-				if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+				if(!fragOutput.discarded() && (pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH))
 				{
 					pThis->m_depth->write4(threadIndex, &newDepth);
 				}
-
-				// go ahead with Fragment Processor (fbos are updated meanwhile)
-				pThis->m_fp->process(&fragInput, &fragOutput);
 			}
 
 			// move fbo data pointers
@@ -282,7 +331,12 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 			{
 				float currentDepth;
 				pThis->m_depth->read4(threadIndex, &currentDepth);
-				depthTestPassed = newDepth < currentDepth;
+				depthTestPassed = (0 < newDepth && newDepth < currentDepth);
+			}
+			else
+			{
+				// remove out of range depth even if depth test is disabled
+				depthTestPassed = (0 < newDepth && newDepth < 1.0f);
 			}
 
 			if(depthTestPassed)

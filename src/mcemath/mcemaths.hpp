@@ -144,6 +144,12 @@ public:
 	float w;
 };
 
+class vec2
+{
+public:
+	float x, y;
+};
+
 } // namespace mcemaths
 
 #pragma pack()

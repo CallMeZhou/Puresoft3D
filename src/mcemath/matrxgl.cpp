@@ -10,7 +10,7 @@ extern "C" MCEMATHAPI(void) mcemaths_make_proj_perspective(float* m44, float zne
 {
 	mcemaths_mat4ident(m44);
 
-	float h = 1.0f / tan(fov_rad);
+	float h = 1.0f / tan(fov_rad / 2.0f);
 	float neg_depth = znear-zfar;
 
 	m44[0] = h / aspect;

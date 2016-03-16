@@ -26,8 +26,8 @@ float PuresoftSamplerProjection::get(const PuresoftFBO* imageBuffer, const float
 	float depthInShadowMap, shadowFactor = 1.0f;
 	for(int i = 0; i < 4; i++)
 	{
-		unsigned int y = (unsigned int)((float)imageBuffer->getHeight() * (texcoord[1] + POISSON_DISK_X[i] / 700.0f));
-		unsigned int x = (unsigned int)((float)imageBuffer->getWidth()  * (texcoord[0] + POISSON_DISK_Y[i] / 700.0f));
+		unsigned int y = (unsigned int)((float)imageBuffer->getHeight() * (texcoord[1] + POISSON_DISK_X[i] / 500.0f));
+		unsigned int x = (unsigned int)((float)imageBuffer->getWidth()  * (texcoord[0] + POISSON_DISK_Y[i] / 500.0f));
 		imageBuffer->directRead4(y, x, &depthInShadowMap);
 		if(depthInShadowMap < texcoord[2])
 			shadowFactor -=  0.2f;

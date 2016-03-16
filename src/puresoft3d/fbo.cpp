@@ -8,10 +8,10 @@
 using namespace std;
 
 PuresoftFBO::PuresoftFBO(
-	unsigned int width, 
-	unsigned int scanline, 
-	unsigned int height, 
-	unsigned int elemLen, 
+	 int width, 
+	 int scanline, 
+	 int height, 
+	 int elemLen, 
 	bool topDown /* = false */, 
 	void* externalBuffer /* = NULL */, 
 	WRAPMODE wrapMode /* = CLAMP */, 
@@ -52,6 +52,7 @@ PuresoftFBO::PuresoftFBO(
 		m_workRanges[i].curCol = 0;
 		m_workRanges[i].curRowEntry = 0;
 		m_workRanges[i].writePoint = m_buffer;
+		m_workRanges[i].overflow = false;
 	}
 
 	memset(m_extraLayers, 0, sizeof(m_extraLayers));
@@ -93,10 +94,10 @@ PuresoftFBO::~PuresoftFBO(void)
 	}
 }
 
-void PuresoftFBO::setCurRow(int idx, unsigned int row)
+void PuresoftFBO::setCurRow(int idx,  int row)
 {
-	unsigned int unused;
-	clampCoord(row, unused);
+	 int unused = 0;
+	m_workRanges[idx].overflow = clampCoord(row, unused);
 	m_workRanges[idx].curRow = row;
 	if(m_topDown)
 		m_workRanges[idx].curRowEntry = m_rowEntries[m_height - row - 1];
@@ -107,28 +108,45 @@ void PuresoftFBO::setCurRow(int idx, unsigned int row)
 
 void PuresoftFBO::nextRow(int idx)
 {
-	if(m_workRanges[idx].curRow >= m_maxRow)
+	if(m_topDown)
 	{
-		if(WRAP == m_wrapMode)
+		if(m_workRanges[idx].curRow <= 0)
 		{
-			setCurRow(idx, 0);
+			if(WRAP == m_wrapMode)
+			{
+				setCurRow(idx, m_maxRow);
+			}
+		}
+		else
+		{
+			setCurRow(idx, m_workRanges[idx].curRow - 1);
 		}
 	}
 	else
 	{
-		if(m_topDown)
-			m_workRanges[idx].curRowEntry = (void*)((uintptr_t)m_workRanges[idx].curRowEntry - m_scanline);
+		if(m_workRanges[idx].curRow >= m_maxRow)
+		{
+			if(WRAP == m_wrapMode)
+			{
+				setCurRow(idx, 0);
+			}
+			else
+			{
+				m_workRanges[idx].overflow = true;
+			}
+		}
 		else
-			m_workRanges[idx].curRowEntry = (void*)((uintptr_t)m_workRanges[idx].curRowEntry + m_scanline);
-		m_workRanges[idx].writePoint = m_workRanges[idx].curRowEntry;
-		m_workRanges[idx].curRow++;
+		{
+			setCurRow(idx, m_workRanges[idx].curRow + 1);
+		}
+
 	}
 }
 
-void PuresoftFBO::setCurCol(int idx, unsigned int col)
+void PuresoftFBO::setCurCol(int idx,  int col)
 {
-	unsigned int unused;
-	clampCoord(unused, col);
+	 int unused = 0;
+	m_workRanges[idx].overflow = clampCoord(unused, col);
 	m_workRanges[idx].curCol = col;
 	m_workRanges[idx].writePoint = (void*)((uintptr_t)m_workRanges[idx].curRowEntry + col * m_elemLen);
 }
@@ -140,6 +158,10 @@ void PuresoftFBO::nextCol(int idx)
 		if(WRAP == m_wrapMode)
 		{
 			setCurCol(idx, 0);
+		}
+		else
+		{
+			m_workRanges[idx].overflow = true;
 		}
 	}
 	else
@@ -156,27 +178,30 @@ void PuresoftFBO::read(int idx, void* data, size_t bytes) const
 
 void PuresoftFBO::write(int idx, const void* data, size_t bytes)
 {
-	memcpy(m_workRanges[idx].writePoint, data, bytes);
+	if(!m_workRanges[idx].overflow)
+		memcpy(m_workRanges[idx].writePoint, data, bytes);
 }
 
 void PuresoftFBO::read1(int idx, void* data) const
 {
-	*((unsigned char*)data) = *((const unsigned char*)m_workRanges[idx].writePoint);
+	*(( char*)data) = *((const  char*)m_workRanges[idx].writePoint);
 }
 
 void PuresoftFBO::write1(int idx, const void* data)
 {
-	*((unsigned char*)m_workRanges[idx].writePoint) = *((const unsigned char*)data);
+	if(!m_workRanges[idx].overflow)
+		*(( char*)m_workRanges[idx].writePoint) = *((const  char*)data);
 }
 
 void PuresoftFBO::read4(int idx, void* data) const
 {
-	*((unsigned int*)data) = *((const unsigned int*)m_workRanges[idx].writePoint);
+	*(( int*)data) = *((const  int*)m_workRanges[idx].writePoint);
 }
 
 void PuresoftFBO::write4(int idx, const void* data)
 {
-	*((unsigned int*)m_workRanges[idx].writePoint) = *((const unsigned int*)data);
+	if(!m_workRanges[idx].overflow)
+		*(( int*)m_workRanges[idx].writePoint) = *((const  int*)data);
 }
 
 void PuresoftFBO::read16(int idx, void* dataAligned16Bytes) const
@@ -186,65 +211,66 @@ void PuresoftFBO::read16(int idx, void* dataAligned16Bytes) const
 
 void PuresoftFBO::write16(int idx, const void* dataAligned16Bytes)
 {
-	mcemaths_quatcpy((float*)m_workRanges[idx].writePoint, (const float*)dataAligned16Bytes);
+	if(!m_workRanges[idx].overflow)
+		mcemaths_quatcpy((float*)m_workRanges[idx].writePoint, (const float*)dataAligned16Bytes);
 }
 
-void PuresoftFBO::directRead(unsigned int row, unsigned int col, void* data, size_t bytes) const
+void PuresoftFBO::directRead( int row,  int col, void* data, size_t bytes) const
 {
 	clampCoord(row, col);
 	memcpy(data, (const void*)((uintptr_t)m_rowEntries[row] + col * m_elemLen), bytes);
 }
 
-void PuresoftFBO::directWrite(unsigned int row, unsigned int col, const void* data, size_t bytes) // not thread safe
+void PuresoftFBO::directWrite( int row,  int col, const void* data, size_t bytes) // not thread safe
 {
-	clampCoord(row, col);
-	memcpy((void*)((uintptr_t)m_rowEntries[row] + col * m_elemLen), data, bytes);
+	if(validateCoord(row, col))
+		memcpy((void*)((uintptr_t)m_rowEntries[row] + col * m_elemLen), data, bytes);
 }
 
-void PuresoftFBO::directRead1(unsigned int row, unsigned int col, void* data) const
+void PuresoftFBO::directRead1( int row,  int col, void* data) const
 {
 	clampCoord(row, col);
-	*((unsigned char*)data) = *((const char*)m_rowEntries[row] + col);
+	*(( char*)data) = *((const char*)m_rowEntries[row] + col);
 }
 
-void PuresoftFBO::directWrite1(unsigned int row, unsigned int col, const void* data) // not thread safe
+void PuresoftFBO::directWrite1( int row,  int col, const void* data) // not thread safe
+{
+	if(validateCoord(row, col))
+		*((char*)m_rowEntries[row] + col) = *((const  char*)data);
+}
+
+void PuresoftFBO::directRead4( int row,  int col, void* data) const
 {
 	clampCoord(row, col);
-	*((char*)m_rowEntries[row] + col) = *((const unsigned char*)data);
+	*(( int*)data) = *((const int*)m_rowEntries[row] + col);
 }
 
-void PuresoftFBO::directRead4(unsigned int row, unsigned int col, void* data) const
+void PuresoftFBO::directWrite4( int row,  int col, const void* data) // not thread safe
 {
-	clampCoord(row, col);
-	*((unsigned int*)data) = *((const int*)m_rowEntries[row] + col);
+	if(validateCoord(row, col))
+		*(( int*)m_rowEntries[row] + col) = *((const  int*)data);
 }
 
-void PuresoftFBO::directWrite4(unsigned int row, unsigned int col, const void* data) // not thread safe
-{
-	clampCoord(row, col);
-	*((unsigned int*)m_rowEntries[row] + col) = *((const unsigned int*)data);
-}
-
-void PuresoftFBO::directRead16(unsigned int row, unsigned int col, void* dataAligned16Bytes) const // elemLen must be 16
+void PuresoftFBO::directRead16( int row,  int col, void* dataAligned16Bytes) const // elemLen must be 16
 {
 	clampCoord(row, col);
 	mcemaths_quatcpy((float*)dataAligned16Bytes, (const float*)((uintptr_t)m_rowEntries[row] + (col << 4)));
 }
 
-void PuresoftFBO::directWrite16(unsigned int row, unsigned int col, const void* dataAligned16Bytes) // elemLen must be 16, not thread safe
+void PuresoftFBO::directWrite16( int row,  int col, const void* dataAligned16Bytes) // elemLen must be 16, not thread safe
 {
-	clampCoord(row, col);
-	mcemaths_quatcpy((float*)((uintptr_t)m_rowEntries[row] + (col << 4)), (const float*)dataAligned16Bytes);
+	if(validateCoord(row, col))
+		mcemaths_quatcpy((float*)((uintptr_t)m_rowEntries[row] + (col << 4)), (const float*)dataAligned16Bytes);
 }
 
 void PuresoftFBO::clear(const void* data, size_t bytes)
 {
-	unsigned char* row = (unsigned char*)m_buffer;
+	 char* row = ( char*)m_buffer;
 
-	for(unsigned int y = 0; y < m_height - 1; y++)
+	for( int y = 0; y < m_height - 1; y++)
 	{
-		unsigned char* col = (unsigned char*)row;
-		for(unsigned int x = 0; x < m_width; x++)
+		 char* col = ( char*)row;
+		for( int x = 0; x < m_width; x++)
 		{
 			memcpy(col, data, bytes);
 			col += m_elemLen;
@@ -255,19 +281,19 @@ void PuresoftFBO::clear(const void* data, size_t bytes)
 
 void PuresoftFBO::clear1(const void* data)
 {
-	memset(m_buffer, *((unsigned char*)data), m_bytes);
+	memset(m_buffer, *(( char*)data), m_bytes);
 }
 
 void PuresoftFBO::clear4(const void* data)
 {
-	unsigned char* row = (unsigned char*)m_buffer;
+	 char* row = ( char*)m_buffer;
 
-	for(unsigned int y = 0; y < m_height - 1; y++)
+	for( int y = 0; y < m_height - 1; y++)
 	{
-		unsigned char* col = (unsigned char*)row;
-		for(unsigned int x = 0; x < m_width; x++)
+		 char* col = ( char*)row;
+		for( int x = 0; x < m_width; x++)
 		{
-			*((unsigned int*)col) = *((unsigned int*)data);
+			*(( int*)col) = *(( int*)data);
 			col += m_elemLen;
 		}
 		row += m_scanline;
@@ -347,7 +373,7 @@ void PuresoftFBO::setBuffer(void* externalBuffer /* = NULL */)
 	}
 
 	uintptr_t p = (uintptr_t)m_buffer;
-	for(unsigned int i = 0; i < m_height; i++)
+	for( int i = 0; i < m_height; i++)
 	{
 		m_rowEntries[i] = (void*)p;
 		p += m_scanline;
@@ -364,22 +390,22 @@ const void* PuresoftFBO::getBuffer(void) const
 	return m_buffer;
 }
 
-unsigned int PuresoftFBO::getWidth(void) const
+ int PuresoftFBO::getWidth(void) const
 {
 	return m_width;
 }
 
-unsigned int PuresoftFBO::getHeight(void) const
+ int PuresoftFBO::getHeight(void) const
 {
 	return m_height;
 }
 
-unsigned int PuresoftFBO::getScanline(void) const
+ int PuresoftFBO::getScanline(void) const
 {
 	return m_scanline;
 }
 
-unsigned int PuresoftFBO::getElemLen(void) const
+ int PuresoftFBO::getElemLen(void) const
 {
 	return m_elemLen;
 }
@@ -403,24 +429,24 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 {
 	
 	BITMAPFILEHEADER header1 = {0x4D42, 0, 0, 0, sizeof(BITMAPINFOHEADER)};
-	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), m_width, m_height, 1, (unsigned short)m_elemLen * 8, 0, 0, 0, 0, 0, 0};
+	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), m_width, m_height, 1, ( short)m_elemLen * 8, 0, 0, 0, 0, 0, 0};
 
 	FILE *fp;
 	if(0 == _wfopen_s(&fp, path, L"w+"))
 	{
 		if(dataIsFloat)
 		{
-			unsigned int chans = m_elemLen / sizeof(float);
-			unsigned int scanline = (m_width * chans * 8 + 31) / 32 * 4;
-			unsigned int bytes = scanline * m_height;
+			 int chans = m_elemLen / sizeof(float);
+			 int scanline = (m_width * chans * 8 + 31) / 32 * 4;
+			 int bytes = scanline * m_height;
 
-			unsigned char palette[1024];
+			 char palette[1024];
 			for(int i = 0; i < 256; i++)
 			{
 				palette[i * 4    ] = 
 				palette[i * 4 + 1] = 
 				palette[i * 4 + 2] = 
-				palette[i * 4 + 3] = (unsigned char)i;
+				palette[i * 4 + 3] = ( char)i;
 			};
 
 			header1.bfOffBits += sizeof(palette);
@@ -431,18 +457,18 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 				header2.biCompression = BI_BITFIELDS;
 			}
 
-			unsigned char* convertBuffer = (unsigned char*)malloc(bytes);
+			 char* convertBuffer = ( char*)malloc(bytes);
 			if(convertBuffer)
 			{
-				unsigned char* destLine = convertBuffer;
-				const unsigned char* srcLine = (const unsigned char*)m_buffer;
-				for(unsigned int y = 0; y < m_height; y++)
+				 char* destLine = convertBuffer;
+				const  char* srcLine = (const  char*)m_buffer;
+				for( int y = 0; y < m_height; y++)
 				{
-					for(unsigned int x = 0; x < m_width; x++)
+					for( int x = 0; x < m_width; x++)
 					{
-						for(unsigned int chan = 0; chan < chans; chan++)
+						for( int chan = 0; chan < chans; chan++)
 						{
-							destLine[x + chan] = (unsigned char)(((const float*)srcLine)[x + chan] * 255.0f);
+							destLine[x + chan] = ( char)(((const float*)srcLine)[x + chan] * 255.0f);
 						}
 					}
 
@@ -477,18 +503,57 @@ void PuresoftFBO::saveAsRawFile(const wchar_t* path) const
 	}
 }
 
-void PuresoftFBO::clampCoord(unsigned int& row, unsigned int& col) const
+bool PuresoftFBO::clampCoord(int& row,  int& col) const
 {
+	bool overflow = false;
+
 	if(CLAMP == m_wrapMode)
 	{
 		if(row > m_maxRow)
+		{
 			row = m_maxRow;
+			overflow = true;
+		}
+		else if(row < 0)
+		{
+			row = 0;
+			overflow = true;
+		}
+		
 		if(col > m_maxCol)
+		{
 			col = m_maxCol;
+			overflow = true;
+		}
+		else if(col < 0)
+		{
+			col = 0;
+			overflow = true;
+		}
 	}
 	else // WRAP
 	{
 		row = row % m_maxRow;
+
+		if(row < 0)
+			row += m_maxRow;
+
 		col = col % m_maxCol;
+
+		if(col < 0)
+			col += m_maxCol;
 	}
+
+	return overflow;
+}
+
+bool PuresoftFBO::validateCoord(int row,  int col) const
+{
+	if(row > m_maxRow || row < 0)
+		return false;
+
+	if(col > m_maxCol || col < 0)
+		return false;
+
+	return true;
 }

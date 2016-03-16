@@ -72,14 +72,12 @@ makes one Mesh object. That's it.
 */
 #include "alloc16.hpp"
 #include "fixvec.hpp"
+#include <string>
 #include <map>
-using namespace std;
 #include "mcemaths.hpp"
-using namespace mcemaths;
 
-typedef vector<vec4, alloc16<vec4> > vec4_coll;
-typedef struct {float x, y;} vec2;
-typedef vector<vec2> vec2_coll;
+typedef std::vector<mcemaths::vec4, alloc16<mcemaths::vec4> > vec4_coll;
+typedef std::vector<mcemaths::vec2> vec2_coll;
 // coordinate data in OBJ file
 struct obj_mesh_data
 {
@@ -91,22 +89,25 @@ struct obj_mesh_data
 // MTL file content
 struct material
 {
-	vec4 ka;
-	vec4 kd;
-	vec4 ks;
-	float spec_expo;
-	string texfile;
-	string bumpfile;
+	mcemaths::vec4 ambientColour;
+	mcemaths::vec4 diffuseColour;
+	mcemaths::vec4 specularColour;
+	float specularExponent;
+	std::string diffuseFile;
+	std::string bumpFile;
+	std::string spcFile;
+	std::string speFile;
+	std::string programmeName;
 };
 
 // data of a FACE, consisted of indices
 struct facet
 {
-	vector<int> texIndices;
-	vector<int> vertIndices;
-	vector<int> normIndices;
+	std::vector<int> texIndices;
+	std::vector<int> vertIndices;
+	std::vector<int> normIndices;
 };
-typedef vector<facet> face;
+typedef std::vector<facet> face;
 
 // FACEs defined in one GROUP
 struct faces
@@ -115,18 +116,28 @@ struct faces
 	face face_data[MAX];
 };
 
-// GROUP, the map's key is MATERIAL NAME
-typedef map<string, faces> group;
+// scene description
+const int MAXLIGHTS = 4;
+struct scene
+{
+	mcemaths::vec4 cameraPosition;
+	mcemaths::vec4 cameraYPR;
+	mcemaths::vec4 lightPositions[MAXLIGHTS];
+	mcemaths::vec4 lightDirections[MAXLIGHTS];
+};
+
+// GROUP, the std::map's key is material name
+typedef std::map<std::string, faces> group;
 // GROUPs defined in one OBJECT
-typedef vector<group> groups;
+typedef std::map<std::string, group> groups;
 // OBJECT
-typedef vector<groups> objects;
-// MATERIAL map, the map's key is MATERIAL NAME too
-typedef map<string, material, less<string>, alloc16<pair<const string, material> > > mtllib; // "string" key of "mtllib" coincides with the "group"'s key
+typedef std::vector<groups> objects;
+// MATERIAL std::map, the std::map's key is MATERIAL NAME too
+typedef std::map<std::string, material, std::less<std::string>, alloc16<std::pair<const std::string, material> > > mtllib; // "std::string" key of "mtllib" coincides with the "group"'s key
 
 typedef void (_stdcall *lof_progress)(float percent);
-bool _cdecl load_obj_fileA(const char* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, bool amalgroups, bool removepath, lof_progress pfprog);
-bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, bool amalgroups, bool removepath, lof_progress pfprog);
+bool _cdecl load_obj_fileA(const char* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, scene& scn, bool amalgroups, bool removepath, lof_progress pfprog);
+bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, scene& scn, bool amalgroups, bool removepath, lof_progress pfprog);
 void _cdecl centralize(vec4_coll& vertices);
 
 #ifdef _UNICODE

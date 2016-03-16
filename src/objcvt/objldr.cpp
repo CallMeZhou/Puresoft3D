@@ -1,23 +1,36 @@
 #include "stdafx.h"
 #include "objldr.h"
 
-#define OBJOBJECT	"object"	//the current line of the obj file defines the start of a new material
-#define OBJO		"o"			//the current line of the obj file defines the start of a new material
-#define OBJGROUP	"g"			//the current line of the obj file defines the start of a new face
-#define OBJMTLLIB	"mtllib"	//the current line of the obj file defines the start of a new material
-#define OBJUSEMTL	"usemtl"	//the current line of the obj file defines the start of a new material
-#define OBJCOMMENT	"#"			//The current line of the obj file is a comment
-#define OBJVERT		"v"			//the current line of the obj file defines a vertex
-#define OBJTEX		"vt"		//the current line of the obj file defines texture coordinates
-#define OBJNORM		"vn"		//the current line of the obj file defines a normal
-#define OBJFACE		"f"			//the current line of the obj file defines a face
-#define MATNEW		"newmtl"
-#define MATKA		"ka"
-#define MATKD		"kd"
-#define MATKS		"ks"
-#define MATNS		"ns"
-#define MATTEXFILE	"map_kd"
-#define MATBUMPFILE	"map_bump" // Extended by myself, you need to type these keyword by yourself into mtl file
+using namespace std;
+using namespace mcemaths;
+
+#define OBJOBJECT	"object"	// new scene object
+#define OBJO		"o"			// new scene object
+#define OBJGROUP	"g"			// new mesh (g = facet [g]roup)
+#define OBJMTLLIB	"mtllib"	// sets an active external material file
+#define OBJUSEMTL	"usemtl"	// sets an active material definition in the active external material file
+#define OBJCOMMENT	"#"			// comment
+#define OBJVERT		"v"			// defines a vertex
+#define OBJTEX		"vt"		// defines a texture coordinate
+#define OBJNORM		"vn"		// defines a normal
+#define OBJFACE		"f"			// defines a facet
+#define MATNEW		"newmtl"	// defines a material
+#define MATKA		"ka"		// ambient colour
+#define MATKD		"kd"		// diffuse colour
+#define MATKS		"ks"		// specular colour
+#define MATNS		"ns"		// specular exponent
+#define MATTEXFILE	"map_kd"	// diffuse texture file
+#define MATBUMPFILE	"map_bump"	// bump texture file
+#define MATSPCFILE	"map_ks"	// specular colour texture file
+#define MATSPEFILE	"map_ns"	// specular exponent texture file
+#define MATPROGNAME	"prog_name"	// shader programme name [non-standard]
+
+#define OBJSCENE	"scene"		// include scene description file [non-standard]
+#define SCNCAMERA	"camera"
+#define SCNLIGHT1	"light1"
+#define SCNLIGHT2	"light1"
+#define SCNLIGHT3	"light1"
+#define SCNLIGHT4	"light1"
 
 #define WRONG_TEXTURE "wrong_texture"
 
@@ -28,9 +41,10 @@ static unsigned int facetype_from_indexcount(const string& test);
 
 static string make_mtl_name(const char* mtlname, const char* mtllibfilename);
 static bool load_matlib(const wchar_t* filename, mtllib& lib, bool removepath);
+static bool load_scene_desc(const wchar_t* filename, scene& scn);
 
 //////////////////////////////////////////////////////////////////////////
-bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, bool amalgroups, bool removepath, lof_progress pfprog)
+bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, scene& scn, bool amalgroups, bool removepath, lof_progress pfprog)
 {
 	ifstream file(filename);
 	if(!file)
@@ -44,7 +58,7 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 	group* current_group = NULL;
 	groups* current_object = NULL;
 
-	string cur_mtl_file, cur_mtl_name;
+	string cur_mtl_file, cur_mtl_name, cur_grp_name;
 	string header, body; // of a line
 	string temp;
 	while(file >> header)
@@ -76,6 +90,8 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 		}
 		if(OBJGROUP == header)
 		{
+			cur_grp_name = body;
+
 			// setting stuffs below to NULL pushes 'if(OBJFACE == header)' to create new stuffs
 			if(!amalgroups)
 				current_group = NULL;
@@ -90,8 +106,7 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 
 			if(!current_group)
 			{
-				current_object->push_back(group());
-				current_group = &*current_object->rbegin();
+				current_group = &((*current_object)[cur_grp_name]);
 			}
 
 			unsigned int facetype = facetype_from_indexcount(body);
@@ -101,6 +116,7 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 				mtlname = "";
 			else
 				mtlname = make_mtl_name(cur_mtl_name.c_str(), cur_mtl_file.c_str());
+
 			current_faces = &((*current_group)[mtlname]);
 
 			facet* current_face;
@@ -164,6 +180,16 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 			PathAppend(path, A2CW(cur_mtl_file.c_str()));
 			load_matlib(path, mtl, removepath);
 		}
+		else if(OBJSCENE == header)
+		{
+			USES_CONVERSION;
+			WCHAR path[MAX_PATH];
+			//_tcscpy_s(path, MAX_PATH, filename);
+			GetFullPathNameW(filename, MAX_PATH, path, NULL);
+			PathRemoveFileSpecW(path);
+			PathAppend(path, A2CW(body.c_str()));
+			load_scene_desc(path, scn);
+		}
 		else if(OBJUSEMTL == header && cur_mtl_name != body)
 		{
 			cur_mtl_name = body;
@@ -177,10 +203,10 @@ bool _cdecl load_obj_fileW(const wchar_t* filename, obj_mesh_data& coords, objec
 	return true;
 }
 
-bool _cdecl load_obj_fileA(const char* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, bool amalgroups, bool removepath, lof_progress pfprog)
+bool _cdecl load_obj_fileA(const char* filename, obj_mesh_data& coords, objects& objs, mtllib& mtl, scene& scn, bool amalgroups, bool removepath, lof_progress pfprog)
 {
 	USES_CONVERSION;
-	return load_obj_fileW(A2CW(filename), coords, objs, mtl, amalgroups, removepath, pfprog);
+	return load_obj_fileW(A2CW(filename), coords, objs, mtl, scn, amalgroups, removepath, pfprog);
 }
 
 void _cdecl centralize(vec4_coll& vertices)
@@ -273,33 +299,86 @@ static bool load_matlib(const wchar_t* filename, mtllib& lib, bool removepath)
 		if(MATNEW == header)
 		{
 			current_material = &lib[make_mtl_name(body.c_str(), pure_name.c_str())];
-			current_material->spec_expo = 0;
+			current_material->specularExponent = 0;
 		}
 		else if(MATKA == header && current_material)
-			stringstream(body) >> current_material->ka.x >> current_material->ka.y >> current_material->ka.z;
+			stringstream(body) >> current_material->ambientColour.z >> current_material->ambientColour.y >> current_material->ambientColour.x;
 		else if(MATKD == header && current_material)
-			stringstream(body) >> current_material->kd.x >> current_material->kd.y >> current_material->kd.z;
+			stringstream(body) >> current_material->diffuseColour.z >> current_material->diffuseColour.y >> current_material->diffuseColour.x;
 		else if(MATKS == header && current_material)
-			stringstream (body) >> current_material->ks.x >> current_material->ks.y >> current_material->ks.z;
+			stringstream (body) >> current_material->specularColour.z >> current_material->specularColour.y >> current_material->specularColour.x;
 		else if(MATNS == header && current_material)
-			stringstream(body) >> current_material->spec_expo;
+			stringstream(body) >> current_material->specularExponent;
 		else if(MATTEXFILE == header && current_material)
 		{
 			stringstream ss(body);
 			string str_frag;
-			while(ss >> str_frag); // we want the last fragment, god knows what are the first a few fragments for...
+			while(ss >> str_frag); // skip options, we don't support them
 			trimspace(str_frag);
-			current_material->texfile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
+			current_material->diffuseFile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
 		}
 		else if(MATBUMPFILE == header && current_material)
 		{
 			stringstream ss(body);
 			string str_frag;
-			while(ss >> str_frag); // we want the last fragment, god knows what are the first a few fragments for...
+			while(ss >> str_frag); // skip options, we don't support them
 			trimspace(str_frag);
-			current_material->bumpfile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
+			current_material->bumpFile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
+		}
+		else if(MATSPCFILE == header && current_material)
+		{
+			stringstream ss(body);
+			string str_frag;
+			while(ss >> str_frag); // skip options, we don't support them
+			trimspace(str_frag);
+			current_material->spcFile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
+		}
+		else if(MATSPEFILE == header && current_material)
+		{
+			stringstream ss(body);
+			string str_frag;
+			while(ss >> str_frag); // skip options, we don't support them
+			trimspace(str_frag);
+			current_material->speFile = removepath ? PathFindFileNameA(str_frag.c_str()) : str_frag;
+		}
+		else if(MATPROGNAME == header && current_material)
+		{
+			stringstream ss(body);
+			string str_frag;
+			while(ss >> str_frag); // skip options, we don't support them
+			trimspace(str_frag);
+			current_material->programmeName = str_frag;
 		}
 	}
 	return true;
 }
 
+static bool load_scene_desc(const wchar_t* filename, scene& scn)
+{
+	USES_CONVERSION;
+	ifstream file(filename);
+	if(!file)
+		return false;
+
+	string pure_name = W2CA(PathFindFileNameW(filename));
+
+	string header, body;
+	material* current_material = NULL;
+	while(file >> header)
+	{
+		transform(header.begin(), header.end(), header.begin(), tolower);
+		getline(file, body);
+		trimspace(body);
+		if(SCNCAMERA == header)
+			stringstream(body) >> scn.cameraPosition[0] >> scn.cameraPosition[1] >> scn.cameraPosition[2] >> scn.cameraYPR[0] >> scn.cameraYPR[1] >> scn.cameraYPR[2];
+		else if(SCNLIGHT1 == header)
+			stringstream(body) >> scn.lightPositions[0].x >> scn.lightPositions[0].y >> scn.lightPositions[0].z >> scn.lightDirections[0].x >> scn.lightDirections[0].y >> scn.lightDirections[0].z;
+		else if(SCNLIGHT2 == header)
+			stringstream(body) >> scn.lightPositions[1].x >> scn.lightPositions[1].y >> scn.lightPositions[1].z >> scn.lightDirections[1].x >> scn.lightDirections[1].y >> scn.lightDirections[1].z;
+		else if(SCNLIGHT3 == header)
+			stringstream(body) >> scn.lightPositions[2].x >> scn.lightPositions[2].y >> scn.lightPositions[2].z >> scn.lightDirections[2].x >> scn.lightDirections[2].y >> scn.lightDirections[2].z;
+		else if(SCNLIGHT4 == header)
+			stringstream(body) >> scn.lightPositions[3].x >> scn.lightPositions[3].y >> scn.lightPositions[3].z >> scn.lightDirections[3].x >> scn.lightDirections[3].y >> scn.lightDirections[3].z;
+	}
+	return true;
+}

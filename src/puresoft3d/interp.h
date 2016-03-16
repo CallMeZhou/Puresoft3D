@@ -14,6 +14,7 @@ public:
 		const float* projectedZs;
 		int row;
 		int leftColumn;
+		int leftColumnSkipping;
 		int rightColumn;
 		const int* leftVerts;
 		const int* rightVerts;

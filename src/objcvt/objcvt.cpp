@@ -8,7 +8,7 @@ const material DEF_MATERIAL =
 	1.0f, "", ""
 };
 
-bool write_face(HOBJXIO hobjxio, const faces& fcs, const obj_mesh_data& dat, const material& mtl)
+bool write_face(HOBJXIO hobjxio, const string& name, const faces& fcs, const obj_mesh_data& dat, const material& mtl)
 {
 	static vec4_coll vertices;
 	static vec4_coll normals;
@@ -107,7 +107,7 @@ bool write_face(HOBJXIO hobjxio, const faces& fcs, const obj_mesh_data& dat, con
 			mesh.texcoords = &texcoords[0];
 			mesh.has_texcoords = true;
 
-			// if texcoords exist, generate tangents (same time for game initialization as much as possible)
+			// if texcoords exist, generate tangents (save time for game initialization as much as possible)
  			for(int i = 0; i < (int)vertices.size(); i += 3)
  			{
  				const vec4&  a = vertices [    i];
@@ -137,10 +137,16 @@ bool write_face(HOBJXIO hobjxio, const faces& fcs, const obj_mesh_data& dat, con
 			mesh.has_tangents = true;
 		}
 
-		mesh.single_colour = vec4(mtl.kd.x, mtl.kd.y, mtl.kd.z, 1.0f);
-		mesh.specularity = mtl.spec_expo;
-		mesh.tex_file = mtl.texfile;
-		mesh.bump_file = mtl.bumpfile;
+		mesh.mesh_name = name;
+		mesh.ambient_colour = vec4(mtl.ambientColour.x, mtl.ambientColour.y, mtl.ambientColour.z, 1.0f);
+		mesh.diffuse_colour = vec4(mtl.diffuseColour.x, mtl.diffuseColour.y, mtl.diffuseColour.z, 1.0f);
+		mesh.specular_colour = vec4(mtl.specularColour.x, mtl.specularColour.y, mtl.specularColour.z, 1.0f);
+		mesh.specular_exponent = mtl.specularExponent;
+		mesh.diffuse_file = mtl.diffuseFile;
+		mesh.bump_file = mtl.bumpFile;
+		mesh.spc_file = mtl.spcFile;
+		mesh.spe_file = mtl.speFile;
+		mesh.programme = mtl.programmeName;
 
 		if(!write_mesh(hobjxio, mesh))
 			return false;
@@ -149,9 +155,9 @@ bool write_face(HOBJXIO hobjxio, const faces& fcs, const obj_mesh_data& dat, con
 	return true;
 }
 
-const char* disp_rgb(const vec4& c)
+string disp_rgb(const vec4& c)
 {
-	static char disp_rgb_buffer[1024];
+	char disp_rgb_buffer[1024];
 	sprintf_s(disp_rgb_buffer, 1024, "(%.1f, %.1f, %.1f)", c.x, c.y, c.z);
 	return disp_rgb_buffer;
 }
@@ -177,11 +183,10 @@ void disp_statistics(const obj_mesh_data& coords, const objects& objs, const mtl
 	{
 		cout << "Object" << i << endl;
 		const groups& grps = objs[i];
-		for(int j = 0; j < (int)grps.size(); j++)
+		for(groups::const_iterator g = grps.begin(); g != grps.end(); g++)
 		{
-			cout << "  Group" << j << endl;
-			const group& g = grps[j];
-			for(group::const_iterator it = g.begin(); it != g.end(); it++)
+			cout << "  Group \"" << g->first << "\"" << endl;
+			for(group::const_iterator it = g->second.begin(); it != g->second.end(); it++)
 			{
 				int tri_tex = it->second.face_data[faces::HAS_TEXCOORD].size() - 2;
 				tri_tex = max(tri_tex, 0);
@@ -202,12 +207,15 @@ void disp_statistics(const obj_mesh_data& coords, const objects& objs, const mtl
 	for(mtllib::const_iterator it = mtl.begin(); it != mtl.end(); it++)
 	{
 		cout << "  \"" << disp_mtl_name(it->first) << "\"" << endl
-			 << "    Ambient  colour = " << disp_rgb(it->second.ka) << endl
-			 << "    Diffuse  colour = " << disp_rgb(it->second.kd) << endl
-			 << "    Specular colour = " << disp_rgb(it->second.ks) << endl
-			 << "    Specularity exponent = " << it->second.spec_expo << endl
-			 << "    Texture file > \"" << it->second.texfile << "\""<< endl
-			 << "    Bump file > \"" << it->second.bumpfile << "\"" << endl;
+			 << "    Ambient  colour        = " << disp_rgb(it->second.ambientColour) << endl
+			 << "    Diffuse  colour        = " << disp_rgb(it->second.diffuseColour) << endl
+			 << "    Specular colour        = " << disp_rgb(it->second.specularColour) << endl
+			 << "    Specularity exponent   = " << it->second.specularExponent << endl
+			 << "    Texture file           > \"" << it->second.diffuseFile << "\""<< endl
+			 << "    Bump file              > \"" << it->second.bumpFile << "\"" << endl
+			 << "    Specular colour file   > \"" << it->second.spcFile << "\"" << endl
+			 << "    Specular exponent file > \"" << it->second.speFile << "\"" << endl
+			 << "    Shader programme       > \"" << it->second.programmeName << "\"" << endl;
 	}
 
 	cout << endl << "==========================================" << endl;
@@ -220,28 +228,28 @@ void _stdcall disp_propress(float percent)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	cout << "Zhou's obj -> objx Converter, Feb.2012." << endl << endl;
+	cout << "Zhou's obj -> objx Converter, Mar.2016." << endl << endl;
 	if(argc < 2)
 	{
 		cout << "Usage:" << endl << endl 
 			 << "objcvt.exe [-a] [-c] [-p] \"input file path name\"" << endl<< endl 
-			 << "-a: multiple groups are amalgamated together by default, this switch turns off amalgamation. Groups using different materials, or belonging to different objects, cannot be merged together." << endl 
-			 << "-c: vertices are centralized to the origin by default, this switch turns off centralization." << endl 
-			 << "-p: path is removed from texture file name by default, this switch turns off path removing." << endl << endl;
+			 << "-a: amalgamate groups as much as possible. Groups using different materials, or belonging to different objects, cannot be merged together." << endl 
+			 << "-c: move geometry centre to the origin. Use it only when the source file contains one mesh" << endl 
+			 << "-p: remove path from texture file name." << endl << endl;
 		system("pause");
 		return E_INVALIDARG;
 	}
 
 	TCHAR infile[MAX_PATH], outfile[MAX_PATH];
-	bool amalgamation = true, centralization = true, removepath = true;
+	bool amalgamation = false, centralization = false, removepath = false;
 	for(int i = 1; i < argc; i++)
 	{
 		if(0 == StrCmpI(_T("-a"), argv[i]))
-			amalgamation = false;
+			amalgamation = true;
 		else if(0 == StrCmpI(_T("-c"), argv[i]))
-			centralization = false;
+			centralization = true;
 		else if(0 == StrCmpI(_T("-p"), argv[i]))
-			removepath = false;
+			removepath = true;
 		else
 			_tcscpy_s(infile, MAX_PATH, argv[i]);
 	}
@@ -251,7 +259,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	obj_mesh_data data;
 	objects objs;
 	mtllib mtlib;
-	if(!load_obj_file(infile, data, objs, mtlib, amalgamation, removepath, disp_propress))
+	scene scn;
+	if(!load_obj_file(infile, data, objs, mtlib, scn, amalgamation, removepath, disp_propress))
 	{
 		int err = GetLastError();
 		printf("Failed to open input file, error code: %X.\n\n", err);
@@ -264,7 +273,15 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	disp_statistics(data, objs, mtlib);
 
-	HOBJXIO hobjxio = create_objx(outfile);
+	scene_desc sd;
+	sd.camera_pos = scn.cameraPosition;
+	sd.camera_ypr = scn.cameraYPR;
+	for(int i = 0; i < MAXLIGHTS; i++)
+	{
+		sd.light_pos[i] = scn.lightPositions[i];
+		sd.light_dir[i] = scn.lightDirections[i];
+	}
+	HOBJXIO hobjxio = create_objx(outfile, sd);
 	if(!hobjxio)
 	{
 		int err = GetLastError();
@@ -277,9 +294,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	for(int o = 0; o < (int)objs.size(); o++)
 	{
 		groups& grps = objs[o];
-		for(int g = 0; g < (int)grps.size(); g++)
+		for(groups::iterator g = grps.begin(); g != grps.end(); g++)
 		{
-			group& grp = grps[g];
+			group& grp = g->second;
 			for(group::iterator it = grp.begin(); it != grp.end(); it++)
 			{
 				material mtl;
@@ -290,7 +307,7 @@ int _tmain(int argc, _TCHAR* argv[])
 					mtl = it_mtl->second;
 
 				faces& fs = it->second;
-				if(!write_face(hobjxio, fs, data, mtl))
+				if(!write_face(hobjxio, g->first, fs, data, mtl))
 				{
 					int err = GetLastError();
 					printf("Failed to write output file, error code: %X.\n\n", err);

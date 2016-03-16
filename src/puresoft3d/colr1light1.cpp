@@ -105,7 +105,7 @@ void InterpolationProcessorDEF02::calcStep(void* interpolatedUserDataStep, const
 	mcemaths_mul_3_4(step->colour, reciprocalStepCount);
 }
 
-void InterpolationProcessorDEF02::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const
+void InterpolationProcessorDEF02::correctInterpolation(void* interpolatedUserData, const void* interpolatedUserDataStart, float correctionFactor2) const
 {
 	PROCDATA_DEF02* output = (PROCDATA_DEF02*)interpolatedUserData;
 	PROCDATA_DEF02* start = (PROCDATA_DEF02*)interpolatedUserDataStart;
@@ -113,12 +113,24 @@ void InterpolationProcessorDEF02::interpolateBySteps(void* interpolatedUserData,
 	mcemaths_mul_3_4(output->normal, correctionFactor2);
 	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
 	mcemaths_mul_3_4(output->colour, correctionFactor2);
+}
 
-	const PROCDATA_DEF02* step = (PROCDATA_DEF02*)interpolatedUserDataStep;
-
-	mcemaths_add_3_4_ip(start->normal, step->normal);
-	mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
-	mcemaths_add_3_4_ip(start->colour, step->colour);
+void InterpolationProcessorDEF02::stepForward(void* interpolatedUserDataStart, const void* interpolatedUserDataStep, int stepCount) const
+{
+	PROCDATA_DEF02* start = (PROCDATA_DEF02*)interpolatedUserDataStart;
+	const PROCDATA_DEF02* step = (const PROCDATA_DEF02*)interpolatedUserDataStep;
+	if(1 == stepCount)
+	{
+		mcemaths_add_3_4_ip(start->normal, step->normal);
+		mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
+		mcemaths_add_3_4_ip(start->colour, step->colour);
+	}
+	else
+	{
+		mcemaths_step_3_4_ip(start->normal, step->normal, (float)stepCount);
+		mcemaths_step_3_4_ip(start->worldPos, step->worldPos, (float)stepCount);
+		mcemaths_step_3_4_ip(start->colour, step->colour, (float)stepCount);
+	}
 }
 
 FragmentProcessorDEF02::FragmentProcessorDEF02(void)

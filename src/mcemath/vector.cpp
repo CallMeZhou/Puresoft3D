@@ -51,6 +51,37 @@ extern "C" MCEMATHAPI(void) mcemaths_sub_3_4_ip(float* v4_l, const float* v4_r)
 	}
 }
 
+MCEMATHAPI(void) mcemaths_step_3_4(float* result4, const float* base4, const float* step4, float n_steps)
+{
+	__asm{
+		mov		eax,	base4
+		movaps	xmm0,	[eax]
+		mov		eax,	step4
+		movaps	xmm1,	[eax]
+		movss	xmm2,	n_steps
+		shufps	xmm2,	xmm2,	0x00
+		mulps	xmm1,	xmm2
+		addps	xmm0,	xmm1
+		mov		eax,	result4
+		movaps	[eax],	xmm0
+	}
+}
+
+MCEMATHAPI(void) mcemaths_step_3_4_ip(float* target4, const float* step4, float n_steps)
+{
+	__asm{
+		mov		eax,	step4
+		movaps	xmm1,	[eax]
+		movss	xmm2,	n_steps
+		shufps	xmm2,	xmm2,	0x00
+		mulps	xmm1,	xmm2
+		mov		eax,	target4
+		movaps	xmm0,	[eax]
+		addps	xmm0,	xmm1
+		movaps	[eax],	xmm0
+	}
+}
+
 extern "C" MCEMATHAPI(float) mcemaths_dot_3_4(const float* v4_1, const float* v4_2)
 {
 	__declspec(align(16)) float result[4];
@@ -404,7 +435,6 @@ extern "C" MCEMATHAPI(void) mcemaths_line_centre(float* c4, float* r, const floa
 		lea		eax,	temp
 		movaps	[eax],	xmm0
 	}
-	*r = sqrt(temp[0]);
 quit:;
 }
 

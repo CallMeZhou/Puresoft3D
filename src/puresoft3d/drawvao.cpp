@@ -1,3 +1,4 @@
+#include <atlbase.h>
 #include "pipeline.h"
 
 void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */)
@@ -41,6 +42,13 @@ void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */
 			continue;
 		}
 
+		if(m_vertOutput[0].position[2] < -1.0f || m_vertOutput[0].position[2] > 1.0f)
+			continue;
+		if(m_vertOutput[1].position[2] < -1.0f || m_vertOutput[1].position[2] > 1.0f)
+			continue;
+		if(m_vertOutput[2].position[2] < -1.0f || m_vertOutput[2].position[2] > 1.0f)
+			continue;
+
 		// rasterization
 		if(!m_rasterizer.pushTriangle(m_vertOutput[0].position, m_vertOutput[1].position, m_vertOutput[2].position))
 		{
@@ -73,6 +81,7 @@ void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */
 			// interpolation (preparation of per-fragment interpolation)
 			FRAGTHREADTASK* newTask = taskQueue->beginPush();
 			interp.leftColumn = row.left;
+			interp.leftColumnSkipping = row.leftClamped - row.left;
 			interp.rightColumn = row.right;
 			interp.leftVerts = row.leftVerts;
 			interp.rightVerts = row.rightVerts;
@@ -82,8 +91,8 @@ void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */
 
 			// complete the task item
 			newTask->taskType = DRAW;
-			newTask->x1 = row.left;
-			newTask->x2 = row.right;
+			newTask->x1 = row.leftClamped;
+			newTask->x2 = row.rightClamped;
 			newTask->y = interp.row;
 			newTask->projZStart = interp.projectedZStart;
 			newTask->projZStep = interp.projectedZStep;

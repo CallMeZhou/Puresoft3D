@@ -38,7 +38,8 @@ public:
 	virtual void preprocess(const PURESOFTUNIFORM* uniforms) = 0;
 	virtual void interpolateByContributes(void* interpolatedUserData, const void** vertexUserData, const float* correctedContributes) const = 0;
 	virtual void calcStep(void* interpolatedUserDataStep, const void* interpolatedUserDataStart, const void* interpolatedUserDataEnd, int stepCount) const = 0;
-	virtual void interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const = 0;
+	virtual void correctInterpolation(void* interpolatedUserData, const void* interpolatedUserDataStart, float correctionFactor2) const = 0;
+	virtual void stepForward(void* interpolatedUserDataStart, const void* interpolatedUserDataStep, int stepCount) const = 0;
 };
 
 typedef struct
@@ -49,7 +50,12 @@ typedef struct
 
 class FragmentProcessorOutput
 {
-public: 
+public:
+	virtual void discard(void) = 0;
+	virtual void read(int index, void* data, size_t bytes) = 0;
+	virtual void read1(int index, void* data) = 0;
+	virtual void read4(int index, void* data) = 0;
+	virtual void read16(int index, void* data) = 0;
 	virtual void write(int index, const void* data, size_t bytes) = 0;
 	virtual void write1(int index, const void* data) = 0;
 	virtual void write4(int index, const void* data) = 0;

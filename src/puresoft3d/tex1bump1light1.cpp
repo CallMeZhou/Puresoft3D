@@ -126,24 +126,39 @@ void InterpolationProcessorDEF03::calcStep(void* interpolatedUserDataStep, const
 	mcemaths_mul_3_4(step->texcoord, reciprocalStepCount);
 }
 
-void InterpolationProcessorDEF03::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const
+void InterpolationProcessorDEF03::correctInterpolation(void* interpolatedUserData, const void* interpolatedUserDataStart, float correctionFactor2) const
 {
 	PROCDATA_DEF03* output = (PROCDATA_DEF03*)interpolatedUserData;
-	PROCDATA_DEF03* start = (PROCDATA_DEF03*)interpolatedUserDataStart;
+	const PROCDATA_DEF03* start = (const PROCDATA_DEF03*)interpolatedUserDataStart;
 	memcpy(output, start, sizeof(PROCDATA_DEF03));
 	mcemaths_mul_3_4(output->tangent, correctionFactor2);
 	mcemaths_mul_3_4(output->binormal, correctionFactor2);
 	mcemaths_mul_3_4(output->normal, correctionFactor2);
 	mcemaths_mul_3_4(output->worldPos, correctionFactor2);
 	mcemaths_mul_3_4(output->texcoord, correctionFactor2);
+}
 
-	const PROCDATA_DEF03* step = (PROCDATA_DEF03*)interpolatedUserDataStep;
-
-	mcemaths_add_3_4_ip(start->tangent, step->normal);
-	mcemaths_add_3_4_ip(start->binormal, step->normal);
-	mcemaths_add_3_4_ip(start->normal, step->normal);
-	mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
-	mcemaths_add_3_4_ip(start->texcoord, step->texcoord);
+void InterpolationProcessorDEF03::stepForward(void* interpolatedUserDataStart, const void* interpolatedUserDataStep, int stepCount) const
+{
+	PROCDATA_DEF03* start = (PROCDATA_DEF03*)interpolatedUserDataStart;
+	const PROCDATA_DEF03* step = (const PROCDATA_DEF03*)interpolatedUserDataStep;
+	
+	if(1 == stepCount)
+	{
+		mcemaths_add_3_4_ip(start->tangent, step->tangent);
+		mcemaths_add_3_4_ip(start->binormal, step->binormal);
+		mcemaths_add_3_4_ip(start->normal, step->normal);
+		mcemaths_add_3_4_ip(start->worldPos, step->worldPos);
+		mcemaths_add_3_4_ip(start->texcoord, step->texcoord);
+	}
+	else
+	{
+		mcemaths_step_3_4_ip(start->tangent, step->tangent, (float)stepCount);
+		mcemaths_step_3_4_ip(start->binormal, step->binormal, (float)stepCount);
+		mcemaths_step_3_4_ip(start->normal, step->normal, (float)stepCount);
+		mcemaths_step_3_4_ip(start->worldPos, step->worldPos, (float)stepCount);
+		mcemaths_step_3_4_ip(start->texcoord, step->texcoord, (float)stepCount);
+	}
 }
 
 FragmentProcessorDEF03::FragmentProcessorDEF03(void)

@@ -16,8 +16,20 @@ private:
 	int m_night;
 	int m_cloud;
 	float m_meshRotateRad;
-	float m_texTransX;
-	mat4 m_texTrans;
+};
+
+class Cloud : public SceneObject
+{
+public:
+	Cloud(PuresoftPipeline& pipeline, SceneObject* parent);
+	~Cloud();
+	void update(float timeSpanSec, const mat4& parent);
+	void draw(PuresoftPipeline& pipeline);
+
+private:
+	int m_diffuse;
+	int m_myShadowProgramme;
+	float m_meshRotateRad;
 };
 
 class Moon : public SceneObject

@@ -12,8 +12,10 @@ public:
 	typedef struct
 	{
 		int left;
+		int leftClamped;
 		int leftVerts[2];  // indices of verts for left point
 		int right;
+		int rightClamped;
 		int rightVerts[2]; // indices of verts for right point
 	} RESULT_ROW;
 

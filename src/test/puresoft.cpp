@@ -26,10 +26,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 //static void updateTexMatrix(mat4& m, float rad);
 
 const int W = 1024;
-const int H = 576;
+const int H = 640;
 
-const int SHDW_W = 2048;
-const int SHDW_H = 2048;
+const int SHDW_W = 1024;
+const int SHDW_H = 1024;
 
 const float PI = 3.1415927f;
 
@@ -110,12 +110,12 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	
 	PuresoftPipeline pipeline((uintptr_t)hWnd, W, H, ddrawRender);//new PuresoftDDrawRenderer);
 
-	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 1.2f, 0);
+	vec4 lightPos(-3.0f, 0, 1.0f, 0), cameraPos(0, 0, 2.2f, 0), cameraYPR;
 	pipeline.setUniform(7, &lightPos, sizeof(lightPos));
 	pipeline.setUniform(8, &cameraPos, sizeof(cameraPos));
 
 	mat4 view, proj, proj_view;
-	mcemaths_make_proj_perspective(proj, 1.0f, 300.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
+	mcemaths_make_proj_perspective(proj, 0.1f, 10.0f, (float)W / H, 2 * PI * (30.0f / 360.0f));
 	view.translation(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 	mcemaths_transform_m4m4(proj_view, proj, view);
 
@@ -124,6 +124,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	//////////////////////////////////////////////////////////////////////////
 	SceneObject root(pipeline, NULL);
 	Earth earth(pipeline, &root);
+	Cloud cloud(pipeline, &root);
 	Moon moon(pipeline, &root);
 	Skybox skybox(pipeline, &root);
 
@@ -131,8 +132,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	// shadow
 	//////////////////////////////////////////////////////////////////////////
 	mat4 light1View, light1Proj, light1pv, light1pvb;
-//	mcemaths_make_proj_perspective(light1Proj, 1.0f, 300.0f, (float)SHDW_W / SHDW_H, 2 * PI * (45.0f / 360.0f));
-	mcemaths_make_proj_orthographic(light1Proj, -10.0f, 20.0f, -3.0f, 3.0f, -3.0f, 3.0f);
+	mcemaths_make_proj_perspective(light1Proj, 0.1f, 10.0f, (float)SHDW_W / SHDW_H, 2 * PI * (30.0f / 360.0f));
+//	mcemaths_make_proj_orthographic(light1Proj, -10.0f, 20.0f, -3.0f, 3.0f, -3.0f, 3.0f);
 	mcemaths_make_view_traditional(light1View, lightPos, vec4(), vec4(0, 1.0f, 0, 0));
 	mcemaths_transform_m4m4(light1pv, light1Proj, light1View);
 	mcemaths_transform_m4m4(light1pvb, bias, light1pv);
@@ -144,7 +145,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	shadowBuffer.pixels = NULL;
 	int texShadow = pipeline.createTexture(&shadowBuffer);
 
-	int progShadow = pipeline.createProgramme(
+	SceneObject::m_defaultShadowProgramme = pipeline.createProgramme(
 		pipeline.addProcessor(new VertexProcesserDEF05), 
 		pipeline.addProcessor(new InterpolationProcessorDEF05), 
 		pipeline.addProcessor(new FragmentProcessorDEF05));
@@ -177,10 +178,10 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setDepth(texShadow);
 		pipeline.clearDepth();
 		pipeline.setViewport(SHDW_W, SHDW_H);
-		SceneObject::m_usePrivateProgramme = false;
-		pipeline.useProgramme(progShadow);
+		SceneObject::m_useShadowProgramme = true;
 
 		earth.draw(pipeline);
+		cloud.draw(pipeline);
 		moon.draw(pipeline);
 
 		// draw scene
@@ -190,12 +191,13 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		pipeline.setDepth();
 		pipeline.clearDepth();
 		pipeline.setViewport(W, H);
-		SceneObject::m_usePrivateProgramme = true;
+		SceneObject::m_useShadowProgramme = false;
 		SceneObject::m_shadowMaps[0] = texShadow;
 		mcemaths_mat4cpy(SceneObject::m_shadowPVs[0], light1pvb);
 
 		skybox.draw(pipeline);
 		earth.draw(pipeline);
+		cloud.draw(pipeline);
 		moon.draw(pipeline);
 
 		pipeline.swapBuffers();
@@ -242,8 +244,7 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	case WM_TIMER:
-		break;
+
 	default:
 		return DefWindowProc(wnd, message, wParam, lParam);
 	}

@@ -90,11 +90,18 @@ void PuresoftRasterizer::processTriangle(const LineSegment& edgeL, const LineSeg
 	for(yMin = max(yMin, 0); yMin <= yMax && yMin < m_height; yMin++) 
 	{
 		m_output.m_rows[yMin].left = edgeL(yMin);
+
 		if(m_output.m_rows[yMin].left < 0)
-			m_output.m_rows[yMin].left = 0;
+			m_output.m_rows[yMin].leftClamped = 0;
+		else
+			m_output.m_rows[yMin].leftClamped = m_output.m_rows[yMin].left;
+
 		m_output.m_rows[yMin].right = edgeR(yMin);
 		if(m_output.m_rows[yMin].right >= m_width)
-			m_output.m_rows[yMin].right = m_width - 1;
+			m_output.m_rows[yMin].rightClamped = m_width - 1;
+		else
+			m_output.m_rows[yMin].rightClamped = m_output.m_rows[yMin].right;
+
 		m_output.m_rows[yMin].leftVerts[0] = edgeL.index0;
 		m_output.m_rows[yMin].leftVerts[1] = edgeL.index1;
 		m_output.m_rows[yMin].rightVerts[0] = edgeR.index0;

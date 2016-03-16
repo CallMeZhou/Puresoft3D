@@ -33,7 +33,8 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	integerBasedLineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], params->rightColumn, params->row, contributesForRight);
 
 	// calculate interpolated ext-values for left and right end of scanline
-	__declspec(align(16)) float correctedContributesForLeft[4], correctedContributesForRight[4];
+	__declspec(align(16)) float correctedContributesForLeft[8];
+	float* correctedContributesForRight = correctedContributesForLeft + 4;
 	mcemaths_quatcpy(correctedContributesForLeft, contributesForLeft);
 	mcemaths_quatcpy(correctedContributesForRight, contributesForRight);
 	mcemaths_mulvec_3_4(correctedContributesForLeft, params->reciprocalWs);
@@ -57,8 +58,7 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 		movaps	xmm0,	[eax]
 		haddps	xmm0,	xmm0
 		haddps	xmm0,	xmm0
-		lea		eax,	correctedContributesForRight
-		movaps	xmm1,	[eax]
+		movaps	xmm1,	[eax + 16]
 		haddps	xmm1,	xmm1
 		haddps	xmm1,	xmm1
 		movss	xmm1,	xmm0
@@ -66,10 +66,17 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	}
 	params->correctionFactor2Start = temp[0];
 	params->correctionFactor2Step = temp[2];
-// the 2 lines below are replaced by the above asm code, but...
+// the 2 lines below are replaced by the above asm code
 //	params->correctionFactor2Start = mcemaths_dot_3_4(contributesForLeft, params->reciprocalWs);
 //	params->correctionFactor2Step = mcemaths_dot_3_4(contributesForRight, params->reciprocalWs);
 	params->correctionFactor2Step = (params->correctionFactor2Step - params->correctionFactor2Start) * reciprocalScanlineLength;
+
+	if(params->leftColumnSkipping > 0)
+	{
+		params->correctionFactor2Start += params->correctionFactor2Step * params->leftColumnSkipping;
+		params->projectedZStart += params->projectedZStep * params->leftColumnSkipping;
+		params->proc->stepForward(params->interpolatedUserDataStart, params->interpolatedUserDataStep, params->leftColumnSkipping);
+	}
 }
 
 void PuresoftInterpolater::interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params)
@@ -77,9 +84,8 @@ void PuresoftInterpolater::interpolateNextStep(void* interpolatedUserData, float
 	float _correctionFactor2 = 1.0f / params->correctionFactor2Start;
 	params->correctionFactor2Start += params->correctionFactor2Step;
 
-	//ATLTRACE("%f, ", _correctionFactor2);
-
-	params->proc->interpolateBySteps(interpolatedUserData, params->interpolatedUserDataStart, params->interpolatedUserDataStep, _correctionFactor2);
+	params->proc->correctInterpolation(interpolatedUserData, params->interpolatedUserDataStart, _correctionFactor2);
+	params->proc->stepForward(params->interpolatedUserDataStart, params->interpolatedUserDataStep, 1);
 
 	*interpolatedProjectedZ = params->projectedZStart * _correctionFactor2;
 	params->projectedZStart += params->projectedZStep;

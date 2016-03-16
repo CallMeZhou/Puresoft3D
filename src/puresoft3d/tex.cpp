@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "pipeline.h"
 
-int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image, int extraLayers /* = 0 */)
+int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image, int extraLayers /* = 0 */, PuresoftFBO::WRAPMODE mode /* = PuresoftFBO::CLAMP */)
 {
 	size_t vacant = 0;
 	for(; vacant < m_texPool.size(); vacant++)
@@ -15,7 +15,7 @@ int PuresoftPipeline::createTexture(const PURESOFTIMGBUFF32* image, int extraLay
 		m_texPool.push_back(NULL);
 	}
 
-	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, true, NULL, PuresoftFBO::WRAP, extraLayers);
+	PuresoftFBO* fbo = new PuresoftFBO(image->width, image->scanline, image->height, image->elemLen, false, NULL, mode, extraLayers);
 
 	if(image->pixels)
 	{

@@ -28,6 +28,7 @@ void VertexProcesserDEF04::process(const VertexProcessorInput* input, VertexProc
 
 	ALIGN16 float vectorFromObserverToNearPlane[4];
 	mcemaths_sub_3_4(vectorFromObserverToNearPlane, position, observer);
+	vectorFromObserverToNearPlane[3] = 0;
 	mcemaths_norm_3_4(vectorFromObserverToNearPlane);
 
 	ALIGN16 float inversedView[16];
@@ -37,8 +38,9 @@ void VertexProcesserDEF04::process(const VertexProcessorInput* input, VertexProc
 
 	mcemaths_transform_m4v4(userOutput->direction, inversedView, vectorFromObserverToNearPlane);
 
-	vectorFromObserverToNearPlane[3] = 1.0f;
-	mcemaths_transform_m4v4(output->position, m_P, vectorFromObserverToNearPlane);
+//	vectorFromObserverToNearPlane[3] = 1.0f;
+//	mcemaths_transform_m4v4(output->position, m_P, vectorFromObserverToNearPlane);
+	mcemaths_quatcpy(output->position, position);
 }
 
 InterpolationProcessorDEF04::InterpolationProcessorDEF04(void)
@@ -87,16 +89,26 @@ void InterpolationProcessorDEF04::calcStep(void* interpolatedUserDataStep, const
 	mcemaths_mul_3_4(step->direction, reciprocalStepCount);
 }
 
-void InterpolationProcessorDEF04::interpolateBySteps(void* interpolatedUserData, void* interpolatedUserDataStart, const void* interpolatedUserDataStep, float correctionFactor2) const
+void InterpolationProcessorDEF04::correctInterpolation(void* interpolatedUserData, const void* interpolatedUserDataStart, float correctionFactor2) const
 {
 	PROCDATA_DEF04* output = (PROCDATA_DEF04*)interpolatedUserData;
-	PROCDATA_DEF04* start = (PROCDATA_DEF04*)interpolatedUserDataStart;
+	const PROCDATA_DEF04* start = (const PROCDATA_DEF04*)interpolatedUserDataStart;
 	memcpy(output, start, sizeof(PROCDATA_DEF04));
 	mcemaths_mul_3_4(output->direction, correctionFactor2);
+}
 
+void InterpolationProcessorDEF04::stepForward(void* interpolatedUserDataStart, const void* interpolatedUserDataStep, int stepCount) const
+{
+	PROCDATA_DEF04* start = (PROCDATA_DEF04*)interpolatedUserDataStart;
 	const PROCDATA_DEF04* step = (PROCDATA_DEF04*)interpolatedUserDataStep;
-
-	mcemaths_add_3_4_ip(start->direction, step->direction);
+	if(1 == stepCount)
+	{
+		mcemaths_add_3_4_ip(start->direction, step->direction);
+	}
+	else
+	{
+		mcemaths_step_3_4_ip(start->direction, step->direction, (float)stepCount);
+	}
 }
 
 FragmentProcessorDEF04::FragmentProcessorDEF04(void)
