@@ -45,9 +45,9 @@ const PuresoftRasterizer::RESULT* PuresoftRasterizer::initialize(int width, int 
 
 class LineSegment
 {
-	int dx, dy, x0, y0;
+	float dx, dy, x0, y0;
 public:
-	LineSegment(const PuresoftRasterizer::VERTEX2I* verts, int idx0, int idx1)
+	LineSegment(const PuresoftRasterizer::VERTEX2F* verts, int idx0, int idx1)
 	{
 		x0 = verts[idx0].x;
 		y0 = verts[idx0].y;
@@ -55,9 +55,14 @@ public:
 		dy = verts[idx1].y - y0;
 		index0 = idx0;
 		index1 = idx1;
+
+		// this is to avoid division-by-0 in operator(), we would always get x0
+		// rather than getting wrong float value
+		if(fabs(dy) < 0.000001f)
+			dy = FLT_MAX;
 	}
 
-	int operator() (int y) const
+	float operator() (float y) const
 	{
 		return dx * (y - y0) / dy + x0;
 	}
@@ -67,50 +72,53 @@ public:
 
 void PuresoftRasterizer::pushVertex(int idx, const float* vert)
 {
-	m_output.vertices[idx].y = (int)(m_halfHeight * vert[1]) + m_halfHeight;
-	m_output.vertices[idx].x = (int)(m_halfWidth  * vert[0]) + m_halfWidth;
+	m_output.vertices[idx].y = ((float)m_halfHeight * vert[1]) + (float)m_halfHeight;
+	m_output.vertices[idx].x = ((float)m_halfWidth  * vert[0]) + (float)m_halfWidth;
 
 	if(0 == idx)
 	{
-		m_output.firstRow = m_output.lastRow = m_output.vertices[0].y;
+		m_output.firstRow = m_output.lastRow = (int)m_output.vertices[0].y;
 	}
-	else if(m_output.vertices[idx].y > m_output.lastRow)
+	else if(m_output.vertices[idx].y > (float)m_output.lastRow)
 	{
-		m_output.lastRow = m_output.vertices[idx].y;
+		m_output.lastRow = (int)m_output.vertices[idx].y;
 	}
-	else if(m_output.vertices[idx].y < m_output.firstRow)
+	else if(m_output.vertices[idx].y < (float)m_output.firstRow)
 	{
-		m_output.firstRow = m_output.vertices[idx].y;
+		m_output.firstRow = (int)m_output.vertices[idx].y;
 	}
 }
 
 // for flat top/bottom triangle
-void PuresoftRasterizer::processTriangle(const LineSegment& edgeL, const LineSegment& edgeR, int yMin, int yMax)
+void PuresoftRasterizer::processTriangle(const LineSegment& edgeL, const LineSegment& edgeR, float yMin, float yMax)
 {
-	for(yMin = max(yMin, 0); yMin <= yMax && yMin < m_height; yMin++) 
+	int iyMin = yMin < 0 ? 0 : (int)(yMin);
+	int lastRowIdx = m_height - 1;
+	int iyMax = yMax > (float)lastRowIdx ? lastRowIdx : (int)(yMax);
+	for(; iyMin <= iyMax; iyMin++)
 	{
-		m_output.m_rows[yMin].left = edgeL(yMin);
+		m_output.m_rows[iyMin].left = (int)(edgeL((float)iyMin) + 0.5f);
 
-		if(m_output.m_rows[yMin].left < 0)
-			m_output.m_rows[yMin].leftClamped = 0;
+		if(m_output.m_rows[iyMin].left < 0)
+			m_output.m_rows[iyMin].leftClamped = 0;
 		else
-			m_output.m_rows[yMin].leftClamped = m_output.m_rows[yMin].left;
+			m_output.m_rows[iyMin].leftClamped = (int)m_output.m_rows[iyMin].left;
 
-		m_output.m_rows[yMin].right = edgeR(yMin);
-		if(m_output.m_rows[yMin].right >= m_width)
-			m_output.m_rows[yMin].rightClamped = m_width - 1;
+		m_output.m_rows[iyMin].right = (int)(edgeR((float)iyMin) + 0.5f);
+		if(m_output.m_rows[iyMin].right >= m_width)
+			m_output.m_rows[iyMin].rightClamped = m_width - 1;
 		else
-			m_output.m_rows[yMin].rightClamped = m_output.m_rows[yMin].right;
+			m_output.m_rows[iyMin].rightClamped = m_output.m_rows[iyMin].right;
 
-		m_output.m_rows[yMin].leftVerts[0] = edgeL.index0;
-		m_output.m_rows[yMin].leftVerts[1] = edgeL.index1;
-		m_output.m_rows[yMin].rightVerts[0] = edgeR.index0;
-		m_output.m_rows[yMin].rightVerts[1] = edgeR.index1;
+		m_output.m_rows[iyMin].leftVerts[0] = edgeL.index0;
+		m_output.m_rows[iyMin].leftVerts[1] = edgeL.index1;
+		m_output.m_rows[iyMin].rightVerts[0] = edgeR.index0;
+		m_output.m_rows[iyMin].rightVerts[1] = edgeR.index1;
 	}
 }
 
 // for non- flat top/bottom triangle, we split it to two flat top/bottom triangles
-void PuresoftRasterizer::processStandingTriangle(const VERTEX2I* verts, int top, int bottom, int third)
+void PuresoftRasterizer::processStandingTriangle(const VERTEX2F* verts, int top, int bottom, int third)
 {
 	LineSegment edgeTopThird(verts, top, third), edgeTopBottom(verts, top, bottom), edgeThirdBottom(verts, third, bottom);
 	
@@ -164,33 +172,33 @@ bool PuresoftRasterizer::pushTriangle(const float* vert0, const float* vert1, co
 	{
 		if(m_output.vertices[0].x < m_output.vertices[1].x)
 		{
-			processTriangle(LineSegment(m_output.vertices, 0, 2), LineSegment(m_output.vertices, 1, 2), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 0, 2), LineSegment(m_output.vertices, 1, 2), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 		else
 		{
-			processTriangle(LineSegment(m_output.vertices, 1, 2), LineSegment(m_output.vertices, 0, 2), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 1, 2), LineSegment(m_output.vertices, 0, 2), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 	}
 	else if(m_output.vertices[0].y == m_output.vertices[2].y)
 	{
 		if(m_output.vertices[0].x < m_output.vertices[2].x)
 		{
-			processTriangle(LineSegment(m_output.vertices, 0, 1), LineSegment(m_output.vertices, 2, 1), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 0, 1), LineSegment(m_output.vertices, 2, 1), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 		else
 		{
-			processTriangle(LineSegment(m_output.vertices, 2, 1), LineSegment(m_output.vertices, 0, 1), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 2, 1), LineSegment(m_output.vertices, 0, 1), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 	}
 	else if(m_output.vertices[1].y == m_output.vertices[2].y)
 	{
 		if(m_output.vertices[1].x < m_output.vertices[2].x)
 		{
-			processTriangle(LineSegment(m_output.vertices, 1, 0), LineSegment(m_output.vertices, 2, 0), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 1, 0), LineSegment(m_output.vertices, 2, 0), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 		else
 		{
-			processTriangle(LineSegment(m_output.vertices, 2, 0), LineSegment(m_output.vertices, 1, 0), m_output.firstRow, m_output.lastRow);
+			processTriangle(LineSegment(m_output.vertices, 2, 0), LineSegment(m_output.vertices, 1, 0), (float)m_output.firstRow, (float)m_output.lastRow);
 		}
 	}
 	// non- flat top/bottom

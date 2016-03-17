@@ -9,7 +9,7 @@ public:
 	{
 		PuresoftInterpolationProcessor* proc;
 		const void* vertexUserData[3];
-		const int* vertices;
+		const float* vertices;
 		const float* reciprocalWs;
 		const float* projectedZs;
 		int row;
@@ -44,7 +44,7 @@ public:
 	void interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params);
 
 private:
-	static void integerBasedTrianglelinearInterpolate(const int* verts, int x,  int y, float* contributes);
-	static void integerBasedLineSegmentlinearInterpolate(const int* verts, int vert1, int vert2, int x,  int y, float* contributes);
+	//static void integerBasedTrianglelinearInterpolate(const float* verts, int x,  int y, float* contributes);
+	static void lineSegmentlinearInterpolate(const float* verts, int vert1, int vert2, float x,  float y, float* contributes);
 };
 

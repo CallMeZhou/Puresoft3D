@@ -6,8 +6,8 @@ class PuresoftRasterizer
 public:
 	typedef struct
 	{
-		int x, y;
-	} VERTEX2I;
+		float x, y;
+	} VERTEX2F;
 
 	typedef struct
 	{
@@ -21,7 +21,7 @@ public:
 
 	typedef struct
 	{
-		VERTEX2I vertices[3];
+		VERTEX2F vertices[3];
 		int firstRow;
 		int lastRow;
 		RESULT_ROW* m_rows;
@@ -43,7 +43,7 @@ private:
 	RESULT m_output;
 
 	inline void pushVertex(int idx, const float* vert);
-	inline void processTriangle(const LineSegment& edgeL, const LineSegment& edgeR, int yMin, int yMax);
-	inline void processStandingTriangle(const VERTEX2I* verts, int top, int bottom, int third);
+	inline void processTriangle(const LineSegment& edgeL, const LineSegment& edgeR, float yMin, float yMax);
+	inline void processStandingTriangle(const VERTEX2F* verts, int top, int bottom, int third);
 };
 

@@ -23,7 +23,7 @@ void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */
 	interp.vertexUserData[0] = m_vertOutput[0].user;
 	interp.vertexUserData[1] = m_vertOutput[1].user;
 	interp.vertexUserData[2] = m_vertOutput[2].user;
-	interp.vertices = (const int*)m_rasterResult->vertices;
+	interp.vertices = (const float*)m_rasterResult->vertices;
 	interp.reciprocalWs = correctionFactor1;
 	interp.projectedZs = projZs;
 

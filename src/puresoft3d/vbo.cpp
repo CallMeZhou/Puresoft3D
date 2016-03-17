@@ -68,7 +68,7 @@ void PuresoftVBO::evenOutRanges(int rangeAmount /* = MAX_WORKRANGES */)
 
 const void* PuresoftVBO::next(size_t idx /* = 0 */)
 {
-	assert((0 < idx) && (idx < MAX_WORKRANGES));
+	assert((0 <= idx) && (idx < MAX_WORKRANGES));
 
 	WORKRANGE& range = m_workRanges[idx];
 

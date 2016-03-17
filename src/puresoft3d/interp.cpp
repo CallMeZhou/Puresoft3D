@@ -10,8 +10,8 @@ using namespace mcemaths;
 #pragma pack(4)
 typedef struct
 {
-	int x;
-	int y;
+	float x;
+	float y;
 } __POINT;
 #pragma pack()
 
@@ -29,8 +29,8 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	__declspec(align(16)) float contributesForRight[4];
 	contributesForLeft[3] = contributesForRight[3] = 0;
 
-	integerBasedLineSegmentlinearInterpolate(params->vertices, params->leftVerts[0], params->leftVerts[1], params->leftColumn, params->row, contributesForLeft);
-	integerBasedLineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], params->rightColumn, params->row, contributesForRight);
+	lineSegmentlinearInterpolate(params->vertices, params->leftVerts[0],  params->leftVerts[1],  (float)params->leftColumn,  (float)params->row, contributesForLeft);
+	lineSegmentlinearInterpolate(params->vertices, params->rightVerts[0], params->rightVerts[1], (float)params->rightColumn, (float)params->row, contributesForRight);
 
 	// calculate interpolated ext-values for left and right end of scanline
 	__declspec(align(16)) float correctedContributesForLeft[8];
@@ -106,8 +106,7 @@ c2 = ((p.y - p3.y) - (p1.y - p3.y) * c1) / (p2.y - p3.y)
 (p.x - p3.x) / (p2.x - p3.x) - c1 * (p1.x - p3.x) / (p2.x - p3.x) - (p.y - p3.y) / (p2.y - p3.y) + c1 * (p1.y - p3.y) / (p2.y - p3.y) = 0
 c1  * ((p1.y - p3.y) / (p2.y - p3.y) - (p1.x - p3.x) / (p2.x - p3.x)) = ((p.y - p3.y) / (p2.y - p3.y) - (p.x - p3.x) / (p2.x - p3.x))
 c1 = ((p.y - p3.y) / (p2.y - p3.y) - (p.x - p3.x) / (p2.x - p3.x)) / (((p1.y - p3.y) / (p2.y - p3.y) - (p1.x - p3.x) / (p2.x - p3.x)))
-*/
-void PuresoftInterpolater::integerBasedTrianglelinearInterpolate(const int* verts, int x, int y, float* contributes)
+void PuresoftInterpolater::integerBasedTrianglelinearInterpolate(const float* verts, int x, int y, float* contributes)
 {
 	// in compiler we trust ...
 
@@ -147,14 +146,15 @@ void PuresoftInterpolater::integerBasedTrianglelinearInterpolate(const int* vert
 
 	contributes[2] = 1.0f - contributes[0] - contributes[1];
 }
+*/
 
-void PuresoftInterpolater::integerBasedLineSegmentlinearInterpolate(const int* verts, int vert1, int vert2, int x,  int y, float* contributes)
+void PuresoftInterpolater::lineSegmentlinearInterpolate(const float* verts, int vert1, int vert2, float x,  float y, float* contributes)
 {
 	const __POINT& p1 = *(((const __POINT*)verts) + vert1);
 	const __POINT& p2 = *(((const __POINT*)verts) + vert2);
 
-	int dx = p1.x - p2.x, dy = p1.y - p2.y;
-	contributes[vert1] = labs(dx) > labs(dy) ? (((float)x - (float)p2.x) / (float)dx) : (((float)y - (float)p2.y) / (float)dy);
+	float dx = p1.x - p2.x, dy = p1.y - p2.y;
+	contributes[vert1] = fabs(dx) > fabs(dy) ? ((x - p2.x) / dx) : ((y - p2.y) / dy);
 	contributes[vert2] = 1.0f - contributes[vert1];
 	contributes[3 - vert1 - vert2] = 0;
 }
