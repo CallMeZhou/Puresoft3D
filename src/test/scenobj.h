@@ -32,7 +32,7 @@ public:
 	SceneObject(PuresoftPipeline& pipeline, SceneObject* parent);
 	virtual ~SceneObject();
 	virtual void update(float timeSpanSec, const mat4& parent);
-	virtual void draw(PuresoftPipeline& pipeline);
+	virtual void draw(PuresoftPipeline& pipeline, bool extraThread = false);
 
 	void chainSubUpdater(SceneObject* sub);
 	void unchainSubUpdater(SceneObject* sub);

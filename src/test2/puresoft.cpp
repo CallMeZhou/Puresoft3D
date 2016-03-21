@@ -96,10 +96,10 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	// basic initialization of pipeline
 	//////////////////////////////////////////////////////////////////////////
 
-	PuresoftRenderer* ddrawRender = NULL;
+	PuresoftRenderer* ddrawRender = new PuresoftDDrawRenderer;
 	try
 	{
-		ddrawRender = new PuresoftDDrawRenderer;
+		ddrawRender->startup((uintptr_t)hWnd, W, H);
 	}
 	catch(...)
 	{
@@ -258,7 +258,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		// sorry I really don't have time to keep the following code tidy
 		//////////////////////////////////////////////////////////////////////////
 
-		float dyaw, dpitch, deltaMouse = 0.4f * (float)highTimer.span() / 1000.0f;
+		float dyaw, dpitch, deltaMouse = 0.2f * (float)highTimer.span() / 1000.0f;
 		input.getRelPos(&dyaw, &dpitch);
 		cameraYPR.x += dyaw * deltaMouse;
 		cameraYPR.y += dpitch * deltaMouse;

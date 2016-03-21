@@ -32,6 +32,8 @@ private:
 
 	RAWINPUTDEVICE m_mouse;
 
+	bool  m_lastXYGot;
+	float m_lastXY[2];
 	float m_sensitivity;
 	float m_absolutePosition[2];
 	float m_absolutePositionBounds[2];

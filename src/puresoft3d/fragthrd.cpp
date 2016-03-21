@@ -326,29 +326,26 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
 
 			// get current depth from the depth buffer and do depth test
-			bool depthTestPassed = true;
+			float currentDepth;
 			if(pThis->m_behavior & BEHAVIOR_TEST_DEPTH)
 			{
-				float currentDepth;
 				pThis->m_depth->read4(threadIndex, &currentDepth);
-				depthTestPassed = (0 < newDepth && newDepth < currentDepth);
 			}
 			else
 			{
-				// remove out of range depth even if depth test is disabled
-				depthTestPassed = (0 < newDepth && newDepth < 1.0f);
+				currentDepth = 1.0f;
 			}
 
-			if(depthTestPassed)
+			if(-1.0f < newDepth && newDepth < currentDepth)
 			{
+				// call Fragment Processor to update FBOs
+				pThis->m_fp->process(&fragInput, &fragOutput);
+
 				// update depth buffer
-				if(pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH)
+				if(!fragOutput.discarded() && (pThis->m_behavior & BEHAVIOR_UPDATE_DEPTH))
 				{
 					pThis->m_depth->write4(threadIndex, &newDepth);
 				}
-
-				// go ahead with Fragment Processor (fbos are updated meanwhile)
-				pThis->m_fp->process(&fragInput, &fragOutput);
 			}
 
 			// move fbo data pointers

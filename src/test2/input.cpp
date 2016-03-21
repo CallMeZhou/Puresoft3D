@@ -35,6 +35,7 @@ public:
 
 void Input::startup(HWND hwnd)
 {
+	m_lastXYGot = false;
 	memset(m_keyStates,  0, MAXKEY * sizeof(bool));
 	memset(m_holdStates, 0, MAXKEY * sizeof(bool));
 
@@ -92,8 +93,26 @@ void Input::handleRawInputMsg(HRAWINPUT raw)
 	}
 	else if(ri->header.dwType == RIM_TYPEMOUSE)
 	{
-		m_relativePosition[0] +=((float)ri->data.mouse.lLastX ) * m_sensitivity;
-		m_relativePosition[1] +=((float)ri->data.mouse.lLastY ) * m_sensitivity;
+		if(ri->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+		{
+			if(m_lastXYGot)
+			{
+				m_relativePosition[0] +=((float)ri->data.mouse.lLastX - m_lastXY[0]) * m_sensitivity;
+				m_relativePosition[1] +=((float)ri->data.mouse.lLastY - m_lastXY[1]) * m_sensitivity;
+			}
+			else
+			{
+				m_lastXYGot = true;
+			}
+
+			m_lastXY[0] = (float)ri->data.mouse.lLastX;
+			m_lastXY[1] = (float)ri->data.mouse.lLastY;
+		}
+		else
+		{
+			m_relativePosition[0] +=((float)ri->data.mouse.lLastX ) * m_sensitivity;
+			m_relativePosition[1] +=((float)ri->data.mouse.lLastY ) * m_sensitivity;
+		}
 
 		m_absolutePosition[0] += (float)ri->data.mouse.lLastX;
 		m_absolutePosition[1] += (float)ri->data.mouse.lLastY;

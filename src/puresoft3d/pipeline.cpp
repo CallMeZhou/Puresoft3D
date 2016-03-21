@@ -40,14 +40,7 @@ PuresoftPipeline::PuresoftPipeline(uintptr_t canvasWindow, int deviceWidth, int 
 
 	m_rasterResult = m_rasterizer.initialize(deviceWidth, deviceHeight);
 
-	if(rndr)
-	{
-		setRenderer(rndr);
-	}
-	else
-	{
-		setRenderer(new PuresoftGdiRenderer);
-	}
+	setRenderer(rndr);
 
 	PURESOFTIMGBUFF32 rndrDesc;
 	m_renderer->getDesc(&rndrDesc);
@@ -253,8 +246,13 @@ void PuresoftPipeline::setRenderer(PuresoftRenderer* rndr)
 		m_renderer->release();
 	}
 
-	if(m_renderer = rndr)
+	if(rndr)
 	{
+		m_renderer = rndr;
+	}
+	else
+	{
+		m_renderer = new PuresoftGdiRenderer;
 		m_renderer->startup(m_canvasWindow, m_deviceWidth, m_deviceHeight);
 	}
 }

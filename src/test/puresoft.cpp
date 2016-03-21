@@ -95,10 +95,10 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 	//////////////////////////////////////////////////////////////////////////
 	// basic initialization of pipeline
-	PuresoftRenderer* ddrawRender = NULL;
+	PuresoftRenderer* ddrawRender = new PuresoftDDrawRenderer;
 	try
 	{
-		ddrawRender = new PuresoftDDrawRenderer;
+		ddrawRender->startup((uintptr_t)hWnd, W, H);
 	}
 	catch(...)
 	{

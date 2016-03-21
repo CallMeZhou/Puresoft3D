@@ -42,7 +42,7 @@ void SceneObject::update(float timeSpanSec, const mat4& parent /* = mat4 */)
 	}
 }
 
-void SceneObject::draw(PuresoftPipeline& pipeline)
+void SceneObject::draw(PuresoftPipeline& pipeline, bool extraThread /* = false */)
 {
 	if(m_useShadowProgramme)
 	{
@@ -53,7 +53,7 @@ void SceneObject::draw(PuresoftPipeline& pipeline)
 		pipeline.useProgramme(m_programme);
 	}
 
-	pipeline.drawVAO(m_vao);
+	pipeline.drawVAO(m_vao, extraThread);
 }
 
 void SceneObject::chainSubUpdater(SceneObject* sub)

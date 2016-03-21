@@ -1,10 +1,10 @@
 #pragma once
 #include <windows.h>
 
-#define YIELD_CPU SwitchToThread()
+//#define YIELD_CPU SwitchToThread()
 //#define YIELD_CPU Sleep(0)
 //#define YIELD_CPU YieldProcessor()
-//#define YIELD_CPU
+#define YIELD_CPU
 
 template<class T, size_t LEN>
 class RingQueueMT
@@ -47,7 +47,6 @@ public:
 			}
 			else
 			{
-				// go on with queue locked
 				break;
 			}
 		}
@@ -80,7 +79,6 @@ public:
 			}
 			else
 			{
-				// go on with queue locked
 				break;
 			}
 		}

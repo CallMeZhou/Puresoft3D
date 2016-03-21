@@ -213,6 +213,6 @@ void Skybox::draw(PuresoftPipeline& pipeline)
 
 	pipeline.setUniform(2, &m_texture, sizeof(int));
 	pipeline.disable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
-	__super::draw(pipeline);
+	__super::draw(pipeline, true);
 	pipeline.enable(BEHAVIOR_UPDATE_DEPTH | BEHAVIOR_TEST_DEPTH);
 }
