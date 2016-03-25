@@ -18,8 +18,8 @@ using namespace mcemaths;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-const int W = 800;
-const int H = 600;
+const int W = 1024;
+const int H = 768;
 
 const int SHDW_W = 2048;
 const int SHDW_H = 2048;
@@ -284,13 +284,6 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 			baseVec.set(0, 0, 1, 0);
 		}
 
-		mat4 baseRotate;
-		baseRotate.rotation(vec4(0, 1.0f, 0, 0), -cameraYPR.x);
-		mcemaths_transform_m4v4_ip(baseVec, baseRotate);
-		mcemaths_mul_3_4(baseVec, movement);
-
-		mcemaths_add_3_4_ip(cameraPos, baseVec);
-
 		if(input.keyDown(VK_SPACE))
 		{
 			cameraPos.y += movement;
@@ -299,10 +292,24 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		{
 			cameraPos.y -= movement;
 		}
+
+		mat4 baseRotate;
+		baseRotate.rotation(vec4(0, 1.0f, 0, 0), -cameraYPR.x);
+		mcemaths_transform_m4v4_ip(baseVec, baseRotate);
+		mcemaths_mul_3_4(baseVec, movement);
+
+		mcemaths_add_3_4_ip(cameraPos, baseVec);
 		
 		input.frameUpdate();
 
 		highTimer.reset();
+
+		if(input.keyDown(VK_F12))
+		{
+			pipeline.saveTexture(-2, L"c:\\scene.bmp", false);
+			pipeline.saveTextureAsRaw(-1, L"c:\\depth.raw");
+			Sleep(500);
+		}
 	}
 
 	input.shutdown();

@@ -60,6 +60,7 @@ public:
 
 	// debug api
 	void saveTexture(int idx, const wchar_t* path, bool dataIsFloat);
+	void saveTextureAsRaw(int idx, const wchar_t* path);
 
 // fundamental data
 private:

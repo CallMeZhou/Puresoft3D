@@ -432,7 +432,7 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), m_width, m_height, 1, ( short)m_elemLen * 8, 0, 0, 0, 0, 0, 0};
 
 	FILE *fp;
-	if(0 == _wfopen_s(&fp, path, L"w+"))
+	if(0 == _wfopen_s(&fp, path, L"w+b"))
 	{
 		if(dataIsFloat)
 		{
@@ -487,7 +487,8 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 		{
 			fwrite(&header1, sizeof(header1), 1, fp);
 			fwrite(&header2, sizeof(header2), 1, fp);
-			fwrite(m_buffer, m_bytes, 1, fp);
+			for(int y = m_height - 1; y >=0; y--)
+				fwrite(m_rowEntries[y], m_scanline, 1, fp);
 		}
 		fclose(fp);
 	}
@@ -496,7 +497,7 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 void PuresoftFBO::saveAsRawFile(const wchar_t* path) const
 {
 	FILE *fp;
-	if(0 == _wfopen_s(&fp, path, L"w+"))
+	if(0 == _wfopen_s(&fp, path, L"w+b"))
 	{
 		fwrite(m_buffer, m_bytes, 1, fp);
 		fclose(fp);
