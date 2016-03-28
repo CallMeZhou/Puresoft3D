@@ -22,7 +22,7 @@ Well, if you really want to pull out the project to your machine and run the dem
   
 After you open the solution file of the project in VS, you will see 6 projects, among which, the '**Puresoft3D**' is your main course, containing 90% of the pipeline's code. [The WIKI pages have details](https://github.com/CallMeZhou/Puresoft3D/wiki).  
   
-You will also see 2 VC-projects named '**test**' and '**test2**', as their names suggest, they are two demo programmes. You may want to set one of them as startup, **switch to release mode and press F5 to build and run it**. You may noticed the '90%' in the above paragraph. The rest 10% is in the demos --- the shaders, I believe you know it.  
+You will also see 2 VC-projects named '**test**' and '**test2**', as their names suggest, they are two demo programmes. You may want to set one of them as startup, **switch to release mode and press F5 to build and run it, but before that, be sure to run the initdirs.bat once**. You may noticed the '90%' in the above paragraph. The rest 10% is in the demos --- the shaders, I believe you know it.  
   
 '**libobjx**' and '**objcvt**' are two helper tools that converts Wavefront OBJ mesh file to an extended binary format OBJX. They are less important and were actually written 4 years ago when I was doing summer project of master degree courses. The demos load scene from OBJX files which are from OBJ files that I edited in Milkshape. Well, I hate all of them, the OBJ, the OBJX, and Milkshape, but I have to have a way of creating scenes to draw, so I just leave them there and use them. **Just do not spend time on them**.  
   
