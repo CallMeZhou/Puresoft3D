@@ -1,5 +1,6 @@
 #PURESOFT3D  
----
+[中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
+  
 ##OVERVIEW  
   
 *Let's find out what's behind video cards.*  
