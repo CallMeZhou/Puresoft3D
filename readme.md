@@ -4,7 +4,7 @@
 ##OVERVIEW  
   
 *Let's find out what's behind video cards.*  
-![](https://bxxlqa.dm2302.livefilestore.com/y3m9w97zmAdChGrzRZPtOdz7YXEUIkwwLdpXN_gFoF3-hP3hacy1jdfkO2Bb2jo92Y2MSMlXYfCCabIT0jUojsOfjBRmPBJvP02Ig8c1vFM6OM6-x50TDDJD0mKers4VWmtN5UBNJEKNATXdCI6XdwfXg/1458875749356.jpg?download&psid=1)  
+![](https://qqw6xw.dm2302.livefilestore.com/y3mZX_CzVUMXZNPKuSzZUTCBAvQpa1b1dVV09d3IY35fVN9FezvItAFhZc8iFyHhHgHobFJNKJAOJqDLhCko3c4Msz2duAcpDg-rCpZ0bIbOTZcxwcSMv0zaN1kTdIALUCz7cIYTOSpDwh0ShAe3fU9xg7W1FrkXUKZMr6hJm7-Jgw?width=1024&height=768&cropmode=none)  
 This is a software graphics pipeline project. It aims to:  
 * *Fullfill personal interest.*  
 * *Assist self-paced study.*  
