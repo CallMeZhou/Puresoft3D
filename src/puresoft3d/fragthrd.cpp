@@ -190,7 +190,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 				currentDepth = 1.0f;
 			}
 
-			if(-1.0f < newDepth && newDepth < currentDepth)
+			if(-1.0f < newDepth && (newDepth - currentDepth < -0.0001f))
+			                        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ to avoid shared-edge double-drawing
 			{
 				// call Fragment Processor to update FBOs
 				pThis->m_fp->process(&fragInput, &fragOutput);
@@ -336,7 +337,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 				currentDepth = 1.0f;
 			}
 
-			if(-1.0f < newDepth && newDepth < currentDepth)
+			if(-1.0f < newDepth && (newDepth - currentDepth < -0.0001f))
+			                       //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ to avoid shared-edge double-drawing
 			{
 				// call Fragment Processor to update FBOs
 				pThis->m_fp->process(&fragInput, &fragOutput);

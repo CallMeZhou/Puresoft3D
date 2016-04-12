@@ -23,11 +23,11 @@ using namespace std;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-const int W = 1024;
-const int H = 640;
+const int W = 800;
+const int H = 500;
 
-const int SHDW_W = 1024;
-const int SHDW_H = 1024;
+const int SHDW_W = 480;
+const int SHDW_H = 480;
 
 const float PI = 3.1415927f;
 
@@ -178,8 +178,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		SceneObject::m_useShadowProgramme = true;
 
 		earth.draw(pipeline);
-		cloud.draw(pipeline);
 		moon.draw(pipeline);
+		cloud.draw(pipeline);
 
 		// draw scene
 		pipeline.setUniform(0, proj, sizeof(proj.elem));
@@ -194,8 +194,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 		skybox.draw(pipeline);
 		earth.draw(pipeline);
-		cloud.draw(pipeline);
 		moon.draw(pipeline);
+		cloud.draw(pipeline);
 
 		pipeline.swapBuffers();
 
