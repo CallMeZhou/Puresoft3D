@@ -38,10 +38,10 @@ public:
 			if(LEN == m_len)
 			{
 				// spin around
-				if(m_abort)
-				{
-					return NULL;
-				}
+// 				if(m_abort)
+// 				{
+// 					return NULL;
+// 				}
 
 				YIELD_CPU;
 			}
@@ -70,10 +70,10 @@ public:
 			if(0 == m_len)
 			{
 				// spin around
-				if(m_abort)
-				{
-					return NULL;
-				}
+// 				if(m_abort)
+// 				{
+// 					return NULL;
+// 				}
 
 				YIELD_CPU;
 			}
@@ -119,10 +119,10 @@ public:
 				return true;
 			}
 
-			if(m_abort)
-			{
-				break;
-			}
+// 			if(m_abort)
+// 			{
+// 				break;
+// 			}
 
 			YIELD_CPU;
 		}
@@ -139,10 +139,10 @@ public:
 				return true;
 			}
 
-			if(m_abort)
-			{
-				break;
-			}
+// 			if(m_abort)
+// 			{
+// 				break;
+// 			}
 		}
 
 		return false;
