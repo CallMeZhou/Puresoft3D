@@ -7,11 +7,13 @@ using namespace std;
 class FBOBridge : public FragmentProcessorOutput
 {
 	int m_threadIndex;
+	int m_behavior;
 	bool m_discarded;
 	PuresoftFBO** m_fbos;
 public:
-	FBOBridge(int threadIndex, PuresoftFBO** fbos)
+	FBOBridge(int threadIndex, int behavior, PuresoftFBO** fbos)
 		: m_threadIndex(threadIndex)
+		, m_behavior(behavior)
 		, m_discarded(false)
 		, m_fbos(fbos)
 	{}
@@ -53,6 +55,7 @@ public:
 	{
 		assert(0 <= index && index < MAX_FBOS);
 		assert(m_fbos[index]);
+		assert(0 == (m_behavior & BEHAVIOR_ALPHABLEND));
 		m_fbos[index]->write(m_threadIndex, data, bytes);
 	}
 
@@ -60,6 +63,7 @@ public:
 	{
 		assert(0 <= index && index < MAX_FBOS);
 		assert(m_fbos[index]);
+		assert(0 == (m_behavior & BEHAVIOR_ALPHABLEND));
 		m_fbos[index]->write1(m_threadIndex, data);
 	}
 
@@ -67,14 +71,28 @@ public:
 	{
 		assert(0 <= index && index < MAX_FBOS);
 		assert(m_fbos[index]);
-		m_fbos[index]->write4(m_threadIndex, data);
+		if(m_behavior & BEHAVIOR_ALPHABLEND)
+		{
+			m_fbos[index]->blend4(m_threadIndex, (const unsigned char*)data);
+		}
+		else
+		{
+			m_fbos[index]->write4(m_threadIndex, data);
+		}
 	}
 
 	void write16(int index, const void* data)
 	{
 		assert(0 <= index && index < MAX_FBOS);
 		assert(m_fbos[index]);
-		m_fbos[index]->write16(m_threadIndex, data);
+		if(m_behavior & BEHAVIOR_ALPHABLEND)
+		{
+			m_fbos[index]->blend16(m_threadIndex, (const float*)data);
+		}
+		else
+		{
+			m_fbos[index]->write16(m_threadIndex, data);
+		}
 	}
 
 	bool discarded(void)
@@ -105,7 +123,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 	// input data structure for Fragment Processor
 	FragmentProcessorInput fragInput;
-	FBOBridge fragOutput(threadIndex, pThis->m_fbos);
 
 	FragmentThreadTaskQueue* taskQueue = pThis->m_fragTaskQueues + threadIndex;
 
@@ -170,6 +187,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			pThis->m_depth->setCurCol(threadIndex, x1);
 		}
 
+		FBOBridge fragOutput(threadIndex, pThis->m_behavior, pThis->m_fbos);
+
 		// process rasterization result of a scanline, column by column
 		for(int x = x1; x <= x2; x++)
 		{
@@ -226,7 +245,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 
 	// input data structure for Fragment Processor
 	FragmentProcessorInput fragInput;
-	FBOBridge fragOutput(threadIndex, pThis->m_fbos);
 
 	FragmentThreadTaskQueue* myQueue = pThis->m_fragTaskQueues + threadIndex;
 
@@ -288,7 +306,6 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 
 		myQueue->endPop();
 
-
 		// set current row to all attached fbos
 		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
@@ -316,6 +333,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 		{
 			pThis->m_depth->setCurCol(threadIndex, x1);
 		}
+
+		FBOBridge fragOutput(threadIndex, pThis->m_behavior, pThis->m_fbos);
 
 		// process rasterization result of a scanline, column by column
 		for(int x = x1; x <= x2; x++)

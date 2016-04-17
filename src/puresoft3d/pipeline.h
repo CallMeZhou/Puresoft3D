@@ -17,6 +17,7 @@ const PURESOFTBGRA PURESOFTBGRA_BLACK = {0};
 const int BEHAVIOR_UPDATE_DEPTH = 0x00000001;
 const int BEHAVIOR_TEST_DEPTH   = 0x00000002;
 const int BEHAVIOR_FACE_CULLING = 0x00000004;
+const int BEHAVIOR_ALPHABLEND   = 0x00000008;
 
 class PuresoftProcessor;
 class PuresoftInterpolationProcessor;

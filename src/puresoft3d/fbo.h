@@ -32,8 +32,10 @@ public:
 	void write1(int idx, const void* data);
 	void read4(int idx, void* data) const;
 	void write4(int idx, const void* data);
+	void blend4(int idx, const unsigned char* bgra);
 	void read16(int idx, void* dataAligned16Bytes) const;  // elemLen must be 16
 	void write16(int idx, const void* dataAligned16Bytes); // elemLen must be 16
+	void blend16(int idx, const float* bgra);
 
 	// random r/w
 	void directRead( int row,  int col, void* data, size_t bytes) const;

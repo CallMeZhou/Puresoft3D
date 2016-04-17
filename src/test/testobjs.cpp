@@ -107,7 +107,9 @@ void Cloud::draw(PuresoftPipeline& pipeline)
 		pipeline.useProgramme(m_programme);
 	}
 
+	pipeline.enable(BEHAVIOR_ALPHABLEND);
 	pipeline.drawVAO(m_vao);
+	pipeline.disable(BEHAVIOR_ALPHABLEND);
 }
 
 //////////////////////////////////////////////////////////////////////////

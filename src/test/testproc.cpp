@@ -534,17 +534,15 @@ void FP_Cloud::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures
 void FP_Cloud::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
 {
 	ALIGN16 float cloudColour[4];
-	PURESOFTBGRA textureColour, bkgndColour;
+	PURESOFTBGRA textureColour;
 	const PROCDATA_CLOUD* inData = (const PROCDATA_CLOUD*)input->user;
 
 	PuresoftSampler2D::get4(m_diffuseTex, inData->texcoord[0], inData->texcoord[1], &textureColour);
 
-	cloudColour[0] = textureColour.elems.b;
-	cloudColour[1] = textureColour.elems.g;
-	cloudColour[2] = textureColour.elems.r;
-	cloudColour[3] = textureColour.elems.a;
-
-	mcemaths_mul_3_4(cloudColour, 1.5f);
+	cloudColour[0] = 255.0f;
+	cloudColour[1] = 255.0f;
+	cloudColour[2] = 255.0f;
+	cloudColour[3] = textureColour.elems.r;
 
 	float shadowFactor = PuresoftSamplerProjection::get(m_shadowTex, inData->shadowcoord);
 
@@ -560,24 +558,19 @@ void FP_Cloud::process(const FragmentProcessorInput* input, FragmentProcessorOut
 	mcemaths_add_3_4(H, E, L);
 	mcemaths_norm_3_4(H);
 
-	float lambert = mcemaths_dot_3_4(L, inData->normal);
+	float lambert = 2.0f * mcemaths_dot_3_4(L, inData->normal);
 
-	mcemaths_mul_3_4(cloudColour, lambert * shadowFactor);
+	mcemaths_mul_3(cloudColour, lambert * shadowFactor);
 
-	output->read4(0, &bkgndColour);
-	cloudColour[0] += bkgndColour.elems.b;
-	cloudColour[1] += bkgndColour.elems.g;
-	cloudColour[2] += bkgndColour.elems.r;
-	cloudColour[3] += bkgndColour.elems.a;
+	__asm{
+		movaps		xmm0,	[cloudColour]
+		cvtps2dq	xmm0,	xmm0
+		packusdw	xmm0,	xmm0
+		packuswb	xmm0,	xmm0
+		movss		[cloudColour], xmm0
+	}
 
-	mcemaths_clamp_3_4(cloudColour, 0, 255.0f);
-
-	bkgndColour.elems.r = (unsigned char)cloudColour[2];
-	bkgndColour.elems.g = (unsigned char)cloudColour[1];
-	bkgndColour.elems.b = (unsigned char)cloudColour[0];
-	bkgndColour.elems.a = 0;
-
-	output->write4(0, &bkgndColour);
+	output->write4(0, cloudColour);
 }
 
 //////////////////////////////////////////////////////////////////////////

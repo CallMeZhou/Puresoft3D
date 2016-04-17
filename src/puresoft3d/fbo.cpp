@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <intrin.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdexcept>
@@ -204,6 +205,29 @@ void PuresoftFBO::write4(int idx, const void* data)
 		*(( int*)m_workRanges[idx].writePoint) = *((const  int*)data);
 }
 
+void PuresoftFBO::blend4(int idx, const unsigned char* bgra)
+{
+	if(!m_workRanges[idx].overflow)
+	{
+		// d = (1-a) * bkgnd + a * overlay
+		//   = bkgnd - a * bkgnd + a * overlay
+		//   = a * (overlay - bkgnd) + bkgnd
+		int* wp = (int*)m_workRanges[idx].writePoint;
+
+		__m64 zero  = _mm_setzero_si64();
+		__m64 src   = _mm_unpacklo_pi8(_m_from_int(*(int*)bgra), zero);
+		__m64 dst   = _mm_unpacklo_pi8(_m_from_int(*wp), zero);
+		__m64 alpha = _mm_unpackhi_pi16(src, src);
+		      alpha = _mm_unpackhi_pi32(alpha, alpha);
+
+		__m64 sum   = _mm_add_pi16(_mm_srli_pi16(_mm_mullo_pi16(_mm_subs_pu16(src, dst), alpha), 8), dst);
+		      sum   = _mm_packs_pu16(sum, sum);
+
+		*wp = _m_to_int(sum);
+		_mm_empty();
+	}
+}
+
 void PuresoftFBO::read16(int idx, void* dataAligned16Bytes) const
 {
 	mcemaths_quatcpy((float*)dataAligned16Bytes, (const float*)m_workRanges[idx].writePoint);
@@ -213,6 +237,27 @@ void PuresoftFBO::write16(int idx, const void* dataAligned16Bytes)
 {
 	if(!m_workRanges[idx].overflow)
 		mcemaths_quatcpy((float*)m_workRanges[idx].writePoint, (const float*)dataAligned16Bytes);
+}
+
+void PuresoftFBO::blend16(int idx, const float* bgra)
+{
+	if(!m_workRanges[idx].overflow)
+	{
+		// d = (1-a) * bkgnd + a * overlay
+		//   = bkgnd - a * bkgnd + a * overlay
+		//   = a * (overlay - bkgnd) + bkgnd
+		float* wp = (float*)m_workRanges[idx].writePoint;
+
+		__m128 zero  = _mm_setzero_ps();
+
+		__m128 src   = _mm_load_ps(bgra);
+		__m128 dst   = _mm_load_ps(wp);
+		__m128 alpha = _mm_unpackhi_ps(src, src);
+		alpha = _mm_unpackhi_ps(alpha, alpha);
+
+		__m128 sum   = _mm_add_ps(_mm_mul_ps(_mm_sub_ps(src, dst), alpha), dst);
+		_mm_store_ps(wp, sum);
+	}
 }
 
 void PuresoftFBO::directRead( int row,  int col, void* data, size_t bytes) const

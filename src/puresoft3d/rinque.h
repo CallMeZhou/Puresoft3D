@@ -12,14 +12,11 @@ class RingQueueMT
 public:
 	RingQueueMT(void)
 	{
-		InitializeCriticalSection(&m_cs);
 		m_in = m_out = m_len = 0;
-		m_abort = false;
 	}
 
 	~RingQueueMT()
 	{
-		DeleteCriticalSection(&m_cs);
 	}
 
 	template<typename prep>
@@ -37,16 +34,12 @@ public:
 		{
 			if(LEN == m_len)
 			{
-				// spin around
-// 				if(m_abort)
-// 				{
-// 					return NULL;
-// 				}
-
+				// friendly spin around
 				YIELD_CPU;
 			}
 			else
 			{
+				// stop spinning
 				break;
 			}
 		}
@@ -69,16 +62,12 @@ public:
 		{
 			if(0 == m_len)
 			{
-				// spin around
-// 				if(m_abort)
-// 				{
-// 					return NULL;
-// 				}
-
+				// friendly spin around
 				YIELD_CPU;
 			}
 			else
 			{
+				// stop spinning
 				break;
 			}
 		}
@@ -93,11 +82,6 @@ public:
 			m_out = 0;
 		}
 		InterlockedDecrement(&m_len);
-	}
-
-	void abort(void)
-	{
-		m_abort = true;
 	}
 
 	void reset(void)
@@ -119,11 +103,6 @@ public:
 				return true;
 			}
 
-// 			if(m_abort)
-// 			{
-// 				break;
-// 			}
-
 			YIELD_CPU;
 		}
 
@@ -138,11 +117,6 @@ public:
 			{
 				return true;
 			}
-
-// 			if(m_abort)
-// 			{
-// 				break;
-// 			}
 		}
 
 		return false;
@@ -154,5 +128,4 @@ private:
 	size_t m_out;
 	size_t m_in;
 	volatile size_t m_len;
-	volatile bool m_abort;
 };
