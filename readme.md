@@ -1,6 +1,11 @@
 #PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
   
+##FOR BUSY READERS  
+* Rasterisation based software renderer.
+* VisualStudio 2010 or later is required (for now).  
+* Run initdirs.bat once before building.  
+  
 ##OVERVIEW  
   
 *Let's find out what's behind video cards.*  
