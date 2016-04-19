@@ -84,3 +84,11 @@ T opt_pow(T x, unsigned int n)
 
 	return pw;
 }
+
+class PuresoftFBO;
+class PuresoftPostProcessor
+{
+public:
+	virtual ~PuresoftPostProcessor() {}
+	virtual void process(int threadIndex, int threadCount, PuresoftFBO* frame, PuresoftFBO* depth) = 0;
+};

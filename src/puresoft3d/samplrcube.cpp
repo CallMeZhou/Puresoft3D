@@ -34,14 +34,14 @@ static PuresoftFBO::LAYER texcoordFromDirection(float* texcoord, const float* di
 		{
 			if(X > 0)
 			{
-				S = (-Z / fabs(X) + 1.0f) / 2.0f;
-				T = (-Y / fabs(X) + 1.0f) / 2.0f;
+				S = (-Z / (float)fabs(X) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(X) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_XPOS;
 			}
 			else
 			{
-				S = ( Z / fabs(X) + 1.0f) / 2.0f;
-				T = (-Y / fabs(X) + 1.0f) / 2.0f;
+				S = ( Z / (float)fabs(X) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(X) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_XNEG;
 			}
 		}
@@ -49,14 +49,14 @@ static PuresoftFBO::LAYER texcoordFromDirection(float* texcoord, const float* di
 		{
 			if(Z > 0)
 			{
-				S = ( X / fabs(Z) + 1.0f) / 2.0f;
-				T = (-Y / fabs(Z) + 1.0f) / 2.0f;
+				S = ( X / (float)fabs(Z) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(Z) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_ZPOS;
 			}
 			else
 			{
-				S = (-X / fabs(Z) + 1.0f) / 2.0f;
-				T = (-Y / fabs(Z) + 1.0f) / 2.0f;
+				S = (-X / (float)fabs(Z) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(Z) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_ZNEG;
 			}
 		}
@@ -67,14 +67,14 @@ static PuresoftFBO::LAYER texcoordFromDirection(float* texcoord, const float* di
 		{
 			if(Z > 0)
 			{
-				S = ( X / fabs(Z) + 1.0f) / 2.0f;
-				T = (-Y / fabs(Z) + 1.0f) / 2.0f;
+				S = ( X / (float)fabs(Z) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(Z) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_ZPOS;
 			}
 			else
 			{
-				S = (-X / fabs(Z) + 1.0f) / 2.0f;
-				T = (-Y / fabs(Z) + 1.0f) / 2.0f;
+				S = (-X / (float)fabs(Z) + 1.0f) / 2.0f;
+				T = (-Y / (float)fabs(Z) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_ZNEG;
 			}
 		}
@@ -82,14 +82,14 @@ static PuresoftFBO::LAYER texcoordFromDirection(float* texcoord, const float* di
 		{
 			if(Z > 0)
 			{
-				S = ( X / fabs(Y) + 1.0f) / 2.0f;
-				T = ( Z / fabs(Y) + 1.0f) / 2.0f;
+				S = ( X / (float)fabs(Y) + 1.0f) / 2.0f;
+				T = ( Z / (float)fabs(Y) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_YPOS;
 			}
 			else
 			{
-				S = ( X / fabs(Y) + 1.0f) / 2.0f;
-				T = (-Z / fabs(Y) + 1.0f) / 2.0f;
+				S = ( X / (float)fabs(Y) + 1.0f) / 2.0f;
+				T = (-Z / (float)fabs(Y) + 1.0f) / 2.0f;
 				return PuresoftFBO::LAYER_YNEG;
 			}
 		}

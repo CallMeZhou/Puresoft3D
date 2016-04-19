@@ -968,8 +968,8 @@ extern "C" MCEMATHAPI(void) mcemaths_make_scaling(float* m44, float x, float y, 
 // the following was written by Richard Davidson
 extern "C" MCEMATHAPI(void) mcemaths_make_rotation(float* m44, const float* axis4, float radian)
 {
-	float c = cos(radian), ic = 1.0f - c;
-	float s = sin(radian);
+	float c = cosf(radian), ic = 1.0f - c;
+	float s = sinf(radian);
 
 	float sin_axis_x = axis4[0] * s;
 	float sin_axis_y = axis4[1] * s;

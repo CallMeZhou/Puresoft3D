@@ -142,6 +142,13 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			taskQueue->endPop();
 			continue;
 		}
+		else if(POST == task->taskType)
+		{
+			PuresoftPostProcessor* postProc = task->postProc;
+			postProc->process(threadIndex, pThis->m_numberOfThreads, pThis->m_fbos[0], pThis->m_depth);
+			taskQueue->endPop();
+			continue;
+		}
 		//else: DRAW
 
 		int x1 = task->x1, x2 = task->x2, y = task->y;

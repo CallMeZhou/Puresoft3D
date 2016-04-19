@@ -35,12 +35,12 @@ void PuresoftGdiRenderer::startup(uintptr_t canvasWindow, int width, int height)
 
 	if(NULL == (m_frameBuffers[0] = _aligned_malloc(bytes, 16)))
 	{
-		throw bad_alloc("PuresoftGdiRenderer::startup m_frameBuffers[0]");
+		throw bad_alloc();
 	}
 
 	if(NULL == (m_frameBuffers[1] = _aligned_malloc(bytes, 16)))
 	{
-		throw bad_alloc("PuresoftGdiRenderer::startup m_frameBuffers[1]");
+		throw bad_alloc();
 	}
 
 	memset(m_frameBuffers[0], 0, bytes);
@@ -51,12 +51,12 @@ void PuresoftGdiRenderer::startup(uintptr_t canvasWindow, int width, int height)
 
 	if((uintptr_t)INVALID_HANDLE_VALUE == (m_startRenderingEvent = (uintptr_t)CreateEventW(NULL, FALSE, FALSE, NULL)))
 	{
-		throw bad_alloc("PuresoftGdiRenderer::startup m_startRenderingEvent");
+		throw bad_alloc();
 	}
 
 	if((uintptr_t)INVALID_HANDLE_VALUE == (m_renderingCompletionEvent = (uintptr_t)CreateEventW(NULL, FALSE, TRUE, NULL)))
 	{
-		throw bad_alloc("PuresoftGdiRenderer::startup m_renderingCompletionEvent");
+		throw bad_alloc();
 	}
 
 	m_renderingThread = _beginthreadex(NULL, 0, renderingThread, this, 0, NULL);

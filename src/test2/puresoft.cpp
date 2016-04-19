@@ -4,7 +4,11 @@
 #include <atlwin.h>
 #include <WTypes.h>
 #include <tchar.h>
+#if(_MSC_VER <= 1600) // VS2010 or ealier
 #include "fixvec.hpp"
+#else
+#include <vector>
+#endif
 #include "mcemaths.hpp"
 #include "pipeline.h"
 #include "rndrddraw.h"
@@ -112,6 +116,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	// make projection matrix
 	mat4 view, proj, proj_view;
 	mcemaths_make_proj_perspective(proj, 0.1f, 5.0f, (float)W / H, 2 * PI * (45.0f / 360.0f));
+
+	PP_Test postProc;
 
 	//////////////////////////////////////////////////////////////////////////
 	// load scene
@@ -233,6 +239,9 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		{
 			it->second.draw(pipeline);
 		}
+
+		// do post processing (in non-shader way)
+		// pipeline.postProcess(&postProc); // comment off because not finished yet
 
 		// flip back buffer to screen, and front buffer to back buffer for next drawing
 		pipeline.swapBuffers();

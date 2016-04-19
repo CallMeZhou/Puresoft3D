@@ -34,14 +34,14 @@ void PuresoftDefaultPictureLoader::loadFromFile(const wchar_t* path, PURESOFTIMG
 {
 	if(m_gdiplbmp)
 	{
-		throw std::bad_exception("PuresoftDefaultPictureLoader::loadFromFile, already open");
+		throw std::bad_exception();
 	}
 
 	Bitmap* bmp = new Bitmap(path);
 	if(Ok != bmp->GetLastStatus())
 	{
 		delete bmp;
-		throw std::bad_exception("PuresoftDefaultPictureLoader::loadFromFile, failed to open");
+		throw std::bad_exception();
 	}
 
 	bmp->RotateFlip(RotateNoneFlipY);
@@ -62,20 +62,20 @@ void PuresoftDefaultPictureLoader::loadFromBuffer(const void* buffer, unsigned i
 {
 	if(m_gdiplbmp)
 	{
-		throw std::bad_exception("PuresoftDefaultPictureLoader::loadFromFile, already open");
+		throw std::bad_exception();
 	}
 
 	CComPtr<IStream> strm = SHCreateMemStream((const BYTE*)buffer, bytes);
 	if(!strm)
 	{
-		throw std::bad_exception("PuresoftDefaultPictureLoader::loadFromFile, SHCreateMemStream");
+		throw std::bad_exception();
 	}
 
 	Bitmap* bmp = new Bitmap(strm);
 	if(Ok != bmp->GetLastStatus())
 	{
 		delete bmp;
-		throw std::bad_exception("PuresoftDefaultPictureLoader::loadFromFile, failed to open");
+		throw std::bad_exception();
 	}
 
 	bmp->RotateFlip(RotateNoneFlipY);
@@ -96,7 +96,7 @@ void PuresoftDefaultPictureLoader::retrievePixel(PURESOFTIMGBUFF32* image)
 {
 	if(!m_gdiplbmp)
 	{
-		throw std::bad_exception("PuresoftDefaultPictureLoader::retrievePixel, not open");
+		throw std::bad_exception();
 	}
 
 	Bitmap* bmp = (Bitmap*)m_gdiplbmp;

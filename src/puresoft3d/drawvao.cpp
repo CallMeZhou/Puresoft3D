@@ -1,4 +1,3 @@
-#include <atlbase.h>
 #include "pipeline.h"
 
 void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */)

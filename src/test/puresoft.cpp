@@ -6,7 +6,11 @@
 #include <tchar.h>
 #include <GdiPlus.h>
 
+#if(_MSC_VER <= 1600) // VS2010 or ealier
 #include "fixvec.hpp"
+#else
+#include <vector>
+#endif
 #include <map>
 
 #include "pipeline.h"

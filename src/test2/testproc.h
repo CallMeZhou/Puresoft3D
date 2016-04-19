@@ -195,3 +195,12 @@ public:
 	void preprocess(const PURESOFTUNIFORM* uniforms, const void** textures);
 	void process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const;
 };
+
+//////////////////////////////////////////////////////////////////////////
+// for post processing
+
+class PP_Test : public PuresoftPostProcessor
+{
+public:
+	void process(int threadIndex, int threadCount, PuresoftFBO* frame, PuresoftFBO* depth);
+};

@@ -13,7 +13,7 @@ static void throwHResultException(const char* file, size_t line, HRESULT hr)
 
 	sprintf_s(errmsg, 1024, "%s, %lu: HRESULT=0x%X", file, line, hr);
 
-	throw bad_exception(errmsg);
+	throw exception(errmsg);
 }
 
 #define THROWHRESULTEXCEPTION(hr) throwHResultException(__FILE__, __LINE__, hr)

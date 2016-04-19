@@ -71,7 +71,11 @@ makes one Mesh object. That's it.
 
 */
 #include "alloc16.hpp"
+#if(_MSC_VER <= 1600) // VS2010 or ealier
 #include "fixvec.hpp"
+#else
+#include <vector>
+#endif
 #include <string>
 #include <map>
 #include "mcemaths.hpp"

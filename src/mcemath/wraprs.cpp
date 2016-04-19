@@ -43,6 +43,45 @@ void align_base_16::operator delete[](void* mem, void* place)
 {
 }
 
+void* align_base_64::operator new(size_t bytes)
+{
+	return _aligned_malloc(bytes, 64);
+}
+
+void align_base_64::operator delete(void* mem)
+{
+	_aligned_free(mem);
+}
+
+void* align_base_64::operator new(size_t bytes, void* place)
+{
+	assert(0 == (unsigned __int64)place % 64);
+	return place;
+}
+
+void align_base_64::operator delete(void* mem, void* place)
+{
+}
+
+void* align_base_64::operator new[](size_t bytes)
+{
+	return _aligned_malloc(bytes, 64);
+}
+
+void align_base_64::operator delete[](void* mem)
+{
+	_aligned_free(mem);
+}
+
+void* align_base_64::operator new[](size_t bytes, void* place)
+{
+	return place;
+}
+
+void align_base_64::operator delete[](void* mem, void* place)
+{
+}
+
 vec4::vec4(void)
 {
 // setting w to 0 instead of 1 by default makes it incorrect in maths since its name is vec4, 

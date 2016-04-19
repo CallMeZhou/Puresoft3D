@@ -2,7 +2,11 @@
 #include <atlbase.h>
 #include <shlwapi.h>
 #include <algorithm>
+#if(_MSC_VER <= 1600) // VS2010 or ealier
 #include "fixvec.hpp"
+#else
+#include <vector>
+#endif
 #include "picldr.h"
 #include "procreator.h"
 #include "loadscene.h"

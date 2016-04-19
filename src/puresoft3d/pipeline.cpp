@@ -301,7 +301,7 @@ void PuresoftPipeline::setUniform(int idx, const void* data, size_t len)
 
 			if(NULL == (m_uniforms[idx].data = _aligned_malloc(len, 16)))
 			{
-				throw bad_alloc("PuresoftPipeline::setUniform");
+				throw bad_alloc();
 			}
 
 			m_uniforms[idx].capacity = len;

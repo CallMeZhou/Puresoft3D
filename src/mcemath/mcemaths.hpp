@@ -54,6 +54,19 @@ public:
 	void  operator delete[](void* mem, void* place);
 };
 
+class align_base_64
+{
+public:
+	void* operator new(size_t bytes);
+	void  operator delete(void* mem);
+	void* operator new(size_t bytes, void* place);
+	void  operator delete(void* mem, void* place);
+	void* operator new[](size_t bytes);
+	void  operator delete[](void* mem);
+	void* operator new[](size_t bytes, void* place);
+	void  operator delete[](void* mem, void* place);
+};
+
 class mat4;
 class quaternion;
 ALIGN16 class vec4 : public align_base_16

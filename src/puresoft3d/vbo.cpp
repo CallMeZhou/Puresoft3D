@@ -13,7 +13,7 @@ PuresoftVBO::PuresoftVBO(size_t unitBytes, size_t unitCount)
 
 	if(NULL == (m_buffer = _aligned_malloc(m_bufferBytes, 16)))
 	{
-		throw bad_alloc("PuresoftVBO::updateContent");
+		throw bad_alloc();
 	}
 
 	rewindRanges(-1);

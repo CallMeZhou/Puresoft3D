@@ -1,6 +1,7 @@
 #pragma once
+#include "mcemaths.hpp"
 
-class PuresoftVBO
+__declspec(align(64)) class PuresoftVBO : public mcemaths::align_base_64
 {
 public:
 	__declspec(align(64)) struct WORKRANGE

@@ -246,8 +246,8 @@ void FP_SingleColour::process(const FragmentProcessorInput* input, FragmentProce
 
 	factors[LAMBERT] = mcemaths_dot_3_4(L, inData->normal);
 
-	float yawOfLight = acos(mcemaths_dot_3_4(L, m_lightDir));
-	factors[LAMBERT] *= yawOfLight < fieldOfLight ? 1.0f : opt_pow(cos(yawOfLight - fieldOfLight), 150);
+	float yawOfLight = (float)acos(mcemaths_dot_3_4(L, m_lightDir));
+	factors[LAMBERT] *= yawOfLight < fieldOfLight ? 1.0f : (float)opt_pow(cos(yawOfLight - fieldOfLight), 150);
 
 	factors[SPECULAR] = opt_pow(mcemaths_dot_3_4(H, inData->normal), (unsigned int)*m_specularExponent);
 
@@ -488,8 +488,8 @@ void FP_DiffuseOnly::process(const FragmentProcessorInput* input, FragmentProces
 
 	factors[LAMBERT] = mcemaths_dot_3_4(L, inData->normal);
 
-	float yawOfLight = acos(mcemaths_dot_3_4(L, m_lightDir));
-	factors[LAMBERT] *= yawOfLight < fieldOfLight ? 1.0f : opt_pow(cos(yawOfLight - fieldOfLight), 150);
+	float yawOfLight = (float)acos(mcemaths_dot_3_4(L, m_lightDir));
+	factors[LAMBERT] *= yawOfLight < fieldOfLight ? 1.0f : (float)opt_pow(cos(yawOfLight - fieldOfLight), 150);
 
 	factors[SPECULAR] = opt_pow(mcemaths_dot_3_4(H, inData->normal), (unsigned int)*m_specularExponent);
 
@@ -529,3 +529,45 @@ void FP_Null::preprocess(const PURESOFTUNIFORM* uniforms, const void** textures)
 
 void FP_Null::process(const FragmentProcessorInput* input, FragmentProcessorOutput* output) const
 {}
+
+//////////////////////////////////////////////////////////////////////////
+// PP_Test
+#include <intrin.h>
+void PP_Test::process(int threadIndex, int threadCount, PuresoftFBO* frame, PuresoftFBO* depth)
+{
+	// amount of rows for this thread
+	int bandSize = frame->getHeight() / threadCount;
+	if(threadIndex == threadCount - 1)
+	{
+		bandSize += frame->getHeight() % threadCount;
+	}
+
+	// buffer entry for this thread
+	uintptr_t frameBuffer = (uintptr_t)frame->getBuffer();
+	frameBuffer += threadIndex * (bandSize * frame->getScanline());
+
+	const unsigned char f[] = {50,50,50,50,50,50,50,50};
+	__asm{
+		lea eax,f
+		movq mm2,[eax]
+	}
+	for(int y = 0; y < bandSize; y++)
+	{
+		PURESOFTBGRA* row = (PURESOFTBGRA*)frameBuffer;
+		for(int x = 0; x < frame->getWidth(); x+=2)
+		{
+			__asm{
+				mov eax,1
+				movd mm1,eax
+				mov edx,row
+				movq mm0,[edx]
+				paddb mm0,mm2
+				movntq [edx],mm0
+			}
+			row+=2;
+		}
+
+		frameBuffer += frame->getScanline();
+	}
+	_mm_empty();
+}

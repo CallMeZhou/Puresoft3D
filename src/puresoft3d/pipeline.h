@@ -21,7 +21,7 @@ const int BEHAVIOR_ALPHABLEND   = 0x00000008;
 
 class PuresoftProcessor;
 class PuresoftInterpolationProcessor;
-__declspec(align(16)) class PuresoftPipeline : public mcemaths::align_base_16
+__declspec(align(64)) class PuresoftPipeline : public mcemaths::align_base_64
 {
 public:
 	PuresoftPipeline(uintptr_t canvasWindow, int deviceWidth, int deviceHeight, PuresoftRenderer* rndr = NULL);
@@ -53,6 +53,7 @@ public:
 	void setFBO(int idx, PuresoftFBO* fbo);
 	void setUniform(int idx, const void* data, size_t len);
 	void drawVAO(int vao, bool callerThrdForFragProc = false);
+	void postProcess(PuresoftPostProcessor* processor);
 	void swapBuffers(void);
 	void enable(int behavior);
 	void disable(int behavior);
@@ -130,7 +131,7 @@ private:
 	static int m_numberOfThreads;
 	uintptr_t m_threads[MAX_FRAGTHREADS];
 
-	enum FRAGTHREADTASKTYPE {NOOP, ENDOFDRAW, QUIT, DRAW};
+	enum FRAGTHREADTASKTYPE {NOOP, ENDOFDRAW, QUIT, DRAW, POST};
 	typedef struct 
 	{
 		FRAGTHREADTASKTYPE taskType; // task type
@@ -143,6 +144,7 @@ private:
 		float correctionFactor2Step;
 		void* userDataStart;
 		void* userDataStep;
+		PuresoftPostProcessor* postProc;
 	} FRAGTHREADTASK;
 
 	typedef RingQueueMT<FRAGTHREADTASK, MAX_FRAGTASKS> FragmentThreadTaskQueue;

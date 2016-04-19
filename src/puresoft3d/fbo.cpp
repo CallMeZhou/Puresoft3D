@@ -40,7 +40,7 @@ PuresoftFBO::PuresoftFBO(
 
 	if(NULL == (m_rowEntries = (void**)_aligned_malloc(sizeof(void*) * m_height, 16)))
 	{
-		throw bad_alloc("PuresoftFBO::PuresoftFBO");
+		throw bad_alloc();
 	}
 
 	m_isExternalBuffer = false;
@@ -412,7 +412,7 @@ void PuresoftFBO::setBuffer(void* externalBuffer /* = NULL */)
 			m_isExternalBuffer = false;
 			if(NULL == (m_buffer = _aligned_malloc(m_bytes, 64)))
 			{
-				throw bad_alloc("PuresoftFBO::setBuffer");
+				throw bad_alloc();
 			}
 		}
 	}
@@ -474,7 +474,7 @@ void PuresoftFBO::saveAsBmpFile(const wchar_t* path, bool dataIsFloat) const
 {
 	
 	BITMAPFILEHEADER header1 = {0x4D42, 0, 0, 0, sizeof(BITMAPINFOHEADER)};
-	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), m_width, m_height, 1, ( short)m_elemLen * 8, 0, 0, 0, 0, 0, 0};
+	BITMAPINFOHEADER header2 = {sizeof(BITMAPINFOHEADER), (WORD)m_width, (WORD)m_height, 1, (WORD)(m_elemLen * 8), 0, 0, 0, 0, 0, 0};
 
 	FILE *fp;
 	if(0 == _wfopen_s(&fp, path, L"w+b"))
