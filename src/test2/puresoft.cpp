@@ -241,7 +241,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		}
 
 		// do post processing (in non-shader way)
-		// pipeline.postProcess(&postProc); // comment off because not finished yet
+		//pipeline.postProcess(&postProc); // comment off because not finished yet
 
 		// flip back buffer to screen, and front buffer to back buffer for next drawing
 		pipeline.swapBuffers();

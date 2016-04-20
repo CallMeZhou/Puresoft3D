@@ -535,23 +535,20 @@ void FP_Null::process(const FragmentProcessorInput* input, FragmentProcessorOutp
 #include <intrin.h>
 void PP_Test::process(int threadIndex, int threadCount, PuresoftFBO* frame, PuresoftFBO* depth)
 {
-	// amount of rows for this thread
-	int bandSize = frame->getHeight() / threadCount;
-	if(threadIndex == threadCount - 1)
-	{
-		bandSize += frame->getHeight() % threadCount;
-	}
-
 	// buffer entry for this thread
 	uintptr_t frameBuffer = (uintptr_t)frame->getBuffer();
-	frameBuffer += threadIndex * (bandSize * frame->getScanline());
+	int scanline = frame->getScanline();
+	frameBuffer += threadIndex * scanline;
 
 	const unsigned char f[] = {50,50,50,50,50,50,50,50};
 	__asm{
 		lea eax,f
 		movq mm2,[eax]
 	}
-	for(int y = 0; y < bandSize; y++)
+
+	for(int y = threadIndex; 
+		y < frame->getHeight(); 
+		y += threadCount)
 	{
 		PURESOFTBGRA* row = (PURESOFTBGRA*)frameBuffer;
 		for(int x = 0; x < frame->getWidth(); x+=2)
@@ -567,7 +564,7 @@ void PP_Test::process(int threadIndex, int threadCount, PuresoftFBO* frame, Pure
 			row+=2;
 		}
 
-		frameBuffer += frame->getScanline();
+		frameBuffer += scanline * threadCount;
 	}
 	_mm_empty();
 }
