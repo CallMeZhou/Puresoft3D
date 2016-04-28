@@ -68,7 +68,8 @@ void PuresoftDDrawRenderer::startup(uintptr_t canvasWindow, int width, int heigh
 	THROWIFFAILED(primary->SetClipper(clipper));
 
 	ddsc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_PITCH | DDSD_CAPS;
-	ddsc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+	// DDSCAPS_SYSTEMMEMORY runs a bit faster, but it forces AERO to basic mode :-(
+	ddsc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;// | DDSCAPS_SYSTEMMEMORY;
 	ddsc.dwWidth = width;
 	ddsc.lPitch = width * 4;
 	ddsc.dwHeight = height;
