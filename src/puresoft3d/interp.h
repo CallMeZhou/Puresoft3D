@@ -41,7 +41,9 @@ public:
 	~PuresoftInterpolater(void);
 
 	void interpolateStartAndStep(INTERPOLATIONSTARTSTEP* params);
-	void interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params);
+	void interpolateNextStepForZ(float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params);
+	void interpolateNextStepForUserData(void* interpolatedUserData, INTERPOLATIONSTEPPING* params, int stepCount);
+	void interpolateNextStepForCorrection(INTERPOLATIONSTEPPING* params);
 
 private:
 	//static void integerBasedTrianglelinearInterpolate(const float* verts, int x,  int y, float* contributes);

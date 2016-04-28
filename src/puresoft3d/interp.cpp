@@ -79,16 +79,23 @@ void PuresoftInterpolater::interpolateStartAndStep(INTERPOLATIONSTARTSTEP* param
 	}
 }
 
-void PuresoftInterpolater::interpolateNextStep(void* interpolatedUserData, float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params)
+void PuresoftInterpolater::interpolateNextStepForZ(float* interpolatedProjectedZ, INTERPOLATIONSTEPPING* params)
+{
+	*interpolatedProjectedZ = params->projectedZStart / params->correctionFactor2Start;
+	params->projectedZStart += params->projectedZStep;
+}
+
+void PuresoftInterpolater::interpolateNextStepForUserData(void* interpolatedUserData, INTERPOLATIONSTEPPING* params, int stepCount)
 {
 	float _correctionFactor2 = 1.0f / params->correctionFactor2Start;
-	params->correctionFactor2Start += params->correctionFactor2Step;
 
 	params->proc->correctInterpolation(interpolatedUserData, params->interpolatedUserDataStart, _correctionFactor2);
-	params->proc->stepForward(params->interpolatedUserDataStart, params->interpolatedUserDataStep, 1);
+	params->proc->stepForward(params->interpolatedUserDataStart, params->interpolatedUserDataStep, stepCount);
+}
 
-	*interpolatedProjectedZ = params->projectedZStart * _correctionFactor2;
-	params->projectedZStart += params->projectedZStep;
+void PuresoftInterpolater::interpolateNextStepForCorrection(INTERPOLATIONSTEPPING* params)
+{
+	params->correctionFactor2Start += params->correctionFactor2Step;
 }
 
 /*

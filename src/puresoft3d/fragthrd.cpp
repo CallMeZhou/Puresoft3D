@@ -196,6 +196,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 		FBOBridge fragOutput(threadIndex, pThis->m_behavior, pThis->m_fbos);
 
+		int stepCount = 0;
+
 		// process rasterization result of a scanline, column by column
 		for(int x = x1; x <= x2; x++)
 		{
@@ -203,7 +205,9 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 
 			// get interpolated values as well as the other perspective correction factor
 			float newDepth;
-			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
+			pThis->m_interpolater.interpolateNextStepForZ(&newDepth, &stepping);
+
+			stepCount++;
 
 			// get current depth from the depth buffer and do depth test
 			float currentDepth;
@@ -219,6 +223,9 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			if(-1.0f < newDepth && (newDepth - currentDepth < -0.0001f))
 			                        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ to avoid shared-edge double-drawing
 			{
+				pThis->m_interpolater.interpolateNextStepForUserData(fragInput.user, &stepping, stepCount);
+				stepCount = 0;
+
 				// call Fragment Processor to update FBOs
 				pThis->m_fp->process(&fragInput, &fragOutput);
 
@@ -228,6 +235,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 					pThis->m_depth->write4(threadIndex, &newDepth);
 				}
 			}
+
+			pThis->m_interpolater.interpolateNextStepForCorrection(&stepping);
 
 			// move fbo data pointers
 			for(size_t i = 0; i < MAX_FBOS; i++)
@@ -343,6 +352,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 
 		FBOBridge fragOutput(threadIndex, pThis->m_behavior, pThis->m_fbos);
 
+		int stepCount = 0;
+
 		// process rasterization result of a scanline, column by column
 		for(int x = x1; x <= x2; x++)
 		{
@@ -350,7 +361,9 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 
 			// get interpolated values as well as the other perspective correction factor
 			float newDepth;
-			pThis->m_interpolater.interpolateNextStep(fragInput.user, &newDepth, &stepping);
+			pThis->m_interpolater.interpolateNextStepForZ(&newDepth, &stepping);
+
+			stepCount++;
 
 			// get current depth from the depth buffer and do depth test
 			float currentDepth;
@@ -364,8 +377,11 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 			}
 
 			if(-1.0f < newDepth && (newDepth - currentDepth < -0.0001f))
-			                       //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ to avoid shared-edge double-drawing
+			                        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ to avoid shared-edge double-drawing
 			{
+				pThis->m_interpolater.interpolateNextStepForUserData(fragInput.user, &stepping, stepCount);
+				stepCount = 0;
+
 				// call Fragment Processor to update FBOs
 				pThis->m_fp->process(&fragInput, &fragOutput);
 
@@ -375,6 +391,8 @@ unsigned __stdcall PuresoftPipeline::fragmentThread_CallerThread(void *param)
 					pThis->m_depth->write4(threadIndex, &newDepth);
 				}
 			}
+
+			pThis->m_interpolater.interpolateNextStepForCorrection(&stepping);
 
 			// move fbo data pointers
 			for(size_t i = 0; i < MAX_FBOS; i++)
