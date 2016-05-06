@@ -142,7 +142,7 @@ private:
 #endif
 
 // The definition of destroy() must be the same for all allocators.
-template <typename T, int ALIGN = 16> void alloc16<T, ALIGN>::destroy(T * const p) const
+template <typename T, int ALIGN> void alloc16<T, ALIGN>::destroy(T * const p) const
 {
 	p->~T();
 }

@@ -2,6 +2,13 @@
 
 void PuresoftPipeline::drawVAO(int vao, bool callerThrdForFragProc /* = false */)
 {
+#ifdef PROFILING
+	for(int i = 0; i < m_numberOfThreads; i++)
+	{
+		m_fragTaskQueues[i].resetCounters();
+	}
+#endif
+
 	if(!m_vp || !m_ip || !m_fp || vao < 0 || vao >= (int)m_vaoPool.size())
 	{
 		return;

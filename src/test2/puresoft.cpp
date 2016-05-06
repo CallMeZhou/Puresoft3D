@@ -13,6 +13,7 @@
 #include "pipeline.h"
 #include "rndrddraw.h"
 #include "testproc.h"
+#include "testpost.h"
 #include "loadscene.h"
 #include "input.h"
 
@@ -117,7 +118,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	mat4 view, proj, proj_view;
 	mcemaths_make_proj_perspective(proj, 0.1f, 5.0f, (float)W / H, 2 * PI * (45.0f / 360.0f));
 
-	PP_Test postProc;
+	PP_DepthofField depthofField;
 
 	//////////////////////////////////////////////////////////////////////////
 	// load scene
@@ -241,7 +242,7 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 		}
 
 		// do post processing (in non-shader way)
-		//pipeline.postProcess(&postProc); // comment off because not finished yet
+		//pipeline.postProcess(&depthofField); // comment off because not finished yet
 
 		// flip back buffer to screen, and front buffer to back buffer for next drawing
 		pipeline.swapBuffers();

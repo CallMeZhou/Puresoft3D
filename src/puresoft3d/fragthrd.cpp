@@ -137,9 +137,12 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			taskQueue->endPop();
 			break;
 		}
-		else if(ENDOFDRAW == task->taskType || NOOP == task->taskType)
+		else if(ENDOFDRAW == task->taskType)
 		{
 			taskQueue->endPop();
+#ifdef PROFILING
+			taskQueue->m_ignorePopSpinning = true;
+#endif
 			continue;
 		}
 		else if(POST == task->taskType)
@@ -150,6 +153,9 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			continue;
 		}
 		//else: DRAW
+#ifdef PROFILING
+		taskQueue->m_ignorePopSpinning = false;
+#endif
 
 		int x1 = task->x1, x2 = task->x2, y = task->y;
 		fragInput.user = pThis->m_userDataBuffers.fragInputs[threadIndex];
@@ -181,11 +187,13 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 		}
 
 		// set starting column to all attached fbos
+		PuresoftFBO** fbos = pThis->m_fbos;
 		for(size_t i = 0; i < MAX_FBOS; i++)
 		{
-			if(pThis->m_fbos[i])
+			PuresoftFBO* fbo = *fbos;
+			if(fbo)
 			{
-				pThis->m_fbos[i]->setCurCol(threadIndex, x1);
+				fbo->setCurCol(threadIndex, x1);
 			}
 		}
 
@@ -230,13 +238,16 @@ unsigned __stdcall PuresoftPipeline::fragmentThread(void *param)
 			}
 
 			// move fbo data pointers
-			for(size_t i = 0; i < MAX_FBOS; i++)
+			PuresoftFBO** fbos = pThis->m_fbos;
+			for(int i = 0; i < (int)MAX_FBOS; i++, fbos++)
 			{
-				if(pThis->m_fbos[i])
+				PuresoftFBO* fbo = *fbos;
+				if(fbo)
 				{
-					pThis->m_fbos[i]->nextCol(threadIndex);
+					fbo->nextCol(threadIndex);
 				}
 			}
+
 			pThis->m_depth->nextCol(threadIndex);
 		}
 	}

@@ -13,6 +13,9 @@ public:
 	RingQueueMT(void)
 	{
 		m_in = m_out = m_len = 0;
+#ifdef PROFILING
+		m_ignorePopSpinning = false;
+#endif
 	}
 
 	~RingQueueMT()
@@ -30,10 +33,16 @@ public:
 
 	T* beginPush(void)
 	{
+#ifdef PROFILING
+		m_counters.beginPushCalled++;
+#endif
 		while(true)
 		{
 			if(LEN == m_len)
 			{
+#ifdef PROFILING
+				m_counters.beginPushSpinned++;
+#endif
 				// friendly spin around
 				YIELD_CPU;
 			}
@@ -58,10 +67,21 @@ public:
 
 	T* beginPop(void)
 	{
+#ifdef PROFILING
+		m_counters.beginPopCalled++;
+#endif
+
 		while(true)
 		{
 			if(0 == m_len)
 			{
+#ifdef PROFILING
+				if(!m_ignorePopSpinning)
+				{
+					m_counters.beginPopSpinned++;
+				}
+#endif
+
 				// friendly spin around
 				YIELD_CPU;
 			}
@@ -82,11 +102,6 @@ public:
 			m_out = 0;
 		}
 		InterlockedDecrement(&m_len);
-	}
-
-	void reset(void)
-	{
-		m_abort = false;
 	}
 
 	size_t size(void) const
@@ -123,9 +138,29 @@ public:
 	}
 
 private:
-	CRITICAL_SECTION m_cs;
 	T m_queue[LEN];
 	size_t m_out;
 	size_t m_in;
 	volatile size_t m_len;
+
+// debuggabilities
+#ifdef PROFILING
+public:
+	struct COUNTERS
+	{
+		volatile unsigned int beginPopCalled;
+		volatile unsigned int beginPopSpinned;
+		volatile unsigned char filling[56];
+		volatile unsigned int beginPushCalled;
+		volatile unsigned int beginPushSpinned;
+	} m_counters;
+	bool m_ignorePopSpinning;
+	void resetCounters(void)
+	{
+		InterlockedExchange(&m_counters.beginPopCalled, 0);
+		InterlockedExchange(&m_counters.beginPopSpinned, 0);
+		InterlockedExchange(&m_counters.beginPushCalled, 0);
+		InterlockedExchange(&m_counters.beginPushSpinned, 0);
+	}
+#endif
 };

@@ -63,6 +63,7 @@ public:
 	// debug api
 	void saveTexture(int idx, const wchar_t* path, bool dataIsFloat);
 	void saveTextureAsRaw(int idx, const wchar_t* path);
+	void getTaskQCounters(unsigned int* taskPushCalled, unsigned int* taskPushSpinned, unsigned int* taskPopCalled, unsigned int* taskPopSpinned);
 
 // fundamental data
 private:

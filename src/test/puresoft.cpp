@@ -157,6 +157,8 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 	DWORD time0 = GetTickCount(), fcount = 0;
 	MSG msg;
 	mat4 rootTransform;
+	char perf[1024];
+	float fps = 0;
 	while (true)
 	{
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -203,17 +205,20 @@ int APIENTRY _tWinMain(HINSTANCE inst, HINSTANCE, LPTSTR, int nCmdShow)
 
 		pipeline.swapBuffers();
 
+		unsigned int pushCalled, pushSpinned, popCalled, popSpinned;
+		pipeline.getTaskQCounters(&pushCalled, &pushSpinned, &popCalled, &popSpinned);
+		sprintf(perf, "pushCalled: %lu, pushSpinned: %lu, popCalled: %lu, popSpinned: %lu, fps: %.1f", pushCalled, pushSpinned, popCalled, popSpinned, fps);
+
 		fcount++;
 		DWORD timeSpan = GetTickCount() - time0;
 		if(timeSpan > 2000)
 		{
-			char frate[64];
-			sprintf_s(frate, 64, "%.1f", 1000.0f * (float)fcount / (float)timeSpan);
-			SetWindowTextA(hWnd, frate);
-
+			fps = 1000.0f * (float)fcount / (float)timeSpan;
 			fcount = 0;
 			time0 = GetTickCount();
 		}
+
+		SetWindowTextA(hWnd, perf);
 	}
 
 	return (int) msg.wParam;

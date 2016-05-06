@@ -1,0 +1,12 @@
+bin/
+debug/
+release/
+profiling/
+inc/
+lib/
+ipch/
+
+*.sdf
+*.suo
+*.opensdf
+*.swp
