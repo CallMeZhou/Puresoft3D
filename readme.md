@@ -1,6 +1,13 @@
 #PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
   
+##QUICK NEWS
+I am half way through making a simple rendering engine based on FBX on top of Puresoft3D, the purposes of which are:
+* To enable Puresoft3D rendering more complex scene.
+* To test more advanced effects, like mirror reflection, SSR, light scattering, SSAO, etc.
+* To make make more fun out of this project.
+* To collect more stars  ╮（╯＿╰）╭
+
 ##FOR BUSY READERS  
 * Rasterisation based software renderer.
 * VisualStudio 2010 or later is required (for now).  
