@@ -163,6 +163,9 @@ public:
 	float x, y;
 };
 
+vec4 operator* (const mat4& transform, const vec4& src);
+mat4 operator* (const mat4& left, const mat4& right);
+
 } // namespace mcemaths
 
 #pragma pack()

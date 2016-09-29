@@ -434,4 +434,18 @@ const quaternion& quaternion::from_eular(const vec4& ypr)
 	return *this;
 }
 
+vec4 operator* (const mat4& transform, const vec4& src)
+{
+	vec4 r;
+	mcemaths_transform_m4v4(r, transform, src);
+	return r;
+}
+
+mat4 operator* (const mat4& left, const mat4& right)
+{
+	mat4 r;
+	mcemaths_transform_m4m4(r, left, right);
+	return r;
+}
+
 }

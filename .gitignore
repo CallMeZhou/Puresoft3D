@@ -5,8 +5,13 @@ profiling/
 inc/
 lib/
 ipch/
+src/privtest
 
 *.sdf
 *.suo
 *.opensdf
 *.swp
+*.VC.db
+*.vsp
+*.vspx
+*.psess
