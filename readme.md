@@ -1,19 +1,19 @@
-#PURESOFT3D  
+# PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
   
-##QUICK NEWS
+## QUICK NEWS
 I am half way through making a simple rendering engine based on FBX on top of Puresoft3D, the purposes of which are:
 * To enable Puresoft3D rendering more complex scene.
 * To test more advanced effects, like mirror reflection, SSR, light scattering, SSAO, etc.
 * To make make more fun out of this project.
 * To collect more stars  ╮（╯＿╰）╭
 
-##FOR BUSY READERS  
+## FOR BUSY READERS  
 * Rasterisation based software renderer.
 * VisualStudio 2010 or later is required (for now).  
 * Run initdirs.bat once before building.  
   
-##OVERVIEW  
+## OVERVIEW  
   
 *Let's find out what's behind video cards.*  
 ![](https://qqw6xw.dm2302.livefilestore.com/y3mZX_CzVUMXZNPKuSzZUTCBAvQpa1b1dVV09d3IY35fVN9FezvItAFhZc8iFyHhHgHobFJNKJAOJqDLhCko3c4Msz2duAcpDg-rCpZ0bIbOTZcxwcSMv0zaN1kTdIALUCz7cIYTOSpDwh0ShAe3fU9xg7W1FrkXUKZMr6hJm7-Jgw?width=1024&height=768&cropmode=none)  
@@ -25,7 +25,7 @@ As long as you have just learned OpenGL/Direct3D, and are able to draw some fanc
   
 Or, if you think you are a fanatical old driver in the pipeline, and you are also keen on challenging me or teaching me lessons, this project fits you too. I opened all the code so I showed all my stupidity in front of you. Never mind being challenged or corrected, playing in no man's land is my only concern.  
   
-##HAVE A TASTE?  
+## HAVE A TASTE?  
   
 Well, if you really want to pull out the project to your machine and run the demo, here are some **system minimum requirements**.  
 * I wrote and tested the whole project in **VisualStudio 2010 Pro** on **Windows 7 and Vista,** and I really do not have time to port it elsewhere for the time being, so you have to have that environment installed.  
@@ -40,6 +40,6 @@ You will also see 2 VC-projects named '**test**' and '**test2**', as their names
   
 The last VC-project in the solution is '**mcemaths**' which is from my old school project too, so please do not mind the wired name, 'mce' stands for 'motion capture engine'. This one is important as all linear algebra calculation is implemented in it. However it **may not be important to you** because we have many maths libraries overall the internet, and I believe some of them are much betther than this. About this library, you **just need to know the purposes of the library functions if you want to read the source code in demos as well as the main module. You can get enough description in the mcemaths.h**.  
   
-##WHERE TO FIND ME  
+## WHERE TO FIND ME  
   
 Send email to [my office mailbox](mailto:chzhoubj@cn.ibm.com) so that I can catch sight of it in every workday's morning. [My personal mailbox](mailto:agedboy@sina.com) is also looking forward to your emails but I usually check it once or twice a week.
