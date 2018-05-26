@@ -1,22 +1,10 @@
 #PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
   
-##QUICK NEWS
-I am half way through making a simple rendering engine based on FBX on top of Puresoft3D, the purposes of which are:
-* To enable Puresoft3D rendering more complex scene.
-* To test more advanced effects, like mirror reflection, SSR, light scattering, SSAO, etc.
-* To make make more fun out of this project.
-* To collect more stars  ╮（╯＿╰）╭
-
-##FOR BUSY READERS  
-* Rasterisation based software renderer.
-* VisualStudio 2010 or later is required (for now).  
-* Run initdirs.bat once before building.  
-  
 ##OVERVIEW  
   
 *Let's find out what's behind video cards.*  
-![](https://qqw6xw.dm2302.livefilestore.com/y3mZX_CzVUMXZNPKuSzZUTCBAvQpa1b1dVV09d3IY35fVN9FezvItAFhZc8iFyHhHgHobFJNKJAOJqDLhCko3c4Msz2duAcpDg-rCpZ0bIbOTZcxwcSMv0zaN1kTdIALUCz7cIYTOSpDwh0ShAe3fU9xg7W1FrkXUKZMr6hJm7-Jgw?width=1024&height=768&cropmode=none)  
+![](https://pic1.zhimg.com/479bf2d12f62870300862bf7b4544976_r.jpg)  
 This is a software graphics pipeline project. It aims to:  
 * *Fullfill personal interest.*  
 * *Assist self-paced study.*  
@@ -30,7 +18,7 @@ Or, if you think you are a fanatical old driver in the pipeline, and you are als
 Well, if you really want to pull out the project to your machine and run the demo, here are some **system minimum requirements**.  
 * I wrote and tested the whole project in **VisualStudio 2010 Pro** on **Windows 7 and Vista,** and I really do not have time to port it elsewhere for the time being, so you have to have that environment installed.  
   
-* Although the project has minimum dependency on GPU, but you must have a **powerful CPU**. I wish you were a prince from Dubai having a crazy box with hundreds of CPU cores inside. But if you were not, **at lease yours must have 2+ cores**. Mine is an i5 with 2 cores / 4 threads, it draws the above scene in 7 fps, so I guess 4 cores and 8 threads would make about 10-14 fps, that would be more acceptable.  
+* Although the project has minimum dependency on GPU, but you must have a **powerful CPU**. I wish you were a prince from Dubai having a crazy box with hundreds of CPU cores inside. But if you are not, **at lease yours must have 2+ cores**. Mine is an i5 with 2 cores / 4 threads, it draws the above scene in 7 fps, so I guess 4 cores and 8 threads would make about 10-14 fps, that would be more acceptable.  
   
 After you open the solution file of the project in VS, you will see 6 projects, among which, the '**Puresoft3D**' is your main course, containing 90% of the pipeline's code. [The WIKI pages have details](https://github.com/CallMeZhou/Puresoft3D/wiki).  
   
@@ -42,4 +30,4 @@ The last VC-project in the solution is '**mcemaths**' which is from my old schoo
   
 ##WHERE TO FIND ME  
   
-Send email to [my office mailbox](mailto:chzhoubj@cn.ibm.com) so that I can catch sight of it in every workday's morning. [My personal mailbox](mailto:agedboy@sina.com) is also looking forward to your emails but I usually check it once or twice a week.
+Send email to [My personal mailbox](mailto:agedboy@sina.com). I usually check it once or twice a week.
