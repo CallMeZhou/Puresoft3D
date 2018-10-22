@@ -1,19 +1,19 @@
-#PURESOFT3D  
+# PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
   
-##OVERVIEW  
+## OVERVIEW  
   
-*Let's find out what's behind video cards.*  
+* Let's find out what's behind video cards.*  
 ![](https://pic1.zhimg.com/479bf2d12f62870300862bf7b4544976_r.jpg)  
 This is a software graphics pipeline project. It aims to:  
 * *Fullfill personal interest.*  
 * *Assist self-paced study.*  
   
-As long as you have just learned OpenGL/Direct3D, and are able to draw some fancy stuffs, but your video card is still a damn black box to you, this project fits you well by opening the box up.  
+Perhaps you learned something about OpenGL/Direct3D, and are able to draw fancy stuffs with it too, but your video card is still a damn black box to you. Well, this project fits you well by opening the box up.  
   
-Or, if you think you are a fanatical old driver in the pipeline, and you are also keen on challenging me or teaching me lessons, this project fits you too. I opened all the code so I showed all my stupidity in front of you. Never mind being challenged or corrected, playing in no man's land is my only concern.  
+If this is not the case and you think you are an old driver in the pipeline, and you are also keen on challenging me or teaching me lessons, this project would be interesting to you too. I opened all the code so I showed all my stupidity in front of you. Never mind being challenged or corrected, playing with nobody is my only concern.  
   
-##HAVE A TASTE?  
+## HAVE A TASTE?  
   
 Well, if you really want to pull out the project to your machine and run the demo, here are some **system minimum requirements**.  
 * I wrote and tested the whole project in **VisualStudio 2010 Pro** on **Windows 7 and Vista,** and I really do not have time to port it elsewhere for the time being, so you have to have that environment installed.  
@@ -24,10 +24,10 @@ After you open the solution file of the project in VS, you will see 6 projects, 
   
 You will also see 2 VC-projects named '**test**' and '**test2**', as their names suggest, they are two demo programmes. You may want to set one of them as startup, **switch to release mode and press F5 to build and run it, but before that, be sure to run the initdirs.bat once**. You may noticed the '90%' in the above paragraph. The rest 10% is in the demos --- the shaders, I believe you know it.  
   
-'**libobjx**' and '**objcvt**' are two helper tools that converts Wavefront OBJ mesh file to an extended binary format OBJX. They are less important and were actually written 4 years ago when I was doing summer project of master degree courses. The demos load scene from OBJX files which are from OBJ files that I edited in Milkshape. Well, I hate all of them, the OBJ, the OBJX, and Milkshape, but I have to have a way of creating scenes to draw, so I just leave them there and use them. **Just do not spend time on them**.  
+'**libobjx**' and '**objcvt**' are two helper tools that converts Wavefront OBJ mesh file to an extended binary format OBJX. They are less important, written 4 years ago during my school project. The demos load scene from OBJX files which are from OBJ files that I edited in Milkshape. Well, **I hate all of them**, the OBJ, the OBJX, and Milkshape, but I have to have a way of creating scenes to draw, so I just leave them there and use them. **Just do not waste time on them**.  
   
-The last VC-project in the solution is '**mcemaths**' which is from my old school project too, so please do not mind the wired name, 'mce' stands for 'motion capture engine'. This one is important as all linear algebra calculation is implemented in it. However it **may not be important to you** because we have many maths libraries overall the internet, and I believe some of them are much betther than this. About this library, you **just need to know the purposes of the library functions if you want to read the source code in demos as well as the main module. You can get enough description in the mcemaths.h**.  
+The last VC-project in the solution is '**mcemaths**' which is from my old school project too, so please do not mind the wired name prefix. This module is important to the project as all linear algebra calculation is implemented in it. However it **may not be important to you** because we have many maths libraries all over the internet, and I believe some of them are much betther than this one. About this library, you **just need to know the purposes of the library functions if you want to read the source code in demos as well as the main module. You can get enough description in the mcemaths.h**.  
   
-##WHERE TO FIND ME  
+## WHERE TO FIND ME  
   
 Send email to [My personal mailbox](mailto:agedboy@sina.com). I usually check it once or twice a week.
