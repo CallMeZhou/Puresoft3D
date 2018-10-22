@@ -4,7 +4,7 @@
 ## OVERVIEW  
   
 * Let's find out what's behind video cards.*  
-![](https://pic1.zhimg.com/479bf2d12f62870300862bf7b4544976_r.jpg)  
+![](https://github.com/CallMeZhou/Puresoft3D/blob/master/cover.jpg)  
 This is a software graphics pipeline project. It aims to:  
 * *Fullfill personal interest.*  
 * *Assist self-paced study.*  
