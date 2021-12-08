@@ -1,5 +1,21 @@
 # PURESOFT3D  
 [中文版自述点这里](https://github.com/CallMeZhou/Puresoft3D/wiki/Readme-in-Chinese)  
+
+**IMPORTANT:** THE DEVELOPMENT OF THIS PROJECT HAS PERMANENTLY STOPPED. SINCERE APPRECIATION FOR ALL STAR-GIVERS. YOU GUYS HAVE GIVEN ME REAL HAPPYNESS.
+
+Believe me, I still love this project and the rasterization technologies. However, as a middle-aged man, I have to spend more time on my family.
+
+I am truly sorry that this project still has too many imperfactions, which include but not limited to:
+
+1. It is tightly bound to VisualStudio. Nowadays people use cmake.
+2. It is tightly bound to Windows indeed.
+3. It uses Intel style inline assmeber that makes it hard to port to other platforms.
+4. It has a over complicated shader classes hierachy that make it hard to use.
+5. The objx file format is a real shit!
+6. The field of depth (DOF) effect is eventually not included. (the screenshot was produced by my experimental code that was not pushed)
+7. The scene/stage file and the scene editor were eventually not implemented (crying).
+
+Well... but my life is short and so is my wife's. I can't keep her waiting any more. I have to share the rest of my life with her.
   
 ## OVERVIEW  
   
